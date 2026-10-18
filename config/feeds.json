@@ -33,5 +33,20 @@
     "name": "ScienceDaily · Science",
     "url": "https://www.sciencedaily.com/rss/top/science.xml",
     "section": "ifis"
+  },
+  {
+    "name": "Deutsche Welle · World",
+    "url": "https://rss.dw.com/rdf/rss-en-world",
+    "section": "world"
+  },
+  {
+    "name": "NASA · News",
+    "url": "https://www.nasa.gov/feed/",
+    "section": "ifis"
+  },
+  {
+    "name": "Phys.org · Science",
+    "url": "https://phys.org/rss-feed/",
+    "section": "ifis"
   }
 ]
