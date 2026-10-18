@@ -20,12 +20,13 @@ foreach ($feeds as $feed) {
  $xml = simplexml_load_string($body, 'SimpleXMLElement', LIBXML_NONET);
  libxml_clear_errors(); libxml_use_internal_errors($old);
  if (!$xml) continue;
- $entries = isset($xml->channel->item) ? $xml->channel->item : $xml->entry;
+ $entries = isset($xml->channel->item) ? $xml->channel->item : (isset($xml->item) ? $xml->item : $xml->entry);
  $count = 0;
  foreach ($entries as $entry) {
   if (++$count > 30) break;
   $link = (string)$entry->link;
   if (!$link && isset($entry->link)) $link = (string)$entry->link['href'];
+  if (!$link && isset($entry->link)) { foreach ($entry->link as $atomLink) { if ((string)$atomLink['rel'] === 'alternate' || !(string)$atomLink['rel']) { $link = (string)$atomLink['href']; break; } } }
   if (!filter_var($link, FILTER_VALIDATE_URL) || !in_array(parse_url($link, PHP_URL_SCHEME), ['http','https'], true)) continue;
   $title = trim(strip_tags((string)$entry->title));
   if (!$title) continue;
