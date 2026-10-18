@@ -199,6 +199,16 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
 .globe-view .globe-legend-line #mapTimeRange{flex:0 0 82px;width:82px;min-width:82px;max-width:82px;margin:0}
 .globe-view .globe-legend-line #mapTimeValue{flex:0 0 auto;min-width:42px;text-align:right;margin-left:0}
 .globe-legend #mapColorMode{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:7px;font-size:12px;padding:4px;max-width:185px}
+
+/* Mobile floating filter menu: larger, readable action icons. */
+@media(max-width:720px){
+ .filter-dock{max-width:82px}
+ .filter-dock .filter-toolbar button{width:72px;min-height:60px;font-size:30px;line-height:1.1;padding:9px 4px;justify-content:center}
+ .filter-dock .filter-toolbar button span{font-size:11px;line-height:1.25}
+ .filter-dock .filter-dock-toggle{width:60px;height:56px;font-size:31px}
+ .filter-dock .dock-language{justify-content:center;padding:8px 3px}
+ .filter-dock .dock-language select{font-size:16px!important;max-width:72px;padding:5px!important}
+}
 </style></head><body>
 <header class="topbar"><div class="topbar-inner"><a class="brand" href="?view=world"><strong>IFIS</strong></a><nav class="topnav" aria-label="Bereiche"><a href="?view=world" class="<?= $view==='world'?'active':'' ?>" data-subtitle-de="Nachrichten aus aller Welt" data-subtitle-en="News from around the world">World</a><a href="?view=ifis" class="<?= $view==='ifis'?'active':'' ?>" data-subtitle-de="Nachrichten mit Veränderungspotenzial" data-subtitle-en="News with potential for change">Potenzial</a><button class="globe-toggle" id="globeToggle" type="button" aria-pressed="false" data-subtitle-de="Nachrichten geografisch entdecken" data-subtitle-en="Explore news geographically">Karte</button></nav><button type="button" id="gridToggle" class="grid-toggle" title="Spaltenzahl ändern" aria-label="Spaltenzahl ändern"><svg class="grid-toggle-symbol" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="2.5" y="13.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="13.5" width="8" height="8" rx="1.3"/></svg><span id="gridCount">1</span></button><div class="top-actions"><button type="button" id="mobileSearchToggle" class="mobile-search-toggle" aria-label="Suche öffnen" aria-expanded="false" title="Nachrichten suchen"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg></button><input class="search" id="search" type="search" placeholder="Nachrichten durchsuchen …" aria-label="Nachrichten durchsuchen"></div></div></header>
 <div class="layout">
