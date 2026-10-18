@@ -8,6 +8,39 @@ $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 $db->exec('CREATE TABLE IF NOT EXISTS articles (id INTEGER PRIMARY KEY, url TEXT NOT NULL UNIQUE, title TEXT NOT NULL, source TEXT NOT NULL, section TEXT NOT NULL, published_at TEXT NOT NULL, summary TEXT NOT NULL DEFAULT "")');
 $cols=$db->query('PRAGMA table_info(articles)')->fetchAll(PDO::FETCH_ASSOC);
 if (!in_array('image_url', array_column($cols,'name'),true)) $db->exec("ALTER TABLE articles ADD COLUMN image_url TEXT DEFAULT ''");
+// Separate, versioned analysis queue. Existing articles remain published unchanged.
+// No automatic rejection and no unsupported claims of AI classification.
+$db->exec("CREATE TABLE IF NOT EXISTS article_analysis (
+ article_id INTEGER PRIMARY KEY REFERENCES articles(id) ON DELETE CASCADE,
+ input_hash TEXT NOT NULL,
+ analyzer_version TEXT NOT NULL DEFAULT 'pending',
+ status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','processing','review','complete','error')),
+ quality_label TEXT NOT NULL DEFAULT 'unassessed',
+ tone_label TEXT NOT NULL DEFAULT 'unassessed',
+ direction_label TEXT NOT NULL DEFAULT 'unassessed',
+ relevance_label TEXT NOT NULL DEFAULT 'unassessed',
+ confidence REAL,
+ evidence_json TEXT NOT NULL DEFAULT '{}',
+ analyzed_at TEXT,
+ updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+)");
+$db->exec("CREATE INDEX IF NOT EXISTS idx_article_analysis_status ON article_analysis(status,updated_at)");
+$db->exec("CREATE INDEX IF NOT EXISTS idx_articles_published_at ON articles(published_at)");
+$queue=$db->prepare("INSERT INTO article_analysis(article_id,input_hash,status,updated_at)
+ VALUES(:id,:hash,'pending',CURRENT_TIMESTAMP)
+ ON CONFLICT(article_id) DO UPDATE SET
+ input_hash=excluded.input_hash,
+ status=CASE WHEN article_analysis.input_hash!=excluded.input_hash THEN 'pending' ELSE article_analysis.status END,
+ analyzer_version=CASE WHEN article_analysis.input_hash!=excluded.input_hash THEN 'pending' ELSE article_analysis.analyzer_version END,
+ quality_label=CASE WHEN article_analysis.input_hash!=excluded.input_hash THEN 'unassessed' ELSE article_analysis.quality_label END,
+ tone_label=CASE WHEN article_analysis.input_hash!=excluded.input_hash THEN 'unassessed' ELSE article_analysis.tone_label END,
+ direction_label=CASE WHEN article_analysis.input_hash!=excluded.input_hash THEN 'unassessed' ELSE article_analysis.direction_label END,
+ relevance_label=CASE WHEN article_analysis.input_hash!=excluded.input_hash THEN 'unassessed' ELSE article_analysis.relevance_label END,
+ confidence=CASE WHEN article_analysis.input_hash!=excluded.input_hash THEN NULL ELSE article_analysis.confidence END,
+ evidence_json=CASE WHEN article_analysis.input_hash!=excluded.input_hash THEN '{}' ELSE article_analysis.evidence_json END,
+ analyzed_at=CASE WHEN article_analysis.input_hash!=excluded.input_hash THEN NULL ELSE article_analysis.analyzed_at END,
+ updated_at=CASE WHEN article_analysis.input_hash!=excluded.input_hash THEN CURRENT_TIMESTAMP ELSE article_analysis.updated_at END");
+$articleId=$db->prepare("SELECT id,title,summary FROM articles WHERE url=?");
 $feeds = json_decode(file_get_contents($base . '/config/feeds.json'), true, 512, JSON_THROW_ON_ERROR);
 $stmt = $db->prepare("INSERT INTO articles(url,title,source,section,published_at,summary,image_url) VALUES(?,?,?,?,?,?,?) ON CONFLICT(url) DO UPDATE SET image_url=CASE WHEN excluded.image_url != '' THEN excluded.image_url ELSE articles.image_url END");
 foreach ($feeds as $feed) {
@@ -46,6 +79,9 @@ foreach ($feeds as $feed) {
   }
   if ($image && (!filter_var($image, FILTER_VALIDATE_URL) || parse_url($image, PHP_URL_SCHEME) !== 'https')) $image = '';
   $stmt->execute([$link,substr($title,0,400),$feed['name'],$feed['section'],gmdate('Y-m-d H:i:s',$timestamp ?: time()),substr($summary,0,450),$image]);
+  $articleId->execute([$link]);
+  $row=$articleId->fetch(PDO::FETCH_ASSOC);
+  if ($row) $queue->execute([':id'=>(int)$row['id'], ':hash'=>hash('sha256', $row['title']."\\n".$row['summary'])]);
  }
 }
 echo "Import complete\n";
