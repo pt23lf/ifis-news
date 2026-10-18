@@ -38,18 +38,18 @@ foreach($items as &$item){$item['category']=category($item);} unset($item);
 @media(max-width:1150px){.layout{grid-template-columns:180px minmax(0,1fr);gap:22px}.right{display:none}}
 @media(max-width:720px){.topbar{height:60px;padding:0 15px;gap:8px}.brand{font-size:23px}.topnav{position:absolute;top:60px;left:0;right:0;height:47px;justify-content:center;border-bottom:1px solid var(--line);background:var(--bg)}.topnav a{padding:11px 25px 9px}.top-actions{gap:0}.search{position:absolute;left:12px;right:12px;top:112px;width:calc(100% - 24px);min-width:0;display:none;z-index:4;background:var(--bg)}.search.open{display:block}.search-toggle{display:block}.layout{display:block;padding:61px 15px 90px}.side{display:none}.feedhead h1{font-size:20px}.feedhead{padding-top:5px}.feedhead small{font-size:11px}.story{grid-template-columns:83px minmax(0,1fr) auto;gap:10px;padding:14px 0}.thumb{width:83px;height:75px}.story h2{font-size:15px}.story.feature{grid-template-columns:minmax(0,1fr) auto}.story.feature h2{font-size:20px}.summary{font-size:13px;-webkit-line-clamp:2}.story-actions{flex-direction:column}.story-actions button{font-size:18px;padding:2px}.bottomnav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;background:var(--bg);border-top:1px solid var(--line);padding:7px 0 max(8px,env(safe-area-inset-bottom));z-index:6}.bottomnav button,.bottomnav a{border:0;background:none;text-align:center;font-size:11px;color:var(--muted);min-width:60px}.bottomnav .ico{display:block;font-size:21px}.bottomnav .active{color:var(--accent)}.empty{padding:65px 15px}}
 @media(prefers-color-scheme:dark){:root{color-scheme:dark;--bg:#15191f;--text:#e9edf3;--muted:#a0acba;--line:#313945;--soft:#202731;--accent:#8ab4ff;--hover:#26354a}.chip.active{background:#e9edf3;color:#15191f;border-color:#e9edf3}}
-</style></head><body>
+</style><link href="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.css" rel="stylesheet"><style>.globe-view{display:none;position:relative;height:min(72vh,680px);min-height:380px;border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:16px}.globe-view.open{display:block}.globe-view #newsGlobe{width:100%;height:100%}.globe-info{position:absolute;left:12px;bottom:12px;background:var(--bg);padding:12px;border-radius:10px;max-width:320px;box-shadow:0 2px 12px #0002;font-size:13px}.globe-toggle{border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:20px;padding:6px 12px;white-space:nowrap}.globe-toggle.active{background:var(--hover);color:var(--accent)}.geo-link{font-size:12px;color:var(--accent);cursor:pointer;border:0;background:none;padding:3px 0}.globe-marker{background:#2468d5;color:white;border:2px solid white;border-radius:50%;width:29px;height:29px;display:grid;place-items:center;font-size:11px;box-shadow:0 1px 7px #0005;cursor:pointer}</style></head><body>
 <header class="topbar"><a class="brand" href="?view=world"><strong>IFIS</strong> News</a><nav class="topnav" aria-label="Bereiche"><a href="?view=world" class="<?= $view==='world'?'active':'' ?>">Weltlage</a><a href="?view=ifis" class="<?= $view==='ifis'?'active':'' ?>">IFIS-Radar</a></nav><div class="top-actions"><input class="search" id="search" type="search" placeholder="Nachrichten durchsuchen …" aria-label="Nachrichten durchsuchen"><button class="iconbtn search-toggle" id="searchToggle" title="Suche" aria-label="Suche">⌕</button><button class="iconbtn" id="savedTop" title="Gemerkt" aria-label="Gemerkt">♧ <span class="desktoplabel">Gemerkt</span></button></div></header>
 <div class="layout">
 <aside class="side" aria-label="Themen"><button data-cat="Alle" class="active">◉ &nbsp; Alle Meldungen</button><?php foreach(['Politik','Gesellschaft','Wirtschaft','Technologie','Umwelt','Gesundheit','Bildung','Wissenschaft','Weitere'] as $c): ?><button data-cat="<?=esc($c)?>"><?=esc($c)?></button><?php endforeach; ?><h3>Ansicht</h3><button id="savedSide">☆ &nbsp; Gemerkt</button><button id="hiddenSide">Ausgeblendete Meldungen</button><div class="sidefooter">Weniger Ablenkung. Mehr geografischer Überblick.<br><a href="https://ifis.net">Über IFIS ↗</a></div></aside>
-<main id="main"><div class="feedhead"><h1 id="feedTitle"><?= $view==='ifis'?'IFIS-Radar':'Weltlage' ?></h1><small><?=count($items)?> Meldungen</small></div>
-<div class="chips" id="chips" aria-label="Themenfilter"><button class="chip active" data-cat="Alle">Alle</button><?php foreach(['Politik','Gesellschaft','Wirtschaft','Technologie','Umwelt','Gesundheit','Bildung','Wissenschaft','Weitere'] as $c): ?><button class="chip" data-cat="<?=esc($c)?>"><?=esc($c)?></button><?php endforeach; ?></div>
+<main id="main"><div class="feedhead"><h1 id="feedTitle"><?= $view==='ifis'?'IFIS-Radar':'Weltlage' ?></h1><button class="globe-toggle" id="globeToggle" type="button" aria-pressed="false">🌍 Globus</button><small><?=count($items)?> Meldungen</small></div>
+<div class="globe-view" id="globeView"><div id="newsGlobe"></div><div class="globe-info" id="globeInfo">Nachrichten geografisch entdecken. Punkte zeigen erkannte Ereignisorte, nicht den Sitz der Redaktion. Die Zuordnung ist vorläufig.</div></div><div class="chips" id="chips" aria-label="Themenfilter"><button class="chip active" data-cat="Alle">Alle</button><?php foreach(['Politik','Gesellschaft','Wirtschaft','Technologie','Umwelt','Gesundheit','Bildung','Wissenschaft','Weitere'] as $c): ?><button class="chip" data-cat="<?=esc($c)?>"><?=esc($c)?></button><?php endforeach; ?></div>
 <div id="stories"><?php foreach($items as $i=>$item): ?><article class="story <?= $i===0?'feature':'' ?>" data-url="<?=esc($item['url'])?>" data-cat="<?=esc($item['category'])?>" data-search="<?=esc(mb_strtolower(($item['title']??'').' '.($item['summary']??'').' '.($item['source']??''),'UTF-8'))?>"><div class="thumb" aria-hidden="true">▤</div><div><div class="cat"><?=esc($item['category'])?></div><h2><a href="<?=esc($item['url'])?>" target="_blank" rel="noopener noreferrer"><?=esc($item['title'])?></a></h2><?php if(!empty($item['summary'])): ?><p class="summary"><?=esc($item['summary'])?></p><?php endif; ?><div class="meta"><?=esc($item['source'])?> · <?=esc($item['published_at'])?> ↗</div></div><div class="story-actions"><button class="save" aria-label="Meldung merken" title="Merken">☆</button><button class="dismiss" aria-label="Meldung ausblenden" title="Ausblenden">×</button></div></article><?php endforeach; ?></div>
 <div class="empty <?= $items?'hide':'' ?>" id="empty"><div class="symbol">▤</div><h2>Noch keine Nachrichten importiert.</h2><p>Sobald die ersten Quellen eingebunden sind, erscheinen hier die aktuellen Meldungen – übersichtlich und ohne Ablenkung.</p></div><div class="empty hide" id="noMatches"><h2>Keine passenden Meldungen</h2><p>Versuche einen anderen Suchbegriff oder Filter.</p></div></main>
 <aside class="right"><div class="panel"><h2>Auf einen Blick</h2><p>Die wichtigsten Meldungen erscheinen hier, sobald Nachrichten importiert wurden.</p></div><div class="panel"><h2>Themen im Fokus</h2><div id="focusTopics"><?php foreach(['Umwelt','Gesundheit','Bildung','Technologie','Gesellschaft'] as $c): ?><button data-cat="<?=esc($c)?>"><?=esc($c)?></button><?php endforeach; ?></div></div><div class="panel"><h2>IFIS-Perspektive</h2><p>Weltlage und IFIS-Radar bleiben bewusst getrennt: erst informieren, dann Zusammenhänge entdecken.</p><a href="https://ifis.net">IFIS entdecken ↗</a></div></aside>
 </div>
 <nav class="bottomnav" aria-label="Mobile Navigation"><a href="?view=world" class="<?= $view==='world'?'active':'' ?>"><span class="ico">▤</span>News</a><a href="?view=ifis" class="<?= $view==='ifis'?'active':'' ?>"><span class="ico">◎</span>Radar</a><button id="savedBottom"><span class="ico">☆</span>Gemerkt</button><button id="moreBottom"><span class="ico">☷</span>Themen</button></nav>
-<script>
+<script src="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.js"></script><script>
 (()=>{'use strict';
 const prefix='ifis-news-v1-',load=(k)=>{try{return JSON.parse(localStorage.getItem(prefix+k)||'[]')}catch{return []}},store=(k,v)=>{try{localStorage.setItem(prefix+k,JSON.stringify(v))}catch{}};
 let saved=load('saved'),hidden=load('hidden'),mode='all',cat='Alle';
@@ -72,5 +72,43 @@ document.getElementById('hiddenSide').onclick=()=>{mode='hidden';cat='Alle';refr
 document.getElementById('searchToggle').onclick=()=>{search.classList.toggle('open');search.focus()};
 document.getElementById('moreBottom').onclick=()=>{document.getElementById('chips').scrollIntoView({behavior:'smooth',block:'center'});};
 search.addEventListener('input',refresh);refresh();
+})();
+</script>
+<script>
+(()=>{
+const locations=[
+['Deutschland',51.16,10.45,['germany','deutschland','german','berlin','hamburg','munich','münchen']],
+['Ukraine',49,32,['ukraine','kyiv','kiev','ukrainian']],
+['Russland',61,100,['russia','russian','moscow','kremlin','russland']],
+['USA',39,-98,['united states','u.s.',' us ','america','american','washington','new york','trump']],
+['China',35,104,['china','chinese','beijing','peking']],
+['Indien',22,79,['india','indian','delhi','mumbai']],
+['Israel',31.5,35,['israel','israeli','jerusalem','tel aviv']],
+['Gaza',31.42,34.38,['gaza','palestinian','palestine']],
+['Iran',32,53,['iran','iranian','tehran']],
+['Großbritannien',54,-2,['britain','british','uk ','london','england']],
+['Frankreich',46.6,2.2,['france','french','paris','frankreich']],
+['Brasilien',-10,-52,['brazil','brazilian','brasilien']],
+['Kenia',0.2,37.9,['kenya','kenyan','kenia']],
+['Südafrika',-29,24,['south africa','südafrika']],
+['Japan',36,138,['japan','japanese','tokyo']],
+['Australien',-25,134,['australia','australian','sydney']],
+['Kanada',56,-106,['canada','canadian','kanada']],
+['Mexiko',23,-102,['mexico','mexican','mexiko']],
+['EU',50.85,4.35,['european union','european commission','eu parliament','europäische union','brussels','brüssel']],
+['Türkei',39,35,['turkey','türkei','turkish','ankara']],
+['Südkorea',36,128,['south korea','südkorea','seoul']],
+['Taiwan',24,121,['taiwan','taipei']],
+['Ägypten',27,30,['egypt','ägypten','cairo']],
+['Sudan',15,30,['sudan','khartoum']],
+['Nigeria',9,8,['nigeria','nigerian']],
+['Indonesien',-2,118,['indonesia','indonesien','jakarta']]
+];
+const stories=[...document.querySelectorAll('.story')],btn=document.getElementById('globeToggle'),panel=document.getElementById('globeView'),info=document.getElementById('globeInfo');let map=null,markers=[];
+const normalize=t=>' '+t.toLocaleLowerCase()+' ';
+const groups=new Map();
+stories.forEach(story=>{const title=story.querySelector('h2').textContent,txt=normalize(title+' '+(story.querySelector('.summary')?.textContent||''));const hit=locations.find(loc=>loc[3].some(word=>txt.includes(word)));if(!hit)return;story.dataset.place=hit[0];if(!groups.has(hit[0]))groups.set(hit[0],{loc:hit,stories:[]});groups.get(hit[0]).stories.push(story);});
+function choose(place){const group=groups.get(place);if(!group)return;info.replaceChildren();const heading=document.createElement('strong');heading.textContent=place+' · '+group.stories.length+' Meldungen';info.append(heading);group.stories.slice(0,6).forEach(story=>{const a=document.createElement('a');a.href=story.querySelector('h2 a').href;a.target='_blank';a.rel='noopener noreferrer';a.style.display='block';a.style.marginTop='8px';a.textContent=story.querySelector('h2').textContent;info.append(a)});map.flyTo({center:[group.loc[2],group.loc[1]],zoom:3,essential:true});}
+btn.addEventListener('click',()=>{const open=panel.classList.toggle('open');btn.classList.toggle('active',open);btn.setAttribute('aria-pressed',String(open));if(!open)return;if(map){map.resize();return;}if(!window.maplibregl){info.textContent='Die Kartenbibliothek konnte nicht geladen werden.';return;}map=new maplibregl.Map({container:'newsGlobe',style:'https://demotiles.maplibre.org/style.json',center:[10,20],zoom:1.15,attributionControl:true});map.on('load',()=>{try{map.setProjection({type:'globe'});}catch(e){};groups.forEach((g,name)=>{const dot=document.createElement('button');dot.className='globe-marker';dot.type='button';dot.textContent=String(g.stories.length);dot.title=name+' · '+g.stories.length+' Meldungen';dot.addEventListener('click',()=>choose(name));markers.push(new maplibregl.Marker({element:dot}).setLngLat([g.loc[2],g.loc[1]]).addTo(map));});if(!groups.size)info.textContent='Noch keine eindeutigen Ereignisorte erkannt.';});});
 })();
 </script></body></html>
