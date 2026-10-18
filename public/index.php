@@ -192,6 +192,8 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
 .globe-view .map-projection-toggle{padding:4px 8px;line-height:1;font-size:20px;min-width:35px;text-align:center;margin-left:auto}
 .globe-view .globe-legend-line:has(#mapTimeRange){grid-template-columns:auto 110px auto;justify-content:start;gap:8px}
 .globe-legend #mapTimeRange{width:110px;min-width:0;max-width:110px}
+.globe-event-jump{display:block;width:100%;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer;padding:8px 4px;font:inherit}
+.globe-event-jump:hover{text-decoration:underline}
 </style></head><body>
 <header class="topbar"><div class="topbar-inner"><a class="brand" href="?view=world"><strong>IFIS</strong></a><nav class="topnav" aria-label="Bereiche"><a href="?view=world" class="<?= $view==='world'?'active':'' ?>" data-subtitle-de="Nachrichten aus aller Welt" data-subtitle-en="News from around the world">World</a><a href="?view=ifis" class="<?= $view==='ifis'?'active':'' ?>" data-subtitle-de="Nachrichten mit Veränderungspotenzial" data-subtitle-en="News with potential for change">Potenzial</a><button class="globe-toggle" id="globeToggle" type="button" aria-pressed="false" data-subtitle-de="Nachrichten geografisch entdecken" data-subtitle-en="Explore news geographically">Karte</button></nav><button type="button" id="gridToggle" class="grid-toggle" title="Spaltenzahl ändern" aria-label="Spaltenzahl ändern"><svg class="grid-toggle-symbol" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="2.5" y="13.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="13.5" width="8" height="8" rx="1.3"/></svg><span id="gridCount">1</span></button><div class="top-actions"><button type="button" id="mobileSearchToggle" class="mobile-search-toggle" aria-label="Suche öffnen" aria-expanded="false" title="Nachrichten suchen"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg></button><input class="search" id="search" type="search" placeholder="Nachrichten durchsuchen …" aria-label="Nachrichten durchsuchen"></div></div></header>
 <div class="layout">
@@ -416,9 +418,29 @@ function addCountryBatchMarkers(){
    dot.style.opacity=isSelected?'1':'.65';
    dot.title=country+' · '+count+' veröffentlichte Artikel · '+band.label+(isSelected?' · im gewählten Zeitraum':' · älter als die Auswahl');
    dot.addEventListener('click',()=>{
-    selectedPlace=null;connector.style.display='none';info.classList.remove('has-selection');
-    info.textContent=country+' · '+count+' veröffentlichte Artikel · '+band.label+'. '+(isSelected?'Innerhalb':'Außerhalb')+' des gewählten Zeitraums. Orange steht für Quellenland, nicht Ereignisort.';
-    map.flyTo({center,zoom:3,essential:true});
+    selectedPlace=null;connector.style.display='none';info.replaceChildren();info.classList.add('has-selection');
+    const heading=document.createElement('strong');heading.textContent=country+' · '+band.label+' · Ereignisorte';info.append(heading);
+    const matches=stories.filter(story=>{
+      const source=story.querySelector('.meta')?.textContent||'';
+      if(sourceCountry(source)!==country)return false;
+      const raw=story.querySelector('time')?.getAttribute('datetime')||'';
+      const published=Date.parse(raw.replace(' ','T').replace(/^(\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2})$/,'$1Z'));
+      const age=(Date.now()-published)/3600000;
+      return Number.isFinite(age)&&age>=band.from&&age<band.to;
+    });
+    const places=new Map();
+    matches.forEach(story=>{const place=story.dataset.place;if(!place||!groups.has(place))return;if(!places.has(place))places.set(place,[]);places.get(place).push(story)});
+    if(!places.size){
+      const note=document.createElement('p');note.textContent='Für diese Veröffentlichungen ist derzeit kein eindeutiger Ereignisort in den angezeigten Meldungen verfügbar.';info.append(note);
+      return;
+    }
+    [...places.entries()].sort((a,b)=>b[1].length-a[1].length).forEach(([place,articles])=>{
+      const link=document.createElement('button');link.type='button';link.className='globe-story-link globe-event-jump';
+      link.textContent=place+' · '+articles.length+' Meldung'+(articles.length===1?'':'en');
+      link.addEventListener('click',()=>choose(place));
+      info.append(link);
+    });
+    if(places.size===1)choose(places.keys().next().value);
    });
    cluster.append(dot);
   });
