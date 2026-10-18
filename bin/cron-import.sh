@@ -21,5 +21,6 @@ PHP_BIN="${PHP_BIN:-$(command -v php)}"
 {
   printf '\n[%s] Import start\n' "$(date -u +%FT%TZ)"
   "$PHP_BIN" bin/import.php
+  "$PHP_BIN" bin/import-ifis.php || printf "[%s] IFIS index refresh failed; previous index retained\\n" "$(date -u +%FT%TZ)"
   printf '[%s] Import finished\n' "$(date -u +%FT%TZ)"
 } >> storage/logs/import.log 2>&1
