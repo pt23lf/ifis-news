@@ -356,14 +356,14 @@ document.querySelectorAll('.story-map-link').forEach(link=>link.addEventListener
 const sourceBatches=<?=json_encode($sourceBatches,JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_UNESCAPED_UNICODE)?>;
 const countryCenters={
  'Vereinigtes Königreich':[-2.5,54.5],'Deutschland':[10.5,51.2],'USA':[-98.5,39.8],
- 'Katar':[51.2,25.3],'Frankreich':[2.3,46.5],'Europa':[14,49]
+ 'Katar':[51.2,25.3],'Frankreich':[2.3,46.5]
 };
 function sourceCountry(name){
  if(/Guardian|BBC News/.test(name))return 'Vereinigtes Königreich';
  if(/Deutsche Welle|SPIEGEL/.test(name))return 'Deutschland';
  if(/Al Jazeera/.test(name))return 'Katar';
  if(/France 24/.test(name))return 'Frankreich';
- if(/Euronews/.test(name))return 'Europa';
+ if(/Euronews/.test(name))return 'Frankreich';
  if(/ScienceDaily|NASA|Phys.org|NPR|New York Times|NOAA|IEEE Spectrum/.test(name))return 'USA';
  return null;
 }
