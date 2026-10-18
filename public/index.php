@@ -578,13 +578,14 @@ function renderFlightArcs(){
    if(!visibleHemisphere(from)||!visibleHemisphere(to))return;
    const a=map.project(from),b=map.project(to),dx=b.x-a.x,dy=b.y-a.y,distance=Math.hypot(dx,dy);
    if(distance<3)return;
-   const lift=Math.min(145,Math.max(18,distance*.22));
+   const lift=Math.min(110,Math.max(10,distance*.16));
    const mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
    const nx=-dy/distance,ny=dx/distance;
+   const upward=ny>0?-1:1;
    // A lifted quadratic arc suggests a flight path; its endpoints remain anchored to the map.
    const curve=document.createElementNS('http://www.w3.org/2000/svg','path');
-   curve.setAttribute('d','M '+a.x+' '+a.y+' Q '+(mx+nx*lift)+' '+(my+ny*lift-lift*.45)+' '+b.x+' '+b.y);
-   curve.setAttribute('fill','none');curve.setAttribute('stroke','#e59a35');curve.setAttribute('stroke-width','2');curve.setAttribute('stroke-opacity','.88');curve.setAttribute('stroke-linecap','round');
+   curve.setAttribute('d','M '+a.x+' '+a.y+' Q '+(mx+nx*lift*upward)+' '+(my+ny*lift*upward-lift*.3)+' '+b.x+' '+b.y);
+   curve.setAttribute('fill','none');curve.setAttribute('stroke','#e59a35');curve.setAttribute('stroke-width','1.7');curve.setAttribute('stroke-opacity','.82');curve.setAttribute('stroke-linecap','round');
    flightLayer.append(curve);
   });
  });
@@ -602,11 +603,11 @@ groups.forEach((group,place)=>{
  dot.textContent=String(reportingSources.size);
  dot.title=place+' · '+reportingSources.size+' berichtende Quellen · '+group.stories.length+' Meldungen';
  dot.setAttribute('aria-label',dot.title);
- dot.addEventListener('click',()=>choose(place));
+ dot.addEventListener('click',()=>{if(selectedPlace===place){closeMapOverlay();return;}choose(place)});
  markers.push(new maplibregl.Marker({element:dot,anchor:'center'}).setLngLat([group.loc[2],group.loc[1]]).addTo(map));
 });
 map.addLayer({id:'news-source-links',type:'line',source:'news-source-links',layout:{visibility:'none'},paint:{'line-color':'#e59a35','line-width':2,'line-opacity':0.85,'line-dasharray':[2,2]}});
-sources.forEach(source=>{const dot=document.createElement('button');dot.className='globe-source';dot.textContent='●';dot.title=source.name+' · Redaktions-/Organisationsstandort, nicht zwingend Rechercheort';dot.addEventListener('click',()=>{mapOverlayOpen=true;selectedPlace=null;selectedSource=source.name;connector.style.display='none';info.replaceChildren();info.classList.add('has-selection');const heading=document.createElement('strong');heading.textContent=source.name+' · berichtete Ereignisorte';info.append(heading);const related=stories.filter(story=>sourceFor(story)?.name===source.name);related.slice(0,15).forEach(story=>appendMapArticle(info,story));updateSourceLinks();map.flyTo({center:source.coordinates,zoom:3})});markers.push(new maplibregl.Marker({element:dot,anchor:'center'}).setLngLat(source.coordinates).addTo(map))});}
+sources.forEach(source=>{const dot=document.createElement('button');dot.className='globe-source';dot.textContent='●';dot.title=source.name+' · Redaktions-/Organisationsstandort, nicht zwingend Rechercheort';dot.addEventListener('click',()=>{if(selectedSource===source.name){closeMapOverlay();return;}mapOverlayOpen=true;selectedPlace=null;selectedSource=source.name;connector.style.display='none';info.replaceChildren();info.classList.add('has-selection');const heading=document.createElement('strong');heading.textContent=source.name+' · berichtete Ereignisorte';info.append(heading);const related=stories.filter(story=>sourceFor(story)?.name===source.name);related.slice(0,15).forEach(story=>appendMapArticle(info,story));updateSourceLinks();map.flyTo({center:source.coordinates,zoom:3})});markers.push(new maplibregl.Marker({element:dot,anchor:'center'}).setLngLat(source.coordinates).addTo(map))});}
 let selectedPlace=null;
 let selectedSource=null;
 let mapOverlayOpen=false;
@@ -650,9 +651,9 @@ function choose(place){
  map.flyTo({center:[group.loc[2],group.loc[1]],zoom:3,essential:true});
  requestAnimationFrame(updateConnector);
 }
-panel.addEventListener('pointerdown',event=>{if(mapOverlayOpen&&!info.contains(event.target)&&!event.target.closest('.globe-source-batch,.globe-marker,.globe-source'))closeMapOverlay();});
-document.addEventListener('keydown',event=>{if(event.key==='Escape')closeMapOverlay()});
-document.addEventListener('pointerdown',event=>{if(mapOverlayOpen&&!panel.contains(event.target))closeMapOverlay()});
+// The selected routes remain visible until the same marker is clicked again.
+// Route selection is controlled by its origin marker.
+// Clicking outside the map does not reset the route selection.
 btn.addEventListener('click',()=>{const open=true;panel.classList.add('open');btn.classList.add('active');btn.setAttribute('aria-pressed','true');panel.scrollIntoView({behavior:'smooth',block:'start'});if(map){map.resize();return;}if(!window.maplibregl){info.textContent='Die Kartenbibliothek konnte nicht geladen werden.';return;}map=new maplibregl.Map({container:'newsGlobe',style:'https://demotiles.maplibre.org/style.json',center:[10,20],zoom:1.15,attributionControl:true});map.on('load',()=>{try{map.setProjection({type:flatProjection?'mercator':'globe'});}catch(e){};addNightLayer();addSourceLinks();flightLayer=document.createElementNS('http://www.w3.org/2000/svg','g');connector.append(flightLayer);updateMapReadState();map.on('move',()=>{hideFarSide();updateConnector()});map.on('resize',()=>{updateConnector();renderFlightArcs();});hideFarSide();if(!groups.size)info.textContent='Noch keine eindeutigen Ereignisorte erkannt.';});});
 })();
 </script></body></html>
