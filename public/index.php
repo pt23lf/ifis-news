@@ -29,6 +29,13 @@ function category(array $item): string {
  return 'Weitere';
 }
 foreach($items as &$item){$item['category']=category($item);} unset($item);
+$ifisIndexFile=dirname(__DIR__).'/storage/ifis-articles.json';
+$ifisIndex=[];
+if(is_file($ifisIndexFile)){
+ $raw=json_decode((string)file_get_contents($ifisIndexFile),true);
+ if(is_array($raw)&&isset($raw['articles'])&&is_array($raw['articles']))$ifisIndex=$raw['articles'];
+}
+
 ?><!doctype html>
 <html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#ffffff">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 rx=%2714%27 fill=%27%232468d5%27/%3E%3Ctext x=%2732%27 y=%2743%27 text-anchor=%27middle%27 font-family=%27Arial%27 font-weight=%27bold%27 font-size=%2733%27 fill=%27white%27%3EI%3C/text%3E%3C/svg%3E"><title><?= $view==='ifis'?'IFIS-Radar':'Weltlage' ?> · IFIS News</title>
@@ -103,6 +110,7 @@ foreach($items as &$item){$item['category']=category($item);} unset($item);
 
 <script src="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.js"></script><script>
 (()=>{'use strict';
+window.ifisReferenceArticles=<?=json_encode($ifisIndex,JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_UNESCAPED_UNICODE|JSON_INVALID_UTF8_SUBSTITUTE)?>;
 const prefix='ifis-news-v1-',load=(k)=>{try{return JSON.parse(localStorage.getItem(prefix+k)||'[]')}catch{return []}},store=(k,v)=>{try{localStorage.setItem(prefix+k,JSON.stringify(v))}catch{}};
 let saved=load('saved'),hidden=load('hidden'),mode='all',cat='Alle';
 const stories=[...document.querySelectorAll('.story')],search=document.getElementById('search'),empty=document.getElementById('empty'),noMatches=document.getElementById('noMatches'),title=document.getElementById('feedTitle');
@@ -193,11 +201,22 @@ document.querySelectorAll('.story').forEach(story=>{
 const url=story.dataset.url,sel=story.querySelector('.trust');sel.value=ratings[url]||'';
 sel.addEventListener('change',()=>{if(sel.value)ratings[url]=sel.value;else delete ratings[url];try{localStorage.setItem(trustKey,JSON.stringify(ratings))}catch{}});
 const words=(story.querySelector('h2').textContent+' '+(story.querySelector('.summary')?.textContent||'')).toLowerCase();
-const links=[
-{terms:['agriculture','farming','farmland','landwirtschaft','soil','ackerbau'],label:'IFIS: Landwirtschaft neu erfinden',url:'https://ifis.net/artikel/landwirtschaft-neu-erfinden'},
-{terms:['overtraining','overload','überlastung','excessive exercise','too much training'],label:'IFIS: Wenn mehr nicht mehr besser wird',url:'https://ifis.net/artikel/wenn-mehr-nicht-mehr-besser-wird'}
-];const match=links.find(x=>x.terms.some(t=>words.includes(t)));
-if(match){const a=document.createElement('a');a.href=match.url;a.target='_blank';a.rel='noopener noreferrer';a.textContent='↗ '+match.label; a.title='Automatischer thematischer Lesehinweis, keine Faktenprüfung';story.querySelector('.ifis-related').append(a);}
+const referenceArticles=window.ifisReferenceArticles||[];
+const stop=new Set(['und','oder','aber','eine','einer','eines','einem','einen','sind','wird','werden','über','auch','mehr','nicht','sich','durch','the','and','for','from','with','that','this','into','about','after','their','have','what','when','where','news','ifis','artikel','menschen','leben','system','systeme','struktur','strukturen']);
+const tokens=(text)=>new Set((text.toLocaleLowerCase('de').match(/[\\p{L}]{4,}/gu)||[]).filter(w=>!stop.has(w)));
+const storyTokens=tokens(words);
+const matches=referenceArticles.map(ref=>{
+ const titleTokens=tokens(ref.title||'');
+ const descTokens=tokens(ref.description||'');
+ let score=0;
+ for(const token of storyTokens){if(titleTokens.has(token))score+=3;else if(descTokens.has(token))score+=1}
+ return {ref,score};
+}).filter(x=>x.score>=6).sort((a,b)=>b.score-a.score).slice(0,2);
+const related=story.querySelector('.ifis-related');
+for(const {ref} of matches){
+ const a=document.createElement('a');a.href=ref.url;a.target='_blank';a.rel='noopener noreferrer';a.textContent='↗ IFIS: '+ref.title;a.title='Automatisch ermittelter thematischer Lesehinweis; keine Inhalts- oder Faktenprüfung';related.append(a);
+}
+
 });
 const language=document.getElementById('language');
 const dictionary={de:{world:'Weltlage',ifis:'IFIS-Radar',all:'Alle',saved:'Gemerkt',hidden:'Ausgeblendet',search:'Nachrichten durchsuchen …',globe:'🌍 Globus',rating:'Eigene Einschätzung',unverified:'Ungeprüft',plausible:'Plausibel',questionable:'Fraglich'},en:{world:'World news',ifis:'IFIS Radar',all:'All',saved:'Saved',hidden:'Hidden',search:'Search news …',globe:'🌍 Globe',rating:'My assessment',unverified:'Not checked',plausible:'Plausible',questionable:'Questionable'}};
