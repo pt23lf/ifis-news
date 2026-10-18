@@ -6,8 +6,10 @@ if (!extension_loaded('pdo_sqlite')) { fwrite(STDERR, "PDO SQLite missing\n"); e
 $db = new PDO('sqlite:' . $base . '/storage/news.sqlite');
 $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 $db->exec('CREATE TABLE IF NOT EXISTS articles (id INTEGER PRIMARY KEY, url TEXT NOT NULL UNIQUE, title TEXT NOT NULL, source TEXT NOT NULL, section TEXT NOT NULL, published_at TEXT NOT NULL, summary TEXT NOT NULL DEFAULT "")');
+$cols=$db->query('PRAGMA table_info(articles)')->fetchAll(PDO::FETCH_ASSOC);
+if (!in_array('image_url', array_column($cols,'name'),true)) $db->exec("ALTER TABLE articles ADD COLUMN image_url TEXT DEFAULT ''");
 $feeds = json_decode(file_get_contents($base . '/config/feeds.json'), true, 512, JSON_THROW_ON_ERROR);
-$stmt = $db->prepare('INSERT OR IGNORE INTO articles(url,title,source,section,published_at,summary) VALUES(?,?,?,?,?,?)');
+$stmt = $db->prepare('INSERT OR IGNORE INTO articles(url,title,source,section,published_at,summary,image_url) VALUES(?,?,?,?,?,?,?)');
 foreach ($feeds as $feed) {
  $url = $feed['url'] ?? '';
  if (!filter_var($url, FILTER_VALIDATE_URL) || parse_url($url, PHP_URL_SCHEME) !== 'https') continue;
@@ -30,7 +32,13 @@ foreach ($feeds as $feed) {
   $summary = trim(strip_tags((string)($entry->description ?? $entry->summary ?? '')));
   $date = (string)($entry->pubDate ?? $entry->published ?? $entry->updated ?? '');
   $timestamp = $date ? strtotime($date) : false;
-  $stmt->execute([$link,substr($title,0,400),$feed['name'],$feed['section'],gmdate('Y-m-d H:i:s',$timestamp ?: time()),substr($summary,0,450)]);
+  $image = '';
+  $media = $entry->children('http://search.yahoo.com/mrss/');
+  if (isset($media->thumbnail)) $image = (string)$media->thumbnail->attributes()->url;
+  if (!$image && isset($media->content)) $image = (string)$media->content->attributes()->url;
+  if (!$image && isset($entry->enclosure)) $image = (string)$entry->enclosure->attributes()->url;
+  if (parse_url($image, PHP_URL_SCHEME) !== 'https') $image = '';
+  $stmt->execute([$link,substr($title,0,400),$feed['name'],$feed['section'],gmdate('Y-m-d H:i:s',$timestamp ?: time()),substr($summary,0,450),$image]);
  }
 }
 echo "Import complete\n";
