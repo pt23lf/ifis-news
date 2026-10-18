@@ -3,6 +3,7 @@ declare(strict_types=1);
 header('Content-Type: text/html; charset=utf-8');
 $view = ($_GET['view'] ?? 'world') === 'ifis' ? 'ifis' : 'world';
 $items = [];
+$sourceBatches=[];
 $dbPath = dirname(__DIR__) . '/storage/news.sqlite';
 if (is_file($dbPath) && extension_loaded('pdo_sqlite')) {
  try {
@@ -10,6 +11,13 @@ if (is_file($dbPath) && extension_loaded('pdo_sqlite')) {
   $query = $db->prepare('SELECT title,url,source,published_at,summary,image_url FROM articles WHERE section=:section ORDER BY published_at DESC LIMIT 120');
   $query->execute(['section'=>$view]);
   $items = $query->fetchAll(PDO::FETCH_ASSOC);
+  $cols=$db->query('PRAGMA table_info(articles)')->fetchAll(PDO::FETCH_ASSOC);
+  if(in_array('first_seen_at',array_column($cols,'name'),true)){
+   $recent=$db->prepare("SELECT source,first_seen_at,COUNT(*) AS count FROM articles WHERE section=:section AND first_seen_at >= :since GROUP BY source, strftime('%Y-%m-%d %H:',first_seen_at), CAST(strftime('%M',first_seen_at) AS INTEGER)/30 ORDER BY first_seen_at DESC");
+   $recent->execute(['section'=>$view,'since'=>gmdate('Y-m-d H:i:s',time()-9000)]);
+   $sourceBatches=$recent->fetchAll(PDO::FETCH_ASSOC);
+  }
+
  } catch (Throwable $e) { error_log($e->getMessage()); }
 }
 $lastImportFile=dirname(__DIR__).'/storage/news-last-import.txt';
@@ -168,6 +176,7 @@ if(is_file($ifisIndexFile)){
 .topnav [data-subtitle-de]:hover::after,.topnav [data-subtitle-de]:focus-visible::after{opacity:1;transform:translate(-50%,0)}
 html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)}
 @media(max-width:720px){.topnav [data-subtitle-de]::after{white-space:normal;min-width:155px;max-width:210px;text-align:center}.topnav [data-subtitle-de]:first-child::after{left:0;transform:translate(0,-5px)}.topnav [data-subtitle-de]:first-child:hover::after,.topnav [data-subtitle-de]:first-child:focus-visible::after{transform:translate(0,0)}}
+.globe-source-batch{border:2px solid white;border-radius:50%;width:31px;height:31px;display:grid;place-items:center;color:#17212e;font-size:12px;font-weight:700;box-shadow:0 2px 9px #0005;cursor:pointer}
 </style></head><body>
 <header class="topbar"><div class="topbar-inner"><a class="brand" href="?view=world"><strong>IFIS</strong></a><nav class="topnav" aria-label="Bereiche"><a href="?view=world" class="<?= $view==='world'?'active':'' ?>" data-subtitle-de="Nachrichten aus aller Welt" data-subtitle-en="News from around the world">World</a><a href="?view=ifis" class="<?= $view==='ifis'?'active':'' ?>" data-subtitle-de="Nachrichten mit Veränderungspotenzial" data-subtitle-en="News with potential for change">Potenzial</a><button class="globe-toggle" id="globeToggle" type="button" aria-pressed="false" data-subtitle-de="Nachrichten geografisch entdecken" data-subtitle-en="Explore news geographically">Karte</button></nav><button type="button" id="gridToggle" class="grid-toggle" title="Spaltenzahl ändern" aria-label="Spaltenzahl ändern"><svg class="grid-toggle-symbol" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="2.5" y="13.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="13.5" width="8" height="8" rx="1.3"/></svg><span id="gridCount">1</span></button><div class="top-actions"><button type="button" id="mobileSearchToggle" class="mobile-search-toggle" aria-label="Suche öffnen" aria-expanded="false" title="Nachrichten suchen"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg></button><input class="search" id="search" type="search" placeholder="Nachrichten durchsuchen …" aria-label="Nachrichten durchsuchen"></div></div></header>
 <div class="layout">
@@ -344,6 +353,50 @@ const freshness=(group)=>{
 const groups=new Map();const constructiveCount=g=>g.stories.filter(story=>story.dataset.direction==='constructive').length;
 stories.forEach(story=>{const title=story.querySelector('h2').textContent,txt=normalize(title+' '+(story.querySelector('.summary')?.textContent||''));const hit=locations.find(loc=>loc[3].some(word=>txt.includes(word)));if(!hit)return;story.dataset.place=hit[0];if(!groups.has(hit[0]))groups.set(hit[0],{loc:hit,stories:[]});groups.get(hit[0]).stories.push(story);});
 document.querySelectorAll('.story-map-link').forEach(link=>link.addEventListener('click',()=>{const story=link.closest('.story');document.getElementById('globeToggle').click();const place=story.dataset.place;if(place&&groups.has(place)){setTimeout(()=>choose(place),350)}else{const source=sourceFor(story);const info=document.getElementById('globeInfo');if(info)info.textContent=source?source.name+' · Ereignisort nicht eindeutig zugeordnet':'Quelle und Ereignisort derzeit nicht eindeutig zugeordnet';if(source)setTimeout(()=>map?.flyTo({center:source.coordinates,zoom:3,essential:true}),400)}}));
+const sourceBatches=<?=json_encode($sourceBatches,JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_UNESCAPED_UNICODE)?>;
+const countryCenters={
+ 'Vereinigtes Königreich':[-2.5,54.5],'Deutschland':[10.5,51.2],'USA':[-98.5,39.8],
+ 'Katar':[51.2,25.3],'Frankreich':[2.3,46.5],'Europa':[14,49]
+};
+function sourceCountry(name){
+ if(/Guardian|BBC News/.test(name))return 'Vereinigtes Königreich';
+ if(/Deutsche Welle|SPIEGEL/.test(name))return 'Deutschland';
+ if(/Al Jazeera/.test(name))return 'Katar';
+ if(/France 24/.test(name))return 'Frankreich';
+ if(/Euronews/.test(name))return 'Europa';
+ if(/ScienceDaily|NASA|Phys.org|NPR|New York Times|NOAA|IEEE Spectrum/.test(name))return 'USA';
+ return null;
+}
+function addCountryBatchMarkers(){
+ const countries=new Map();
+ for(const item of sourceBatches){
+  const country=sourceCountry(item.source);if(!country)continue;
+  const parsed=Date.parse(item.first_seen_at.replace(' ','T')+'Z');if(!Number.isFinite(parsed))continue;
+  const slot=Math.floor(parsed/1800000)*1800000;
+  if(Date.now()-slot>9000000||slot>Date.now()+1800000)continue;
+  if(!countries.has(country))countries.set(country,new Map());
+  const slots=countries.get(country);slots.set(slot,(slots.get(slot)||0)+Number(item.count||0));
+ }
+ countries.forEach((slots,country)=>{
+  const center=countryCenters[country];if(!center)return;
+  [...slots.entries()].sort((a,b)=>b[0]-a[0]).slice(0,5).forEach(([slot,count],index)=>{
+   const dot=document.createElement('button');dot.type='button';dot.className='globe-source-batch';
+   dot.textContent=String(count);
+   const label=new Intl.DateTimeFormat('de-DE',{hour:'2-digit',minute:'2-digit',timeZone:'UTC'}).format(new Date(slot));
+   dot.title=country+' · '+count+' neue Artikel · Importzeitfenster ab '+label+' UTC';
+   dot.style.opacity=String(Math.max(.42,1-index*.14));
+   dot.style.backgroundColor=`hsl(34 78% ${45+index*7}%)`;
+   const angle=index*2.39996,radius=index===0?0:Math.sqrt(index)*1.3;
+   const coords=[center[0]+Math.cos(angle)*radius,center[1]+Math.sin(angle)*radius*.6];
+   dot.addEventListener('click',()=>{
+    selectedPlace=null;connector.style.display='none';info.classList.remove('has-selection');
+    info.textContent=country+' · '+count+' erstmals eingelesene Artikel im Zeitfenster ab '+label+' UTC. Orange steht für Quellenland, nicht Ereignisort.';
+    map.flyTo({center:coords,zoom:3,essential:true});
+   });
+   markers.push(new maplibregl.Marker({element:dot}).setLngLat(coords).addTo(map));
+  });
+ });
+}
 const sourceLocations={'The Guardian':{name:'The Guardian · London (Redaktionssitz)',coordinates:[-0.1276,51.5072]},'Guardian World':{name:'The Guardian · London (Redaktionssitz)',coordinates:[-0.1276,51.5072]},'Guardian Global Development':{name:'The Guardian · London (Redaktionssitz)',coordinates:[-0.1276,51.5072]}};
 function sourceFor(story){const name=story.querySelector('.meta')?.textContent||'';return Object.entries(sourceLocations).find(([key])=>name.includes(key))?.[1]||null}
 function hideFarSide(){if(!map)return;const center=map.getCenter(),rad=Math.PI/180;const a=center.lat*rad,b=center.lng*rad;markers.forEach(marker=>{const p=marker.getLngLat(),lat=p.lat*rad,lon=p.lng*rad;const facing=Math.sin(a)*Math.sin(lat)+Math.cos(a)*Math.cos(lat)*Math.cos(lon-b);marker.getElement().style.visibility=facing>0.025?'visible':'hidden'})}
@@ -391,6 +444,6 @@ function choose(place){
  map.flyTo({center:[group.loc[2],group.loc[1]],zoom:3,essential:true});
  requestAnimationFrame(updateConnector);
 }
-btn.addEventListener('click',()=>{const open=true;panel.classList.add('open');btn.classList.add('active');btn.setAttribute('aria-pressed','true');panel.scrollIntoView({behavior:'smooth',block:'start'});if(map){map.resize();return;}if(!window.maplibregl){info.textContent='Die Kartenbibliothek konnte nicht geladen werden.';return;}map=new maplibregl.Map({container:'newsGlobe',style:'https://demotiles.maplibre.org/style.json',center:[10,20],zoom:1.15,attributionControl:true});map.on('load',()=>{try{map.setProjection({type:'globe'});}catch(e){};groups.forEach((g,name)=>{const dot=document.createElement('button');dot.className='globe-marker';dot.type='button';dot.textContent=String(g.stories.length);const recent=freshness(g);dot.style.backgroundColor=recent.color;const positive=constructiveCount(g);if(positive){const badge=document.createElement('span');badge.className='constructive-count';badge.textContent='↗'+positive;dot.append(badge)}dot.title=name+' · '+g.stories.length+' Meldungen · '+recent.label+' · '+positive+' konstruktiv eingeordnet (vorläufig)';dot.addEventListener('click',()=>choose(name));markers.push(new maplibregl.Marker({element:dot}).setLngLat([g.loc[2],g.loc[1]]).addTo(map));});addNightLayer();addSourceLinks();map.on('move',()=>{hideFarSide();updateConnector()});map.on('resize',updateConnector);hideFarSide();if(!groups.size)info.textContent='Noch keine eindeutigen Ereignisorte erkannt.';});});
+btn.addEventListener('click',()=>{const open=true;panel.classList.add('open');btn.classList.add('active');btn.setAttribute('aria-pressed','true');panel.scrollIntoView({behavior:'smooth',block:'start'});if(map){map.resize();return;}if(!window.maplibregl){info.textContent='Die Kartenbibliothek konnte nicht geladen werden.';return;}map=new maplibregl.Map({container:'newsGlobe',style:'https://demotiles.maplibre.org/style.json',center:[10,20],zoom:1.15,attributionControl:true});map.on('load',()=>{try{map.setProjection({type:'globe'});}catch(e){};groups.forEach((g,name)=>{const dot=document.createElement('button');dot.className='globe-marker';dot.type='button';dot.textContent=String(g.stories.length);const recent=freshness(g);dot.style.backgroundColor=recent.color;const positive=constructiveCount(g);if(positive){const badge=document.createElement('span');badge.className='constructive-count';badge.textContent='↗'+positive;dot.append(badge)}dot.title=name+' · '+g.stories.length+' Meldungen · '+recent.label+' · '+positive+' konstruktiv eingeordnet (vorläufig)';dot.addEventListener('click',()=>choose(name));markers.push(new maplibregl.Marker({element:dot}).setLngLat([g.loc[2],g.loc[1]]).addTo(map));});addNightLayer();addSourceLinks();addCountryBatchMarkers();map.on('move',()=>{hideFarSide();updateConnector()});map.on('resize',updateConnector);hideFarSide();if(!groups.size)info.textContent='Noch keine eindeutigen Ereignisorte erkannt.';});});
 })();
 </script></body></html>
