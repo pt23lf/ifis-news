@@ -42,11 +42,11 @@ foreach($items as &$item){$item['category']=category($item);} unset($item);
 /* IFIS World: aligned search and bottom-right upward-opening filter dock */
 @media(min-width:721px){
  .topbar-inner{padding-left:24px;padding-right:24px;gap:clamp(12px,2vw,32px)}
- .topbar-inner .top-actions{margin-left:0;min-width:0;flex:0 1 350px}
+ .topbar-inner .top-actions{margin-left:0;min-width:0;flex:0 1 350px;margin-right:0}
  .topbar-inner .search{display:block;position:static;width:100%;min-width:0;box-sizing:border-box}
  .topbar .grid-toggle{margin-left:auto}
 }
-.filter-dock{position:fixed;top:auto;bottom:18px;right:max(16px,calc((100vw - 1100px)/2 + 24px));transform:none;display:flex;flex-direction:column-reverse;z-index:20;max-height:calc(100dvh - 100px);overflow-y:auto;background:var(--bg)}
+.filter-dock{position:fixed;top:auto;bottom:18px;right:16px;transform:none;display:flex;flex-direction:column-reverse;z-index:20;max-height:calc(100dvh - 100px);overflow-y:auto;background:var(--bg)}
 .filter-dock.expanded .filter-toolbar{display:flex;flex-direction:column}
 @media(max-width:720px){
  .topbar-inner .top-actions{min-width:0}
