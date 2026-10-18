@@ -216,6 +216,9 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
 .globe-view .globe-source-cluster{transform:none}
 .globe-view .globe-source-cluster::after{display:none}
 .topbar,.topbar-inner,.topnav{z-index:30}
+.globe-view #newsGlobe{background:#142b3a}
+.globe-view .globe-connector{pointer-events:none;z-index:2}
+.globe-view .globe-connector path{vector-effect:non-scaling-stroke}
 </style></head><body>
 <header class="topbar"><div class="topbar-inner"><a class="brand" href="?view=world"><strong>IFIS</strong></a><nav class="topnav" aria-label="Bereiche"><a href="?view=world" class="<?= $view==='world'?'active':'' ?>" data-subtitle-de="Nachrichten aus aller Welt" data-subtitle-en="News from around the world">World</a><a href="?view=ifis" class="<?= $view==='ifis'?'active':'' ?>" data-subtitle-de="Nachrichten mit Veränderungspotenzial" data-subtitle-en="News with potential for change">Potenzial</a><button class="globe-toggle" id="globeToggle" type="button" aria-pressed="false" data-subtitle-de="Nachrichten geografisch entdecken" data-subtitle-en="Explore news geographically">Karte</button></nav><button type="button" id="gridToggle" class="grid-toggle" title="Spaltenzahl ändern" aria-label="Spaltenzahl ändern"><svg class="grid-toggle-symbol" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="2.5" y="13.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="13.5" width="8" height="8" rx="1.3"/></svg><span id="gridCount">1</span></button><div class="top-actions"><button type="button" id="mobileSearchToggle" class="mobile-search-toggle" aria-label="Suche öffnen" aria-expanded="false" title="Nachrichten suchen"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg></button><input class="search" id="search" type="search" placeholder="Nachrichten durchsuchen …" aria-label="Nachrichten durchsuchen"></div></div></header>
 <div class="layout">
@@ -486,7 +489,7 @@ function addCountryBatchMarkers(){
    dot.title=country+' · '+count+' veröffentlichte Artikel'+(colorMode.value==='unseen'?' · '+unread+' ungesehen':'')+' · '+band.label+(isSelected?' · im gewählten Zeitraum':' · älter als die Auswahl');
    dot.addEventListener('click',()=>{
     mapOverlayOpen=true;
-    selectedPlace=null;selectedSource=null;updateSourceLinks();connector.style.display='none';info.replaceChildren();info.classList.add('has-selection');
+    selectedPlace=null;selectedSource=null;updateSourceLinks();connector.style.display='block';info.replaceChildren();info.classList.add('has-selection');
     const heading=document.createElement('strong');heading.textContent=country+' · '+band.label+' · Ereignisorte';info.append(heading);
     const matches=stories.filter(story=>{
       const source=story.querySelector('.meta')?.textContent||'';
@@ -552,10 +555,42 @@ const sourceLocations={
 };
 function sourceFor(story){const name=story.querySelector('.meta')?.textContent||'';return Object.entries(sourceLocations).find(([key])=>name.includes(key))?.[1]||null}
 
-function hideFarSide(){if(!map)return;const center=map.getCenter(),rad=Math.PI/180,a=center.lat*rad,b=center.lng*rad;markers.forEach(marker=>{const el=marker.getElement(),p=marker.getLngLat(),lat=p.lat*rad,lon=p.lng*rad;const facing=flatProjection||Math.sin(a)*Math.sin(lat)+Math.cos(a)*Math.cos(lat)*Math.cos(lon-b)>0.025;const source=el.classList.contains('globe-source')||el.classList.contains('globe-source-cluster');const enabled=source?document.getElementById('showSourceMarkers').checked:document.getElementById('showEventMarkers').checked;const screen=map.project(p);const bounds=map.getContainer().getBoundingClientRect();const inside=screen.x>=18&&screen.y>=18&&screen.x<=bounds.width-18&&screen.y<=bounds.height-18;el.style.visibility=facing&&enabled&&inside?'visible':'hidden';el.style.opacity=source?(focusMode.value==='source'?'1':'.72'):(focusMode.value==='event'?'1':'.55');el.style.zIndex=source?(focusMode.value==='source'?'5':'2'):(focusMode.value==='event'?'5':'2')});updateSourceLinks();connector.style.display='none';}
+function hideFarSide(){if(!map)return;const center=map.getCenter(),rad=Math.PI/180,a=center.lat*rad,b=center.lng*rad;markers.forEach(marker=>{const el=marker.getElement(),p=marker.getLngLat(),lat=p.lat*rad,lon=p.lng*rad;const facing=flatProjection||Math.sin(a)*Math.sin(lat)+Math.cos(a)*Math.cos(lat)*Math.cos(lon-b)>0.025;const source=el.classList.contains('globe-source')||el.classList.contains('globe-source-cluster');const enabled=source?document.getElementById('showSourceMarkers').checked:document.getElementById('showEventMarkers').checked;const screen=map.project(p);const bounds=map.getContainer().getBoundingClientRect();const inside=screen.x>=18&&screen.y>=18&&screen.x<=bounds.width-18&&screen.y<=bounds.height-18;el.style.visibility=facing&&enabled&&inside?'visible':'hidden';el.style.opacity=source?(focusMode.value==='source'?'1':'.72'):(focusMode.value==='event'?'1':'.55');const zoomScale=Math.max(.65,Math.min(1.65,.78+map.getZoom()*.14));el.style.transform='scale('+zoomScale+')';el.style.zIndex=source?(focusMode.value==='source'?'5':'2'):(focusMode.value==='event'?'5':'2')});updateSourceLinks();connector.style.display=selectedPlace||selectedSource?'block':'none';}
 function nightGeoJSON(){const now=new Date(),jd=now.getTime()/86400000+2440587.5,n=jd-2451545,mean=(280.46+0.9856474*n)*Math.PI/180,anomaly=(357.528+0.9856003*n)*Math.PI/180,lambda=mean+(1.915*Math.sin(anomaly)+0.020*Math.sin(2*anomaly))*Math.PI/180,epsilon=(23.439-0.0000004*n)*Math.PI/180,decl=Math.asin(Math.sin(epsilon)*Math.sin(lambda)),ra=Math.atan2(Math.cos(epsilon)*Math.sin(lambda),Math.cos(lambda)),gmst=(280.46061837+360.98564736629*(jd-2451545))*Math.PI/180,subLon=((ra-gmst)*180/Math.PI+540)%360-180;const features=[],rad=Math.PI/180;for(let lat=-90;lat<90;lat+=5){for(let lon=-180;lon<180;lon+=5){const phi=(lat+2.5)*rad,h=(lon+2.5-subLon)*rad,elevation=Math.asin(Math.sin(phi)*Math.sin(decl)+Math.cos(phi)*Math.cos(decl)*Math.cos(h))*180/Math.PI;if(elevation>=0)continue;features.push({type:'Feature',properties:{opacity:Math.min(.68,Math.max(.08,-elevation/22*.30))},geometry:{type:'Polygon',coordinates:[[[lon,lat],[lon+5,lat],[lon+5,lat+5],[lon,lat+5],[lon,lat]]]}})}}return {type:'FeatureCollection',features}}
 function addNightLayer(){map.addSource('night',{type:'geojson',data:nightGeoJSON()});map.addLayer({id:'night',type:'fill',source:'night',layout:{visibility:nightToggle.checked?'visible':'none'},paint:{'fill-color':'#071326','fill-opacity':['get','opacity']}});nightToggle.addEventListener('change',()=>map.setLayoutProperty('night','visibility',nightToggle.checked?'visible':'none'))}
-function updateSourceLinks(){if(!map||!map.getLayer('news-source-links'))return;const visible=document.getElementById('showEventMarkers').checked&&document.getElementById('showSourceMarkers').checked&&(!!selectedPlace||!!selectedSource);map.setLayoutProperty('news-source-links','visibility',visible?'visible':'none');if(visible)map.setFilter('news-source-links',selectedPlace?['==',['get','event'],selectedPlace]:['==',['get','source'],selectedSource]);}
+let flightLayer=null;
+function visibleHemisphere(coordinates){if(flatProjection)return true;const c=map.getCenter(),r=Math.PI/180;return Math.sin(c.lat*r)*Math.sin(coordinates[1]*r)+Math.cos(c.lat*r)*Math.cos(coordinates[1]*r)*Math.cos((coordinates[0]-c.lng)*r)>0.025}
+function renderFlightArcs(){
+ if(!map||!flightLayer)return;
+ flightLayer.replaceChildren();
+ if(!document.getElementById('showEventMarkers').checked||!document.getElementById('showSourceMarkers').checked||(!selectedPlace&&!selectedSource))return;
+ const size=map.getContainer();flightLayer.setAttribute('viewBox','0 0 '+size.clientWidth+' '+size.clientHeight);
+ const unique=new Set();
+ groups.forEach((group,place)=>{
+  if(selectedPlace&&place!==selectedPlace)return;
+  group.stories.forEach(story=>{
+   const source=sourceFor(story);if(!source||(selectedSource&&source.name!==selectedSource))return;
+   const key=source.name+'|'+place;if(unique.has(key))return;unique.add(key);
+   const from=source.coordinates,to=[group.loc[2],group.loc[1]];
+   if(!visibleHemisphere(from)||!visibleHemisphere(to))return;
+   const a=map.project(from),b=map.project(to),dx=b.x-a.x,dy=b.y-a.y,distance=Math.hypot(dx,dy);
+   if(distance<3)return;
+   const lift=Math.min(145,Math.max(18,distance*.22));
+   const mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+   const nx=-dy/distance,ny=dx/distance;
+   // A lifted quadratic arc suggests a flight path; its endpoints remain anchored to the map.
+   const curve=document.createElementNS('http://www.w3.org/2000/svg','path');
+   curve.setAttribute('d','M '+a.x+' '+a.y+' Q '+(mx+nx*lift)+' '+(my+ny*lift-lift*.45)+' '+b.x+' '+b.y);
+   curve.setAttribute('fill','none');curve.setAttribute('stroke','#e59a35');curve.setAttribute('stroke-width','2');curve.setAttribute('stroke-opacity','.88');curve.setAttribute('stroke-linecap','round');
+   flightLayer.append(curve);
+  });
+ });
+}
+function updateSourceLinks(){
+ if(!map||!map.getLayer('news-source-links'))return;
+ map.setLayoutProperty('news-source-links','visibility','none');
+ renderFlightArcs();
+}
 function addSourceLinks(){const features=[],sources=new Map();groups.forEach(g=>g.stories.forEach(story=>{const source=sourceFor(story);if(!source)return;const destination=[g.loc[2],g.loc[1]];if(Math.abs(destination[0]-source.coordinates[0])+Math.abs(destination[1]-source.coordinates[1])<0.1)return;sources.set(source.name,source);features.push({type:'Feature',geometry:{type:'LineString',coordinates:[source.coordinates,destination]},properties:{source:source.name,event:g.loc[0]}})}));
 map.addSource('news-source-links',{type:'geojson',data:{type:'FeatureCollection',features}});
 groups.forEach((group,place)=>{
@@ -572,9 +607,9 @@ sources.forEach(source=>{const dot=document.createElement('button');dot.classNam
 let selectedPlace=null;
 let selectedSource=null;
 let mapOverlayOpen=false;
-function closeMapOverlay(){if(!mapOverlayOpen)return;mapOverlayOpen=false;selectedPlace=null;selectedSource=null;info.replaceChildren();updateSourceLinks();info.classList.remove('has-selection');info.textContent='Nachrichten geografisch entdecken. Wähle einen Ort auf der Karte.';connector.style.display='none';}
+function closeMapOverlay(){if(!mapOverlayOpen)return;mapOverlayOpen=false;selectedPlace=null;selectedSource=null;info.replaceChildren();updateSourceLinks();info.classList.remove('has-selection');info.textContent='Nachrichten geografisch entdecken. Wähle einen Ort auf der Karte.';connector.style.display='block';}
 const connector=document.getElementById('globeConnector'),connectorPath=document.getElementById('globeConnectorPath'),connectorEnd=document.getElementById('globeConnectorEnd');
-function updateConnector(){connector.style.display='none';return;
+function updateConnector(){connector.style.display='block';renderFlightArcs();return;
  if(!map||!selectedPlace||!groups.has(selectedPlace) ){connector.style.display='none';return;}
  const g=groups.get(selectedPlace),pt=map.project([g.loc[2],g.loc[1]]);
  const box=info.getBoundingClientRect(),container=panel.getBoundingClientRect();
@@ -615,6 +650,6 @@ function choose(place){
 panel.addEventListener('pointerdown',event=>{if(mapOverlayOpen&&!info.contains(event.target)&&!event.target.closest('.globe-source-batch,.globe-marker,.globe-source'))closeMapOverlay();});
 document.addEventListener('keydown',event=>{if(event.key==='Escape')closeMapOverlay()});
 document.addEventListener('pointerdown',event=>{if(mapOverlayOpen&&!panel.contains(event.target))closeMapOverlay()});
-btn.addEventListener('click',()=>{const open=true;panel.classList.add('open');btn.classList.add('active');btn.setAttribute('aria-pressed','true');panel.scrollIntoView({behavior:'smooth',block:'start'});if(map){map.resize();return;}if(!window.maplibregl){info.textContent='Die Kartenbibliothek konnte nicht geladen werden.';return;}map=new maplibregl.Map({container:'newsGlobe',style:'https://demotiles.maplibre.org/style.json',center:[10,20],zoom:1.15,attributionControl:true});map.on('load',()=>{try{map.setProjection({type:flatProjection?'mercator':'globe'});}catch(e){};addNightLayer();addSourceLinks();updateMapReadState();map.on('move',()=>{hideFarSide();updateConnector()});map.on('resize',updateConnector);hideFarSide();if(!groups.size)info.textContent='Noch keine eindeutigen Ereignisorte erkannt.';});});
+btn.addEventListener('click',()=>{const open=true;panel.classList.add('open');btn.classList.add('active');btn.setAttribute('aria-pressed','true');panel.scrollIntoView({behavior:'smooth',block:'start'});if(map){map.resize();return;}if(!window.maplibregl){info.textContent='Die Kartenbibliothek konnte nicht geladen werden.';return;}map=new maplibregl.Map({container:'newsGlobe',style:'https://demotiles.maplibre.org/style.json',center:[10,20],zoom:1.15,attributionControl:true});map.on('load',()=>{try{map.setProjection({type:flatProjection?'mercator':'globe'});}catch(e){};addNightLayer();addSourceLinks();flightLayer=document.createElementNS('http://www.w3.org/2000/svg','g');connector.append(flightLayer);updateMapReadState();map.on('move',()=>{hideFarSide();updateConnector()});map.on('resize',()=>{updateConnector();renderFlightArcs();});hideFarSide();if(!groups.size)info.textContent='Noch keine eindeutigen Ereignisorte erkannt.';});});
 })();
 </script></body></html>
