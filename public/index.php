@@ -222,6 +222,9 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
 .globe-view .globe-marker{width:calc(29px * var(--marker-scale,1));height:calc(29px * var(--marker-scale,1));font-size:calc(11px * var(--marker-scale,1))}
 .globe-view .globe-source{width:calc(25px * var(--marker-scale,1));height:calc(25px * var(--marker-scale,1));font-size:calc(13px * var(--marker-scale,1))}
 .globe-view .globe-source-batch{width:calc(31px * var(--marker-scale,1));height:calc(31px * var(--marker-scale,1));font-size:calc(12px * var(--marker-scale,1))}
+.globe-view .globe-info-toggle{position:absolute;left:12px;bottom:12px;z-index:9;border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:12px;box-shadow:0 2px 8px #0002}
+.globe-view .globe-info{bottom:49px;max-height:min(55vh,370px);overflow-y:auto;z-index:8}
+.globe-view .globe-info.is-collapsed{display:none}
 </style></head><body>
 <header class="topbar"><div class="topbar-inner"><a class="brand" href="?view=world"><strong>IFIS</strong></a><nav class="topnav" aria-label="Bereiche"><a href="?view=world" class="<?= $view==='world'?'active':'' ?>" data-subtitle-de="Nachrichten aus aller Welt" data-subtitle-en="News from around the world">World</a><a href="?view=ifis" class="<?= $view==='ifis'?'active':'' ?>" data-subtitle-de="Nachrichten mit Veränderungspotenzial" data-subtitle-en="News with potential for change">Potenzial</a><button class="globe-toggle" id="globeToggle" type="button" aria-pressed="false" data-subtitle-de="Nachrichten geografisch entdecken" data-subtitle-en="Explore news geographically">Karte</button></nav><button type="button" id="gridToggle" class="grid-toggle" title="Spaltenzahl ändern" aria-label="Spaltenzahl ändern"><svg class="grid-toggle-symbol" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="2.5" y="13.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="13.5" width="8" height="8" rx="1.3"/></svg><span id="gridCount">1</span></button><div class="top-actions"><button type="button" id="mobileSearchToggle" class="mobile-search-toggle" aria-label="Suche öffnen" aria-expanded="false" title="Nachrichten suchen"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg></button><input class="search" id="search" type="search" placeholder="Nachrichten durchsuchen …" aria-label="Nachrichten durchsuchen"></div></div></header>
 <div class="layout">
@@ -612,6 +615,18 @@ let selectedPlace=null;
 let selectedSource=null;
 let mapOverlayOpen=false;
 function closeMapOverlay(){if(!mapOverlayOpen)return;mapOverlayOpen=false;selectedPlace=null;selectedSource=null;info.replaceChildren();updateSourceLinks();info.classList.remove('has-selection');info.textContent='Nachrichten geografisch entdecken. Wähle einen Ort auf der Karte.';connector.style.display='block';}
+const articlePanelToggle=document.createElement('button');
+articlePanelToggle.type='button';
+articlePanelToggle.className='globe-info-toggle';
+articlePanelToggle.setAttribute('aria-controls','globeInfo');
+articlePanelToggle.setAttribute('aria-expanded','true');
+articlePanelToggle.textContent='− Artikelliste';
+articlePanelToggle.addEventListener('click',()=>{
+ const collapsed=info.classList.toggle('is-collapsed');
+ articlePanelToggle.setAttribute('aria-expanded',String(!collapsed));
+ articlePanelToggle.textContent=collapsed?'+ Artikelliste':'− Artikelliste';
+});
+panel.append(articlePanelToggle);
 const connector=document.getElementById('globeConnector'),connectorPath=document.getElementById('globeConnectorPath'),connectorEnd=document.getElementById('globeConnectorEnd');
 function updateConnector(){connector.style.display='block';renderFlightArcs();return;
  if(!map||!selectedPlace||!groups.has(selectedPlace) ){connector.style.display='none';return;}
