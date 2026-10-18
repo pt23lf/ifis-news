@@ -37,7 +37,13 @@ foreach ($feeds as $feed) {
   if (isset($media->thumbnail)) $image = (string)$media->thumbnail->attributes()->url;
   if (!$image && isset($media->content)) $image = (string)$media->content->attributes()->url;
   if (!$image && isset($entry->enclosure)) $image = (string)$entry->enclosure->attributes()->url;
-  if (parse_url($image, PHP_URL_SCHEME) !== 'https') $image = '';
+  if (!$image) {
+    $html = (string)($entry->description ?? $entry->summary ?? $entry->children('http://www.w3.org/2005/Atom')->content ?? '');
+    if (preg_match('~<img\\b[^>]*\\bsrc\\s*=\\s*(["\\x27])([^"\\x27]+)\\1~i', $html, $matches)) {
+      $image = html_entity_decode($matches[2], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    }
+  }
+  if ($image && (!filter_var($image, FILTER_VALIDATE_URL) || parse_url($image, PHP_URL_SCHEME) !== 'https')) $image = '';
   $stmt->execute([$link,substr($title,0,400),$feed['name'],$feed['section'],gmdate('Y-m-d H:i:s',$timestamp ?: time()),substr($summary,0,450),$image]);
  }
 }
