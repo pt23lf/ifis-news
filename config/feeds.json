@@ -48,5 +48,55 @@
     "name": "Phys.org · Science",
     "url": "https://phys.org/rss-feed/",
     "section": "ifis"
+  },
+  {
+    "name": "BBC News · World",
+    "url": "https://feeds.bbci.co.uk/news/world/rss.xml",
+    "section": "world"
+  },
+  {
+    "name": "Al Jazeera · English",
+    "url": "https://www.aljazeera.com/xml/rss/all.xml",
+    "section": "world"
+  },
+  {
+    "name": "France 24 · English",
+    "url": "https://www.france24.com/en/rss",
+    "section": "world"
+  },
+  {
+    "name": "NPR · News",
+    "url": "https://feeds.npr.org/1001/rss.xml",
+    "section": "world"
+  },
+  {
+    "name": "New York Times · World",
+    "url": "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",
+    "section": "world"
+  },
+  {
+    "name": "Euronews · English",
+    "url": "https://www.euronews.com/rss",
+    "section": "world"
+  },
+  {
+    "name": "NOAA · Environment",
+    "url": "https://www.noaa.gov/rss.xml",
+    "section": "ifis"
+  },
+  {
+    "name": "BBC News · Science",
+    "url": "https://feeds.bbci.co.uk/news/science_and_environment/rss.xml",
+    "section": "ifis"
+  },
+  {
+    "name": "BBC News · Technology",
+    "url": "https://feeds.bbci.co.uk/news/technology/rss.xml",
+    "section": "ifis"
+  },
+  {
+    "name": "IEEE Spectrum · Technology",
+    "url": "https://spectrum.ieee.org/feeds/feed.rss",
+    "section": "ifis"
   }
 ]
