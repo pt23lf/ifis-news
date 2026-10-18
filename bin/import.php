@@ -9,7 +9,7 @@ $db->exec('CREATE TABLE IF NOT EXISTS articles (id INTEGER PRIMARY KEY, url TEXT
 $cols=$db->query('PRAGMA table_info(articles)')->fetchAll(PDO::FETCH_ASSOC);
 if (!in_array('image_url', array_column($cols,'name'),true)) $db->exec("ALTER TABLE articles ADD COLUMN image_url TEXT DEFAULT ''");
 $feeds = json_decode(file_get_contents($base . '/config/feeds.json'), true, 512, JSON_THROW_ON_ERROR);
-$stmt = $db->prepare('INSERT INTO articles(url,title,source,section,published_at,summary,image_url) VALUES(?,?,?,?,?,?,?) ON CONFLICT(url) DO UPDATE SET image_url=CASE WHEN excluded.image_url != '' THEN excluded.image_url ELSE articles.image_url END');
+$stmt = $db->prepare("INSERT INTO articles(url,title,source,section,published_at,summary,image_url) VALUES(?,?,?,?,?,?,?) ON CONFLICT(url) DO UPDATE SET image_url=CASE WHEN excluded.image_url != '' THEN excluded.image_url ELSE articles.image_url END");
 foreach ($feeds as $feed) {
  $url = $feed['url'] ?? '';
  if (!filter_var($url, FILTER_VALIDATE_URL) || parse_url($url, PHP_URL_SCHEME) !== 'https') continue;
