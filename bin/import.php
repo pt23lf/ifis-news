@@ -8,6 +8,7 @@ $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 $db->exec('CREATE TABLE IF NOT EXISTS articles (id INTEGER PRIMARY KEY, url TEXT NOT NULL UNIQUE, title TEXT NOT NULL, source TEXT NOT NULL, section TEXT NOT NULL, published_at TEXT NOT NULL, summary TEXT NOT NULL DEFAULT "")');
 $cols=$db->query('PRAGMA table_info(articles)')->fetchAll(PDO::FETCH_ASSOC);
 if (!in_array('image_url', array_column($cols,'name'),true)) $db->exec("ALTER TABLE articles ADD COLUMN image_url TEXT DEFAULT ''");
+if (!in_array('first_seen_at', array_column($cols,'name'),true)) $db->exec("ALTER TABLE articles ADD COLUMN first_seen_at TEXT DEFAULT NULL");
 // Separate, versioned analysis queue. Existing articles remain published unchanged.
 // No automatic rejection and no unsupported claims of AI classification.
 $db->exec("CREATE TABLE IF NOT EXISTS article_analysis (
@@ -42,7 +43,7 @@ $queue=$db->prepare("INSERT INTO article_analysis(article_id,input_hash,status,u
  updated_at=CASE WHEN article_analysis.input_hash!=excluded.input_hash THEN CURRENT_TIMESTAMP ELSE article_analysis.updated_at END");
 $articleId=$db->prepare("SELECT id,title,summary FROM articles WHERE url=?");
 $feeds = json_decode(file_get_contents($base . '/config/feeds.json'), true, 512, JSON_THROW_ON_ERROR);
-$stmt = $db->prepare("INSERT INTO articles(url,title,source,section,published_at,summary,image_url) VALUES(?,?,?,?,?,?,?) ON CONFLICT(url) DO UPDATE SET image_url=CASE WHEN excluded.image_url != '' THEN excluded.image_url ELSE articles.image_url END");
+$stmt = $db->prepare("INSERT INTO articles(url,title,source,section,published_at,summary,image_url,first_seen_at) VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(url) DO UPDATE SET image_url=CASE WHEN excluded.image_url != '' THEN excluded.image_url ELSE articles.image_url END");
 foreach ($feeds as $feed) {
  $url = $feed['url'] ?? '';
  if (!filter_var($url, FILTER_VALIDATE_URL) || parse_url($url, PHP_URL_SCHEME) !== 'https') continue;
@@ -91,7 +92,7 @@ foreach ($feeds as $feed) {
     }
   }
   if ($image && (!filter_var($image, FILTER_VALIDATE_URL) || parse_url($image, PHP_URL_SCHEME) !== 'https')) $image = '';
-  $stmt->execute([$link,substr($title,0,400),$feed['name'],$feed['section'],gmdate('Y-m-d H:i:s',$timestamp ?: time()),substr($summary,0,450),$image]);
+  $stmt->execute([$link,substr($title,0,400),$feed['name'],$feed['section'],gmdate('Y-m-d H:i:s',$timestamp ?: time()),substr($summary,0,450),$image,gmdate('Y-m-d H:i:s')]);
   $articleId->execute([$link]);
   $row=$articleId->fetch(PDO::FETCH_ASSOC);
   if ($row) $queue->execute([':id'=>(int)$row['id'], ':hash'=>hash('sha256', $row['title']."\\n".$row['summary'])]);
