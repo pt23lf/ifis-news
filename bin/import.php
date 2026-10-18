@@ -97,4 +97,5 @@ foreach ($feeds as $feed) {
   if ($row) $queue->execute([':id'=>(int)$row['id'], ':hash'=>hash('sha256', $row['title']."\\n".$row['summary'])]);
  }
 }
-echo "Import complete\n";
+file_put_contents(dirname(__DIR__).'/storage/news-last-import.txt',gmdate('c'),LOCK_EX);
+echo "Import complete\\n";
