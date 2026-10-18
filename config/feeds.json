@@ -98,5 +98,10 @@
     "name": "IEEE Spectrum · Technology",
     "url": "https://spectrum.ieee.org/feeds/feed.rss",
     "section": "ifis"
+  },
+  {
+    "name": "DER SPIEGEL · Schlagzeilen",
+    "url": "https://www.spiegel.de/schlagzeilen/index.rss",
+    "section": "world"
   }
 ]
