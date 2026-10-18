@@ -78,9 +78,8 @@ const url=story.dataset.url,sel=story.querySelector('.trust');sel.value=ratings[
 sel.addEventListener('change',()=>{if(sel.value)ratings[url]=sel.value;else delete ratings[url];try{localStorage.setItem(trustKey,JSON.stringify(ratings))}catch{}});
 const words=(story.querySelector('h2').textContent+' '+(story.querySelector('.summary')?.textContent||'')).toLowerCase();
 const links=[
-{terms:['climate','klima','nature','environment','umwelt'],label:'IFIS: Umwelt und Struktur',url:'https://ifis.net/artikel/landwirtschaft-neu-erfinden'},
-{terms:['hospital','healthcare','health system','gesundheitssystem','krankenhaus'],label:'IFIS: Gesundheitssystem',url:'https://ifis.net/artikel'},
-{terms:['exercise','fitness','training','sport'],label:'IFIS: Training und Belastung',url:'https://fitpro.de/'}
+{terms:['agriculture','farming','farmland','landwirtschaft','soil','ackerbau'],label:'IFIS: Landwirtschaft neu erfinden',url:'https://ifis.net/artikel/landwirtschaft-neu-erfinden'},
+{terms:['overtraining','overload','überlastung','excessive exercise','too much training'],label:'IFIS: Wenn mehr nicht mehr besser wird',url:'https://ifis.net/artikel/wenn-mehr-nicht-mehr-besser-wird'}
 ];const match=links.find(x=>x.terms.some(t=>words.includes(t)));
 if(match){const a=document.createElement('a');a.href=match.url;a.target='_blank';a.rel='noopener noreferrer';a.textContent='↗ '+match.label; a.title='Automatischer thematischer Lesehinweis, keine Faktenprüfung';story.querySelector('.ifis-related').append(a);}
 });
