@@ -172,6 +172,7 @@ if(is_file($ifisIndexFile)){
 .topnav [data-subtitle-de]{position:relative}
 .topnav [data-subtitle-de]::after{content:attr(data-subtitle-de);position:absolute;left:50%;top:calc(100% + 9px);transform:translate(-50%,-5px);opacity:0;pointer-events:none;white-space:nowrap;background:#17212e;color:#fff;border-radius:9px;padding:8px 12px;font-size:12px;font-weight:400;line-height:1.4;box-shadow:0 5px 18px #0003;z-index:20;transition:opacity .15s,transform .15s}
 .topnav [data-subtitle-de]:hover::after,.topnav [data-subtitle-de]:focus-visible::after{opacity:1;transform:translate(-50%,0)}
+.topnav [data-subtitle-de].subtitle-dismissed::after{opacity:0!important;pointer-events:none!important}
 html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)}
 @media(max-width:720px){.topnav [data-subtitle-de]::after{white-space:normal;min-width:155px;max-width:210px;text-align:center}.topnav [data-subtitle-de]:first-child::after{left:0;transform:translate(0,-5px)}.topnav [data-subtitle-de]:first-child:hover::after,.topnav [data-subtitle-de]:first-child:focus-visible::after{transform:translate(0,0)}}
 .globe-source-batch{border:2px solid white;border-radius:50%;width:31px;height:31px;display:grid;place-items:center;color:#17212e;font-size:12px;font-weight:700;box-shadow:0 2px 9px #0005;cursor:pointer}
@@ -296,6 +297,16 @@ document.addEventListener('pointerdown',event=>{
  closeDockOverlays();
 });
 document.addEventListener('keydown',event=>{if(event.key==='Escape')closeDockOverlays()});
+// Menu subtitles are transient: dismiss on the next action, including touch and keyboard.
+const subtitleLinks=[...document.querySelectorAll('.topnav [data-subtitle-de]')];
+function dismissSubtitles(){subtitleLinks.forEach(link=>link.classList.add('subtitle-dismissed'))}
+subtitleLinks.forEach(link=>{
+ link.addEventListener('pointerenter',()=>link.classList.remove('subtitle-dismissed'));
+ link.addEventListener('focus',()=>link.classList.remove('subtitle-dismissed'));
+});
+document.addEventListener('pointerdown',dismissSubtitles,true);
+document.addEventListener('keydown',event=>{if(event.key==='Escape'||event.key==='Enter'||event.key===' ')dismissSubtitles()},true);
+document.addEventListener('scroll',dismissSubtitles,{passive:true,capture:true});
 const trustKey=prefix+'trust';
 let ratings={};try{ratings=JSON.parse(localStorage.getItem(trustKey)||'{}')||{}}catch{}
 document.querySelectorAll('.story').forEach(story=>{
