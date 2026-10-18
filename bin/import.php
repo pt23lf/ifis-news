@@ -68,8 +68,21 @@ foreach ($feeds as $feed) {
   $timestamp = $date ? strtotime($date) : false;
   $image = '';
   $media = $entry->children('http://search.yahoo.com/mrss/');
-  if (isset($media->thumbnail)) $image = (string)$media->thumbnail->attributes()->url;
-  if (!$image && isset($media->content)) $image = (string)$media->content->attributes()->url;
+  // Prefer the largest declared media image rather than a tiny RSS thumbnail.
+  $candidates = [];
+  foreach (['content','thumbnail'] as $tag) {
+    foreach ($media->$tag as $node) {
+      $attrs = $node->attributes();
+      $candidate = (string)$attrs->url;
+      $width = (int)($attrs->width ?? 0);
+      $height = (int)($attrs->height ?? 0);
+      if ($candidate && filter_var($candidate,FILTER_VALIDATE_URL) && parse_url($candidate,PHP_URL_SCHEME)==='https') {
+        $candidates[] = ['url'=>$candidate,'score'=>($width > 0 && $height > 0) ? $width*$height : ($tag==='content' ? 100000 : 1)];
+      }
+    }
+  }
+  usort($candidates,static fn($a,$b)=>$b['score']<=>$a['score']);
+  if ($candidates) $image = $candidates[0]['url'];
   if (!$image && isset($entry->enclosure)) $image = (string)$entry->enclosure->attributes()->url;
   if (!$image) {
     $html = (string)($entry->description ?? $entry->summary ?? $entry->children('http://www.w3.org/2005/Atom')->content ?? '');
