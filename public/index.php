@@ -421,6 +421,7 @@ function addCountryBatchMarkers(){
    dot.style.opacity=isSelected?'1':'.65';
    dot.title=country+' · '+count+' veröffentlichte Artikel · '+band.label+(isSelected?' · im gewählten Zeitraum':' · älter als die Auswahl');
    dot.addEventListener('click',()=>{
+    orangeOverlayOpen=true;
     selectedPlace=null;connector.style.display='none';info.replaceChildren();info.classList.add('has-selection');
     const heading=document.createElement('strong');heading.textContent=country+' · '+band.label+' · Ereignisorte';info.append(heading);
     const matches=stories.filter(story=>{
@@ -443,7 +444,7 @@ function addCountryBatchMarkers(){
       link.addEventListener('click',()=>choose(place));
       info.append(link);
     });
-    if(places.size===1)choose(places.keys().next().value);
+    if(places.size===1){const place=places.keys().next().value;choose(place);}
    });
    cluster.append(dot);
   });
@@ -475,6 +476,8 @@ map.addSource('news-source-links',{type:'geojson',data:{type:'FeatureCollection'
 map.addLayer({id:'news-source-links',type:'line',source:'news-source-links',paint:{'line-color':'#e59a35','line-width':1.4,'line-opacity':0.48,'line-dasharray':[2,2]}});
 sources.forEach(source=>{const dot=document.createElement('button');dot.className='globe-source';dot.textContent='●';dot.title=source.name+' · kein Rechercheort';dot.addEventListener('click',()=>{info.textContent=source.name+'. Die Linien verbinden den bekannten Redaktionssitz mit automatisch erkannten Ereignisorten. Der tatsächliche Rechercheort ist unbekannt.';map.flyTo({center:source.coordinates,zoom:3})});markers.push(new maplibregl.Marker({element:dot}).setLngLat(source.coordinates).addTo(map))});}
 let selectedPlace=null;
+let orangeOverlayOpen=false;
+function closeOrangeOverlay(){if(!orangeOverlayOpen)return;orangeOverlayOpen=false;selectedPlace=null;info.replaceChildren();info.classList.remove('has-selection');info.textContent='Nachrichten geografisch entdecken. Wähle einen Ort auf der Karte.';connector.style.display='none';}
 const connector=document.getElementById('globeConnector'),connectorPath=document.getElementById('globeConnectorPath'),connectorEnd=document.getElementById('globeConnectorEnd');
 function updateConnector(){
  if(!map||!selectedPlace||!groups.has(selectedPlace)){connector.style.display='none';return;}
@@ -487,6 +490,7 @@ function updateConnector(){
  connectorEnd.setAttribute('cx',pt.x);connectorEnd.setAttribute('cy',pt.y);
 }
 function choose(place){
+ orangeOverlayOpen=false;
  const group=groups.get(place);if(!group)return;
  selectedPlace=place;info.replaceChildren();info.classList.add('has-selection');
  const heading=document.createElement('strong');
@@ -512,6 +516,8 @@ function choose(place){
  map.flyTo({center:[group.loc[2],group.loc[1]],zoom:3,essential:true});
  requestAnimationFrame(updateConnector);
 }
+panel.addEventListener('pointerdown',event=>{if(orangeOverlayOpen&&!info.contains(event.target)&&!event.target.closest('.globe-source-batch'))closeOrangeOverlay();});
+document.addEventListener('keydown',event=>{if(event.key==='Escape')closeOrangeOverlay()});
 btn.addEventListener('click',()=>{const open=true;panel.classList.add('open');btn.classList.add('active');btn.setAttribute('aria-pressed','true');panel.scrollIntoView({behavior:'smooth',block:'start'});if(map){map.resize();return;}if(!window.maplibregl){info.textContent='Die Kartenbibliothek konnte nicht geladen werden.';return;}map=new maplibregl.Map({container:'newsGlobe',style:'https://demotiles.maplibre.org/style.json',center:[10,20],zoom:1.15,attributionControl:true});map.on('load',()=>{try{map.setProjection({type:flatProjection?'mercator':'globe'});}catch(e){};groups.forEach((g,name)=>{const dot=document.createElement('button');dot.className='globe-marker';dot.type='button';dot.textContent=String(g.stories.length);const recent=freshness(g);dot.style.backgroundColor=recent.color;const positive=constructiveCount(g);if(positive){const badge=document.createElement('span');badge.className='constructive-count';badge.textContent='↗'+positive;dot.append(badge)}dot.title=name+' · '+g.stories.length+' Meldungen · '+recent.label+' · '+positive+' konstruktiv eingeordnet (vorläufig)';dot.addEventListener('click',()=>choose(name));markers.push(new maplibregl.Marker({element:dot}).setLngLat([g.loc[2],g.loc[1]]).addTo(map));});addNightLayer();addSourceLinks();addCountryBatchMarkers();map.on('move',()=>{hideFarSide();updateConnector()});map.on('resize',updateConnector);hideFarSide();if(!groups.size)info.textContent='Noch keine eindeutigen Ereignisorte erkannt.';});});
 })();
 </script></body></html>
