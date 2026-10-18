@@ -99,7 +99,7 @@ foreach($items as &$item){$item['category']=category($item);} unset($item);
 <div class="empty <?= $items?'hide':'' ?>" id="empty"><div class="symbol">▤</div><h2>Noch keine Nachrichten importiert.</h2><p>Sobald die ersten Quellen eingebunden sind, erscheinen hier die aktuellen Meldungen – übersichtlich und ohne Ablenkung.</p></div><div class="empty hide" id="noMatches"><h2>Keine passenden Meldungen</h2><p>Versuche einen anderen Suchbegriff oder Filter.</p></div></main>
 
 </div>
-<footer class="site-footer" aria-label="Rechtliches und Informationen"><a href="https://ifis.net/impressum">Impressum</a><a href="https://ifis.net/datenschutz">Datenschutz</a><a href="https://ifis.net/">IFIS.net</a><span>IFIS News · Externe Nachrichtenquellen; automatische Einordnungen sind vorläufig.</span></footer>
+<footer class="site-footer" aria-label="Rechtliches und Informationen"><a href="info.php?page=about">Über IFIS News</a><a href="info.php?page=method">Quellen & Methodik</a><a href="info.php?page=imprint">Impressum</a><a href="info.php?page=privacy">Datenschutz</a><a href="https://ifis.net/">IFIS.net</a><span>IFIS News · Externe Nachrichtenquellen; automatische Einordnungen sind vorläufig.</span></footer>
 
 <script src="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.js"></script><script>
 (()=>{'use strict';
