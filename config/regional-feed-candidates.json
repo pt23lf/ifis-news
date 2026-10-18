@@ -1,0 +1,96 @@
+{
+  "purpose": "Geografisch vielfältige lokale Berichterstattung; Redaktionsstandort ≠ Ereignisort. Kandidaten erst nach technischem und redaktionellem Review aktivieren.",
+  "status": "candidate_not_activated",
+  "candidates": [
+    {
+      "name": "GroundUp",
+      "region": "Southern Africa",
+      "city": "Cape Town",
+      "country": "ZA",
+      "url": "https://groundup.org.za/sitenews/rss/",
+      "source_page": "https://groundup.org.za/feeds/",
+      "editorial": "Independent nonprofit, Press Council member",
+      "verification": "publisher_documented_url"
+    },
+    {
+      "name": "Rest of World · Latest",
+      "region": "Global South and worldwide",
+      "city": "New York",
+      "country": "US",
+      "url": "https://restofworld.org/feed/latest/",
+      "source_page": "https://restofworld.org/platforms/",
+      "editorial": "International technology reporting; not a local outlet",
+      "verification": "publisher_documented_url"
+    },
+    {
+      "name": "Rappler · Philippines",
+      "region": "Southeast Asia",
+      "city": "Manila",
+      "country": "PH",
+      "url": "https://www.rappler.com/philippines/feed/",
+      "source_page": "https://www.rappler.com/philippines/",
+      "editorial": "Independent newsroom; assess governance and corrections",
+      "verification": "url_unverified"
+    },
+    {
+      "name": "The Daily Star · Bangladesh",
+      "region": "South Asia",
+      "city": "Dhaka",
+      "country": "BD",
+      "url": "https://www.thedailystar.net/frontpage/rss.xml",
+      "source_page": "https://www.thedailystar.net/",
+      "editorial": "Review independence and feed availability",
+      "verification": "url_unverified"
+    },
+    {
+      "name": "Dawn · Pakistan",
+      "region": "South Asia",
+      "city": "Karachi",
+      "country": "PK",
+      "url": "https://www.dawn.com/feeds/home",
+      "source_page": "https://www.dawn.com/",
+      "editorial": "Review editorial policy",
+      "verification": "url_unverified"
+    },
+    {
+      "name": "The Guardian · Australia",
+      "region": "Oceania",
+      "city": "Sydney",
+      "country": "AU",
+      "url": "https://www.theguardian.com/australia-news/rss",
+      "source_page": "https://www.theguardian.com/australia-news",
+      "editorial": "Australian newsroom; same parent as existing Guardian",
+      "verification": "url_unverified"
+    },
+    {
+      "name": "The Guardian · Nigeria",
+      "region": "West Africa",
+      "city": "Lagos",
+      "country": "NG",
+      "url": "https://guardian.ng/feed/",
+      "source_page": "https://guardian.ng/",
+      "editorial": "Independent Nigerian publication; distinct from UK Guardian",
+      "verification": "url_unverified"
+    },
+    {
+      "name": "Agência Brasil",
+      "region": "South America",
+      "city": "Brasília",
+      "country": "BR",
+      "url": "https://agenciabrasil.ebc.com.br/rss/ultimasnoticias/feed.xml",
+      "source_page": "https://agenciabrasil.ebc.com.br/",
+      "editorial": "Public broadcaster; label ownership",
+      "verification": "url_unverified"
+    },
+    {
+      "name": "RNZ · New Zealand",
+      "region": "Oceania",
+      "city": "Wellington",
+      "country": "NZ",
+      "url": "https://www.rnz.co.nz/rss/national.xml",
+      "source_page": "https://www.rnz.co.nz/",
+      "editorial": "Public broadcaster; review editorial safeguards",
+      "verification": "url_unverified"
+    }
+  ]
+}
