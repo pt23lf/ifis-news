@@ -1,1 +1,37 @@
-[]
+[
+  {
+    "name": "The Guardian · World",
+    "url": "https://www.theguardian.com/world/rss",
+    "section": "world"
+  },
+  {
+    "name": "The Guardian · Global Development",
+    "url": "https://www.theguardian.com/global-development/rss",
+    "section": "world"
+  },
+  {
+    "name": "ScienceDaily · Society",
+    "url": "https://www.sciencedaily.com/rss/top/society.xml",
+    "section": "ifis"
+  },
+  {
+    "name": "ScienceDaily · Health",
+    "url": "https://www.sciencedaily.com/rss/top/health.xml",
+    "section": "ifis"
+  },
+  {
+    "name": "ScienceDaily · Environment",
+    "url": "https://www.sciencedaily.com/rss/top/environment.xml",
+    "section": "ifis"
+  },
+  {
+    "name": "ScienceDaily · Technology",
+    "url": "https://www.sciencedaily.com/rss/top/technology.xml",
+    "section": "ifis"
+  },
+  {
+    "name": "ScienceDaily · Science",
+    "url": "https://www.sciencedaily.com/rss/top/science.xml",
+    "section": "ifis"
+  }
+]
