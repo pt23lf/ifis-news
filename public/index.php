@@ -356,6 +356,11 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
 .globe-view.map-dark #newsGlobe,.globe-view.map-dark .maplibregl-canvas-container{background:#111720!important}
 .feedhead #feedTitle.feed-title-saved{font-size:27px!important;line-height:1.2!important;letter-spacing:0!important}
 
+
+/* Flight connections run underneath marker circles and their readable counts. */
+.globe-view #newsGlobe>.globe-connector{position:absolute;inset:0;z-index:2!important;pointer-events:none}
+.globe-view #newsGlobe>.maplibregl-marker{z-index:4!important}
+.globe-view #newsGlobe>.maplibregl-popup{z-index:8!important}
 /* The icon popup and the filtered feed below the map replace the redundant bottom-left map list. */
 .globe-view #globeInfo{display:none!important}
 </style></head><body>
@@ -967,7 +972,9 @@ function openNewsMap(scrollToMap=true){panel.classList.add('open');btn.classList
 map.getContainer().style.backgroundColor=isDarkMap()?'#111720':'#ffffff';
 map.getCanvas().addEventListener('pointerdown',()=>{rotationHoldUntil=performance.now()+4500});
 map.getCanvas().addEventListener('wheel',()=>{rotationHoldUntil=performance.now()+4500},{passive:true});
-map.on('dragstart',()=>{rotationHoldUntil=performance.now()+4500});map.on('load',()=>{try{map.setProjection({type:flatProjection?'mercator':'globe'});}catch(e){};addNightLayer();addSourceLinks();flightLayer=document.createElementNS('http://www.w3.org/2000/svg','g');connector.append(flightLayer);updateMapReadState();map.on('move',()=>{hideFarSide();updateConnector()});map.on('resize',()=>{updateConnector();renderFlightArcs();});hideFarSide();if(!groups.size)info.textContent='Noch keine eindeutigen Ereignisorte erkannt.';});}
+map.on('dragstart',()=>{rotationHoldUntil=performance.now()+4500});map.on('load',()=>{try{map.setProjection({type:flatProjection?'mercator':'globe'});}catch(e){};addNightLayer();addSourceLinks();flightLayer=document.createElementNS('http://www.w3.org/2000/svg','g');connector.append(flightLayer);
+// The flight-line SVG belongs inside MapLibre: above tiles but BELOW marker buttons.
+map.getContainer().append(connector);updateMapReadState();map.on('move',()=>{hideFarSide();updateConnector()});map.on('resize',()=>{updateConnector();renderFlightArcs();});hideFarSide();if(!groups.size)info.textContent='Noch keine eindeutigen Ereignisorte erkannt.';});}
 btn.addEventListener('click',()=>openNewsMap(true));
 // Open the map on first load while keeping its news feed on the Potential view.
 openNewsMap(false);
