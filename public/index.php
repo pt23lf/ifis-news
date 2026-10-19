@@ -686,7 +686,6 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
 <script src="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.js"></script><script>
 (()=>{'use strict';
 window.ifisReferenceArticles=<?=json_encode($ifisIndex,JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_UNESCAPED_UNICODE|JSON_INVALID_UTF8_SUBSTITUTE)?>;
-let map=null;
 const prefix='ifis-news-v1-',load=(k)=>{try{return JSON.parse(localStorage.getItem(prefix+k)||'[]')}catch{return []}},store=(k,v)=>{try{localStorage.setItem(prefix+k,JSON.stringify(v))}catch{}};
 let saved=load('saved'),hidden=load('hidden'),mode='all',cat='Alle';
 const stories=[...document.querySelectorAll('.story')],search=document.getElementById('search'),empty=document.getElementById('empty'),noMatches=document.getElementById('noMatches'),title=document.getElementById('feedTitle');
@@ -906,7 +905,7 @@ const locations=[
 ['Nigeria',9,8,['nigeria','nigerian']],
 ['Indonesien',-2,118,['indonesia','indonesien','jakarta']]
 ];
-const stories=[...document.querySelectorAll('.story')],btn=document.getElementById('globeToggle'),panel=document.getElementById('globeView'),info=document.getElementById('globeInfo');let markers=[];const nightToggle=document.getElementById('nightToggle');
+const stories=[...document.querySelectorAll('.story')],btn=document.getElementById('globeToggle'),panel=document.getElementById('globeView'),info=document.getElementById('globeInfo');let map=null,markers=[];const nightToggle=document.getElementById('nightToggle');
 const normalize=t=>' '+t.toLocaleLowerCase()+' ';
 const freshness=(group)=>{
  const timestamps=group.stories.map(story=>{
