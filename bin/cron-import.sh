@@ -17,7 +17,22 @@ if ! mkdir "$LOCK" 2>/dev/null; then
 fi
 date -u +%FT%TZ > "$LOCK/started"
 trap 'rm -rf "$LOCK"' EXIT HUP INT TERM
-PHP_BIN="${PHP_BIN:-$(command -v php)}"
+# HTTPS cron inherits the web-server PATH, where "php" can be an old CLI.
+# Prefer a supported PHP CLI (>= 7.4) for arrow functions in bin/import.php.
+php_supported() {
+  [ -x "$1" ] && [ "$("$1" -r 'echo PHP_VERSION_ID;' 2>/dev/null || echo 0)" -ge 70400 ]
+}
+PHP_BIN="${PHP_BIN:-}"
+if [ -n "$PHP_BIN" ] && ! php_supported "$PHP_BIN"; then PHP_BIN=""; fi
+if [ -z "$PHP_BIN" ]; then
+  for candidate in /usr/bin/php83 /usr/bin/php84 /usr/bin/php82 /usr/bin/php81 /usr/bin/php80 /usr/bin/php8.3 /usr/bin/php8.4 /usr/bin/php8.2 /usr/local/bin/php83 /usr/local/bin/php8.3 "$(command -v php 2>/dev/null || true)"; do
+    if php_supported "$candidate"; then PHP_BIN="$candidate"; break; fi
+  done
+fi
+if [ -z "$PHP_BIN" ]; then
+  printf '[%s] ERROR: No PHP CLI >= 7.4 found. Check All-inkl CLI PHP path.\\n' "$(date -u +%FT%TZ)" >> storage/logs/import.log
+  exit 1
+fi
 {
   printf '\n[%s] Import start\n' "$(date -u +%FT%TZ)"
   "$PHP_BIN" bin/import.php
