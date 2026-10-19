@@ -1272,7 +1272,7 @@ function rotateMap(timestamp){
 mapAutoRotate.addEventListener('change',()=>rememberMapPreference('rotation',mapAutoRotate.value));
 window.requestAnimationFrame(rotateMap);
 let flatProjection=incomingMapParams.get('projection')==='flat';
-if(flatProjection){const control=document.getElementById('mapProjectionToggle');control.setAttribute('aria-pressed','true');control.title='Globus anzeigen';control.setAttribute('aria-label','Globus anzeigen';control.firstChild.textContent='◉ ';}
+if(flatProjection){const control=document.getElementById('mapProjectionToggle');control.setAttribute('aria-pressed','true');control.title='Globus anzeigen';control.setAttribute('aria-label','Globus anzeigen');control.firstChild.textContent='◉ ';}
 document.getElementById('mapProjectionToggle').addEventListener('click',event=>{event.preventDefault();event.stopPropagation();
  flatProjection=!flatProjection;
  const control=document.getElementById('mapProjectionToggle');
