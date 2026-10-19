@@ -276,7 +276,15 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
 .globe-legend #mapTimeRange{width:135px;accent-color:#e59a35;vertical-align:middle}.globe-legend #mapTimeValue{min-width:42px;display:inline-block;font-size:12px;font-variant-numeric:tabular-nums}
 .globe-source-cluster{display:flex;gap:5px;align-items:center;justify-content:center;position:relative;white-space:nowrap;transform:translateY(-6px);pointer-events:auto}
 .globe-source-cluster::after{content:'';position:absolute;left:50%;bottom:-7px;width:7px;height:7px;background:#e59a35;border:1px solid white;border-radius:50%;transform:translateX(-50%);pointer-events:none}
-.map-projection-toggle{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:7px;padding:5px 8px;font-size:12px;cursor:pointer;text-align:left}
+.map-projection-toggle{width:52px;height:48px;display:inline-flex;align-items:center;justify-content:center;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:13px;padding:0;cursor:pointer;flex-shrink:0}
+.projection-symbol{display:block;position:relative;width:26px;height:26px;box-sizing:border-box}
+.projection-symbol-map{border:2px solid currentColor;border-radius:5px}
+.projection-symbol-map::before,.projection-symbol-map::after{content:"";position:absolute;top:0;bottom:0;width:2px;background:currentColor}
+.projection-symbol-map::before{left:7px}.projection-symbol-map::after{right:7px}
+.projection-symbol-globe{border:2px solid currentColor;border-radius:50%}
+.projection-symbol-globe::before{content:"";position:absolute;inset:4px;border:2px solid currentColor;border-radius:50%}
+.projection-symbol-globe::after{content:"";position:absolute;top:10px;left:0;right:0;border-top:2px solid currentColor}
+.map-projection-toggle:focus-visible{outline:2px solid currentColor;outline-offset:3px}
 .globe-view .globe-legend{max-width:min(320px,calc(100% - 24px))}
 .globe-view .globe-legend-line:has(#mapTimeRange){display:grid;grid-template-columns:auto minmax(100px,1fr) auto;align-items:center;gap:9px;white-space:nowrap}
 .globe-legend #mapTimeRange{width:100%;max-width:none;min-width:100px;box-sizing:border-box}
@@ -670,7 +678,7 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
   <label class="map-legend-select">Globus dreht <select id="mapAutoRotate" aria-label="Geschwindigkeit der Globusrotation"><option value="0">Aus</option><option value="1.5">Langsam</option><option value="4">Normal</option><option value="9">Schnell</option></select></label>
   <label class="map-legend-select">Hervorheben <select id="mapFocusMode" aria-label="Kartenobjekte hervorheben"><option value="event">Ereignisorte</option><option value="source">Quellenorte</option></select></label>
   <label class="map-legend-select">Farbmodus <select id="mapColorMode" aria-label="Farbmodus der Karte"><option value="age">Veröffentlichungszeit</option><option value="unseen">Noch nicht gesehen</option></select></label>
-  <div class="map-legend-projection"><span>Kartenform</span><button id="mapProjectionToggle" type="button" class="map-projection-toggle" title="Flache Karte anzeigen" aria-label="Flache Karte anzeigen" aria-pressed="false">▤</button></div>
+  <div class="map-legend-projection"><span>Kartenform</span><button id="mapProjectionToggle" type="button" class="map-projection-toggle" title="Flache Karte anzeigen" aria-label="Flache Karte anzeigen" aria-pressed="false"><span class="projection-symbol projection-symbol-map" aria-hidden="true"></span></button></div>
  </section>
  <div class="globe-legend-update"><?=esc($lastImportLabel)?></div>
 </div></details><div class="globe-info" id="globeInfo">Nachrichten geografisch entdecken. Punkte zeigen erkannte Ereignisorte, nicht den Sitz der Redaktion. Die Zuordnung ist vorläufig.</div></div><div class="filter-dock" id="filterDock"><button class="filter-dock-toggle" id="filterDockToggle" type="button" aria-label="Filterleiste ein- oder ausklappen" aria-expanded="false">☷</button><div class="filter-toolbar" aria-label="Nachrichtenfilter"><button type="button" data-open-filter="direction" aria-expanded="false" title="Entwicklungsrichtung"><span class="dock-symbol" aria-hidden="true">↗</span><span>Richtung</span></button><button type="button" data-open-filter="topics" aria-expanded="false" title="Themen"><span class="dock-symbol" aria-hidden="true">▦</span><span>Themen</span></button><button type="button" data-open-filter="quality" aria-expanded="false" title="Tonlage und Quellen"><span class="dock-symbol" aria-hidden="true">⚑</span><span>Qualität</span></button><button type="button" id="statsToggle" title="Nachrichtenbilanz" aria-expanded="false"><span class="dock-symbol" aria-hidden="true">▥</span><span>Bilanz</span></button><button type="button" data-open-filter="saved" title="Gemerkt"><span class="dock-symbol" aria-hidden="true">☆</span><span>Gemerkt</span></button><button type="button" data-open-filter="hidden" title="Ausgeblendet"><span class="dock-symbol" aria-hidden="true">⊘</span><span>Verborgen</span></button><button type="button" id="infoPagesToggle" title="Infoseiten" aria-expanded="false" aria-controls="infoPagesPanel"><span class="dock-symbol" aria-hidden="true">☷</span><span>Seiten</span></button><label class="dock-language" title="Sprache auswählen"><select id="language" aria-label="Sprache auswählen" title="Sprache" style="border:1px solid var(--line);border-radius:16px;background:var(--bg);color:var(--text);padding:6px"><option value="de">DE</option><option value="en">EN</option></select></label></div></div><nav id="infoPagesPanel" class="info-pages-panel" aria-label="Informationsseiten" hidden>
@@ -1358,14 +1366,14 @@ function rotateMap(timestamp){
 mapAutoRotate.addEventListener('change',()=>rememberMapPreference('rotation',mapAutoRotate.value));
 window.requestAnimationFrame(rotateMap);
 let flatProjection=incomingMapParams.get('projection')==='flat';
-if(flatProjection){const control=document.getElementById('mapProjectionToggle');control.setAttribute('aria-pressed','true');control.title='Globus anzeigen';control.setAttribute('aria-label','Globus anzeigen');control.firstChild.textContent='◉ ';}
+if(flatProjection){const control=document.getElementById('mapProjectionToggle');control.setAttribute('aria-pressed','true');control.title='Globus anzeigen';control.setAttribute('aria-label','Globus anzeigen');control.querySelector('.projection-symbol').className='projection-symbol projection-symbol-globe';}
 document.getElementById('mapProjectionToggle').addEventListener('click',event=>{event.preventDefault();event.stopPropagation();
  flatProjection=!flatProjection;
  const control=document.getElementById('mapProjectionToggle');
  control.setAttribute('aria-pressed',String(flatProjection));
  control.title=flatProjection?'Globus anzeigen':'Flache Karte anzeigen';
  control.setAttribute('aria-label',flatProjection?'Globus anzeigen':'Flache Karte anzeigen');
- control.firstChild.textContent=flatProjection?'◉ ':'▤ ';
+ control.querySelector('.projection-symbol').className='projection-symbol '+(flatProjection?'projection-symbol-globe':'projection-symbol-map');
  if(map){try{map.setProjection({type:flatProjection?'mercator':'globe'});}catch(e){console.warn('Kartenprojektion konnte nicht gewechselt werden',e)}updateMapReadState();updateConnector();}
 });
 const sourceImprintAudit=<?=json_encode($sourceImprintAudit,JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_UNESCAPED_UNICODE)?>;
@@ -1525,20 +1533,6 @@ function renderFlightArcs(){
  const limb=map.project([horizonLon,horizonLat*180/Math.PI]);
  const projectedRadius=Math.hypot(limb.x-globeCentre.x,limb.y-globeCentre.y);
  const globeRadius=Number.isFinite(projectedRadius)&&projectedRadius>8?projectedRadius:Math.min(width,height)*.48;
- // Mask against the projected earth silhouette. Altitude remains visible
- // within the globe, but no SVG stroke can escape into the surrounding sky.
- // The clip is rebuilt on each repaint after flightLayer.replaceChildren().
- if(!flatProjection){
-  const clip=document.createElementNS('http://www.w3.org/2000/svg','clipPath');
-  clip.setAttribute('id','ifis-news-flight-limb');
-  clip.setAttribute('clipPathUnits','userSpaceOnUse');
-  const disc=document.createElementNS('http://www.w3.org/2000/svg','circle');
-  disc.setAttribute('cx',String(globeCentre.x));
-  disc.setAttribute('cy',String(globeCentre.y));
-  disc.setAttribute('r',String(Math.max(1,globeRadius-1.5)));
-  clip.append(disc);
-  flightLayer.append(clip);
- }
  const center=map.getCenter(),rad=Math.PI/180;
  const facing=coordinates=>Math.sin(center.lat*rad)*Math.sin(coordinates[1]*rad)+Math.cos(center.lat*rad)*Math.cos(coordinates[1]*rad)*Math.cos((coordinates[0]-center.lng)*rad);
  const unique=new Set();
@@ -1559,7 +1553,7 @@ function renderFlightArcs(){
    if(Math.hypot(b.x-a.x,b.y-a.y)<3)return;
    const {points,angle}=flightRoutePoints(from,to);
    // The arc grows with geographic distance, but is capped to avoid visual clutter.
-   const peak=flatProjection?0:Math.min(globeRadius*.36,globeRadius*(.035+.18*Math.min(1,angle/Math.PI)));
+   const peak=flatProjection?0:Math.min(globeRadius*.28,globeRadius*(.04+.16*Math.min(1,angle/Math.PI)));
    const sampled=points.map(({t,coordinates})=>{
     const p=map.project(coordinates);
     let x=p.x,y=p.y;
@@ -1600,7 +1594,6 @@ function renderFlightArcs(){
    curve.setAttribute('stroke-width',flatProjection?(hoveredMapStory?'3.1':'1.7'):(hoveredMapStory?'2':'1.05'));
    curve.setAttribute('stroke-opacity',flatProjection?(hoveredMapStory?'.96':'.82'):(hoveredMapStory?'.88':'.54'));
    curve.setAttribute('stroke-linecap','round');curve.setAttribute('stroke-linejoin','round');
-   if(!flatProjection)curve.setAttribute('clip-path','url(#ifis-news-flight-limb)');
    flightLayer.append(curve);
   });
  });
