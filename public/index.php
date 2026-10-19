@@ -887,7 +887,7 @@ function showMarkerArticles(coordinates,title,articles,routePoints=[],descriptio
     popupRect.right>mapRect.right-margin?mapRect.right-margin-popupRect.right:0;
   const dy=popupRect.top<mapRect.top+margin?mapRect.top+margin-popupRect.top:
     popupRect.bottom>mapRect.bottom-margin?mapRect.bottom-margin-popupRect.bottom:0;
-  if(dx||dy)map.panBy([-dx,-dy],{duration:200,essential:true});
+  if(dx||dy)map.panBy([dx,dy],{duration:200,essential:true});
  }));
  const popupForSelection=activeMapPopup;
  popupForSelection.on('close',()=>{if(activeMapPopup!==popupForSelection)return;setHoveredMapStory(null);activeMapPopup=null;mapOverlayOpen=false;selectedPlace=null;selectedSource=null;window.ifisNewsFeed.clearMapStories();info.replaceChildren();info.textContent='Nachrichten geografisch entdecken. Wähle einen Ort auf der Karte.';info.classList.remove('has-selection');updateSourceLinks()});
