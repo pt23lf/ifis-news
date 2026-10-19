@@ -91,6 +91,13 @@ foreach($items as $item){
 }
 $items=$deduplicated;
 
+// The CLI source-audit stores reviewable hints only; it never overrides editorial coordinates.
+$sourceImprintAudit=[];
+$auditFile=dirname(__DIR__).'/storage/source-imprint-audit.json';
+if(is_file($auditFile)){
+ $data=json_decode((string)file_get_contents($auditFile),true);
+ if(is_array($data))$sourceImprintAudit=$data;
+}
 $ifisIndexFile=dirname(__DIR__).'/storage/ifis-articles.json';
 $ifisIndex=[];
 if(is_file($ifisIndexFile)){
@@ -841,6 +848,7 @@ document.getElementById('mapProjectionToggle').addEventListener('click',event=>{
  control.firstChild.textContent=flatProjection?'◉ ':'▤ ';
  if(map){try{map.setProjection({type:flatProjection?'mercator':'globe'});}catch(e){console.warn('Kartenprojektion konnte nicht gewechselt werden',e)}hideFarSide();updateConnector();}
 });
+const sourceImprintAudit=<?=json_encode($sourceImprintAudit,JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_UNESCAPED_UNICODE)?>;
 const sourceLocations={
  'IFIS · Artikel':{name:'IFIS · Lübeck',coordinates:[10.686,53.866]},
  'The Guardian':{name:'The Guardian · London',coordinates:[-0.1276,51.5072]},
@@ -933,7 +941,9 @@ sources.forEach(source=>{
  const dot=document.createElement('button');dot.type='button';dot.className='globe-source';
  dot._ifisStories=related;dot._ifisLabel=source.name;
  dot.textContent=String(places.size);
- dot.title=source.name+' · '+places.size+' Ereignisorte · '+related.length+' Artikel · Redaktionsstandort';
+ const audits=Object.entries(sourceLocations).filter(([,loc])=>loc===source).map(([key])=>sourceImprintAudit[key]).filter(Boolean);
+ const audit=audits.find(item=>item.status==='address_city_found')||audits[0];
+ dot.title=source.name+' · '+places.size+' Ereignisorte · '+related.length+' Artikel · Standorthinweis: '+(audit?.status==='address_city_found'?'Adresshinweis auf offizieller Seite gefunden (noch redaktionell zu bestätigen)':audit?'Impressum ohne eindeutigen Standortnachweis':'redaktionell hinterlegt, noch nicht geprüft')+(audit?.evidence_url?' · '+audit.evidence_url:'');
  dot.addEventListener('click',()=>{
   const selected=dot._ifisTimeStories||mapTimeStories(related);if(!selected.length)return;
   const visitedPlaces=new Set(selected.map(story=>story.dataset.place).filter(Boolean));
