@@ -1,5 +1,10 @@
 [
   {
+    "name": "IFIS · Artikel",
+    "url": "https://ifis.net/artikel.rss",
+    "section": "ifis"
+  },
+  {
     "name": "The Guardian · World",
     "url": "https://www.theguardian.com/world/rss",
     "section": "world"
