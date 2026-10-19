@@ -1099,34 +1099,41 @@ function showMarkerArticles(coordinates,title,articles,routePoints=[],descriptio
  const markerOffset=selectedMarker?selectedMarker._ifisScreenOffset||[0,0]:[0,0];
  if(markerOffset[0]||markerOffset[1])
   selectedPopup.setOffset({bottom:[markerOffset[0],markerOffset[1]-gap]});
- // First let the popup get its actual height; then center the complete unit.
+ // MapLibre's panBy cannot reliably move a globe marker near the horizon
+ // into view: the projection is nonlinear. Reorient to its real coordinate,
+ // then offset the map camera to reserve room for the complete popup.
  requestAnimationFrame(()=>requestAnimationFrame(()=>{
   if(activeMapPopup!==selectedPopup)return;
   const popupEl=selectedPopup.getElement();
   if(!popupEl)return;
   const mapBox=mapContainer.getBoundingClientRect();
-  // Use the viewport-visible part of the map (important on mobile browsers).
-  const visibleTop=Math.max(8,Math.min(mapHeight-90,Math.max(0,64-mapBox.top)));
-  const visibleBottom=Math.min(mapHeight-8,Math.max(visibleTop+90,window.innerHeight-mapBox.top-12));
-  const freeHeight=visibleBottom-visibleTop;
-  // Apply the height limit before measuring, so centering uses final dimensions.
-  const availableCardHeight=Math.max(95,Math.floor(freeHeight-gap-28));
-  popupEl.style.setProperty('max-height',availableCardHeight+'px','important');
+  // On mobile, align against the actually visible part of the map.
+  const visibleTop=Math.max(10,Math.min(mapHeight-95,Math.max(0,65-mapBox.top)));
+  const visibleBottom=Math.min(mapHeight-10,Math.max(visibleTop+95,window.innerHeight-mapBox.top-12));
+  const freeHeight=Math.max(95,visibleBottom-visibleTop);
+  const availableCardHeight=Math.max(85,Math.floor(freeHeight-gap-28));
   const popupContent=popupEl.querySelector('.maplibregl-popup-content');
   if(popupContent){
    popupContent.style.setProperty('max-height',availableCardHeight+'px','important');
-   popupContent.style.overflow='auto';
+   popupContent.style.overflowY='auto';
   }
+  // Keep the article list scrollable rather than letting long collections
+  // push the entire overlay out of the map.
+  wrapper.style.setProperty('max-height',Math.max(65,availableCardHeight-18)+'px','important');
   const popupHeight=Math.min(popupEl.getBoundingClientRect().height,availableCardHeight);
-  const targetX=mapWidth/2;
-  // At tiny viewport sizes, always keep the icon beneath the card.
-  const desiredY=visibleTop+Math.max(0,(freeHeight-popupHeight-gap)/2)+popupHeight+gap;
-  const point=map.project(coordinates);
-  const currentX=point.x+markerOffset[0],currentY=point.y+markerOffset[1];
-  // panBy moves screen features opposite to its delta.
-  const shiftX=currentX-targetX,shiftY=currentY-desiredY;
-  if(Math.abs(shiftX)>1||Math.abs(shiftY)>1)
-   map.panBy([shiftX,shiftY],{duration:300,essential:true});
+  const visibleCenterY=visibleTop+freeHeight/2;
+  const desiredMarkerY=visibleCenterY+(popupHeight+gap)/2;
+  // Bound the marker to the earth's disk in globe mode. All longitudes,
+  // including points at the limb, are centered via the camera instead of
+  // attempting to pan an offscreen projected point.
+  const globeLimit=mapHeight/2+Math.min(mapWidth,mapHeight)*.37;
+  const targetY=flatProjection?desiredMarkerY:Math.min(desiredMarkerY,globeLimit);
+  const markerOffsetNow=selectedMarker?selectedMarker._ifisScreenOffset||[0,0]:[0,0];
+  map.easeTo({
+   center:coordinates,
+   offset:[-markerOffsetNow[0],targetY-mapHeight/2-markerOffsetNow[1]],
+   duration:380,essential:true
+  });
  }));
  const popupForSelection=activeMapPopup;
  popupForSelection.on('close',()=>{if(activeMapPopup!==popupForSelection)return;setHoveredMapStory(null);activeMapPopup=null;mapOverlayOpen=false;selectedPlace=null;selectedSource=null;window.ifisNewsFeed.clearMapStories();info.replaceChildren();info.textContent='Nachrichten geografisch entdecken. Wähle einen Ort auf der Karte.';info.classList.remove('has-selection');updateSourceLinks()});
