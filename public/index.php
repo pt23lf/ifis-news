@@ -10,7 +10,8 @@ $ogPageTitle=$shareCollectionType!==''?$shareCollectionName.' · '.($shareCollec
 $ogDescription=$shareCollectionType!==''?
  'Aktuelle Artikelsammlung zum '.($shareCollectionType==='event'?'Ereignisort ':'Quellenort ').$shareCollectionName.'. Quellen, Meldungen und Verbindungen auf der interaktiven IFIS-News-Karte entdecken.':
  'Nachrichten aus unterschiedlichen Quellen, Ereignisorte und ihre Verbindungen auf der interaktiven Weltkarte von IFIS News.';
-$ogCanonical='https://news.ifis.net/'.($_SERVER['QUERY_STRING']??''?'?'.$_SERVER['QUERY_STRING']:'');
+$ogQuery=(string)($_SERVER['QUERY_STRING']??'');
+$ogCanonical='https://news.ifis.net/'.($ogQuery!==''?'?'.$ogQuery:'');
 $ogImage='https://news.ifis.net/share-image.php'.($shareCollectionType!==''?'?'.http_build_query(['collection'=>$shareCollectionType,'name'=>$shareCollectionName]):'');
 
 $items = [];
@@ -1395,6 +1396,9 @@ function restoreSharedCollection(){
  if(!matches.length){
   document.getElementById('mapTimeRange').value='48';
   updateMapReadState();
+  // Preserve usefulness of older shared collections instead of opening nothing.
+  if(!(button._ifisTimeStories||[]).length&&button._ifisStories?.length)
+   button._ifisTimeStories=button._ifisStories;
  }
  // A restored marker may be on the far hemisphere. Face it before opening.
  map.jumpTo({center:marker.getLngLat(),zoom:Math.max(1.8,map.getZoom())});
