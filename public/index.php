@@ -2,6 +2,17 @@
 declare(strict_types=1);
 header('Content-Type: text/html; charset=utf-8');
 $view = ($_GET['view'] ?? 'ifis') === 'world' ? 'world' : 'ifis';
+$shareCollectionType=in_array((string)($_GET['collection']??''),['event','source'],true)?(string)$_GET['collection']:'';
+$shareCollectionName=trim((string)($_GET['name']??''));
+if(mb_strlen($shareCollectionName,'UTF-8')>100)$shareCollectionName=mb_substr($shareCollectionName,0,100,'UTF-8');
+if($shareCollectionName===''||preg_match('/[\x00-\x1f\x7f]/u',$shareCollectionName))$shareCollectionType='';
+$ogPageTitle=$shareCollectionType!==''?$shareCollectionName.' · '.($shareCollectionType==='event'?'Ereignisort':'Quellenort').' · IFIS News':($view==='ifis'?'Potenzial':'Weltlage').' · IFIS News';
+$ogDescription=$shareCollectionType!==''?
+ 'Aktuelle Artikelsammlung zum '.($shareCollectionType==='event'?'Ereignisort ':'Quellenort ').$shareCollectionName.'. Quellen, Meldungen und Verbindungen auf der interaktiven IFIS-News-Karte entdecken.':
+ 'Nachrichten aus unterschiedlichen Quellen, Ereignisorte und ihre Verbindungen auf der interaktiven Weltkarte von IFIS News.';
+$ogCanonical='https://news.ifis.net/'.($_SERVER['QUERY_STRING']??''?'?'.$_SERVER['QUERY_STRING']:'');
+$ogImage='https://news.ifis.net/share-image.php'.($shareCollectionType!==''?'?'.http_build_query(['collection'=>$shareCollectionType,'name'=>$shareCollectionName]):'');
+
 $items = [];
 $sourceBatches=[];
 $dbPath = dirname(__DIR__) . '/storage/news.sqlite';
@@ -107,7 +118,24 @@ if(is_file($ifisIndexFile)){
 
 ?><!doctype html>
 <html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#ffffff">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 rx=%2714%27 fill=%27%232468d5%27/%3E%3Ctext x=%2732%27 y=%2743%27 text-anchor=%27middle%27 font-family=%27Arial%27 font-weight=%27bold%27 font-size=%2733%27 fill=%27white%27%3EI%3C/text%3E%3C/svg%3E"><title><?= $view==='ifis'?'Potenzial':'Weltlage' ?> · IFIS News</title>
+<meta name="description" content="<?=esc($ogDescription)?>">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="IFIS News">
+<meta property="og:locale" content="de_DE">
+<meta property="og:title" content="<?=esc($ogPageTitle)?>">
+<meta property="og:description" content="<?=esc($ogDescription)?>">
+<meta property="og:url" content="<?=esc($ogCanonical)?>">
+<meta property="og:image" content="<?=esc($ogImage)?>">
+<meta property="og:image:secure_url" content="<?=esc($ogImage)?>">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="IFIS News – Weltkarte mit Quellen, Ereignisorten und Verbindungslinien">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="<?=esc($ogPageTitle)?>">
+<meta name="twitter:description" content="<?=esc($ogDescription)?>">
+<meta name="twitter:image" content="<?=esc($ogImage)?>">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 rx=%2714%27 fill=%27%232468d5%27/%3E%3Ctext x=%2732%27 y=%2743%27 text-anchor=%27middle%27 font-family=%27Arial%27 font-weight=%27bold%27 font-size=%2733%27 fill=%27white%27%3EI%3C/text%3E%3C/svg%3E"><title><?=esc($ogPageTitle)?></title>
 <style>
 :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Arial,sans-serif;color-scheme:light;--bg:#fff;--text:#17212e;--muted:#697587;--line:#e7eaf0;--soft:#f5f7fa;--accent:#2468d5;--hover:#eef4ff}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-size:15px;line-height:1.48}a{color:inherit;text-decoration:none}button,input{font:inherit}button{cursor:pointer}button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.topbar{height:65px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:32px;padding:0 30px;position:sticky;top:0;background:var(--bg);z-index:5}.brand{font-size:25px;letter-spacing:-1px;white-space:nowrap}.brand strong{font-weight:780}.topnav{display:flex;height:100%;gap:18px}.topnav a{padding:19px 12px 16px;border-bottom:3px solid transparent;white-space:nowrap}.topnav a.active{border-color:var(--accent);font-weight:650}.top-actions{margin-left:auto;display:flex;gap:15px;align-items:center}.search{border:1px solid var(--line);background:var(--soft);border-radius:24px;padding:9px 15px;min-width:270px;color:var(--text)}.search::placeholder{color:var(--muted)}.iconbtn{border:0;background:transparent;color:var(--muted);padding:7px 9px;border-radius:8px}.iconbtn:hover,.side button:hover,.chip:hover{background:var(--hover)}.layout{display:grid;grid-template-columns:minmax(0,1fr);gap:28px;max-width:1100px;margin:auto;padding:25px 24px 70px}.side{border-right:1px solid var(--line);padding-right:15px}.side h3{font-size:12px;margin:23px 10px 8px;color:var(--muted);font-weight:650;text-transform:uppercase;letter-spacing:.06em}.side button{display:block;width:100%;text-align:left;border:0;background:transparent;padding:10px 12px;border-radius:9px;color:var(--muted)}.side button.active{background:var(--hover);color:var(--accent);font-weight:650}.feedhead{display:flex;align-items:baseline;justify-content:space-between;border-bottom:1px solid var(--line);padding:6px 0 13px;gap:12px}.feedhead h1{font-size:23px;letter-spacing:-.5px;margin:0}.muted{color:var(--muted)}.feedhead small{color:var(--muted);white-space:nowrap}.chips{display:flex;gap:8px;overflow:auto;padding:14px 0 16px;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}.chip{border:1px solid var(--line);border-radius:18px;background:var(--bg);padding:6px 12px;white-space:nowrap;font-size:13px;color:var(--muted)}.chip.active{background:var(--text);color:var(--bg);border-color:var(--text)}.story{display:grid;grid-template-columns:120px minmax(0,1fr) auto;gap:17px;padding:17px 0;border-bottom:1px solid var(--line);align-items:start}.story.feature{grid-template-columns:minmax(0,1fr) auto;padding-top:8px}.story h2{font-size:17px;line-height:1.3;letter-spacing:-.25px;margin:3px 0 5px}.story.feature h2{font-size:23px}.story h2 a:hover{text-decoration:underline}.summary{color:var(--muted);font-size:14px;margin:0 0 7px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.meta{font-size:12px;color:var(--muted)}.cat{font-size:11px;font-weight:700;color:var(--accent)}.thumb{background:var(--soft);width:120px;height:82px;border-radius:9px;display:flex;align-items:center;justify-content:center;color:#a3afbd;font-size:24px}.story.feature .thumb{display:none}.story:not(.feature):not(:has(.thumb)){grid-template-columns:minmax(0,1fr) auto}.story>div:nth-child(2){min-width:0}.thumb{object-fit:cover}.story-actions{display:flex;gap:0}.story-actions button{border:0;background:transparent;padding:5px;color:var(--muted);font-size:20px}.story-actions button:hover,.story-actions button.saved{color:var(--accent)}.panel{border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:15px}.panel h2{font-size:15px;margin:0 0 12px}.panel p{color:var(--muted);font-size:13px}.panel a{color:var(--accent)}.panel button{border:1px solid var(--line);border-radius:18px;padding:6px 10px;background:var(--bg);margin:0 5px 8px 0;color:var(--muted)}.empty{text-align:center;padding:75px 15px;color:var(--muted)}.empty .symbol{font-size:36px;color:#a6b1bf}.empty h2{color:var(--text);font-size:20px}.empty p{max-width:420px;margin:auto}.bottomnav{display:none}.hide{display:none!important}.subtle{font-size:12px;color:var(--muted)}.sectiontitle{font-size:14px;font-weight:650;margin:10px 0 0}.sidefooter{font-size:12px;color:var(--muted);padding:15px 10px}
@@ -1301,7 +1329,7 @@ function updateHeaderUnderline(){
 }
 window.addEventListener('resize',updateHeaderUnderline);
 if(document.fonts?.ready)document.fonts.ready.then(updateHeaderUnderline);
-function openNewsMap(scrollToMap=true){updateHeaderUnderline();panel.classList.add('open');btn.classList.add('active');btn.setAttribute('aria-pressed','true');if(scrollToMap)panel.scrollIntoView({behavior:'smooth',block:'start'});if(map){map.resize();return;}if(!window.maplibregl){info.textContent='Die Kartenbibliothek konnte nicht geladen werden.';return;}map=new maplibregl.Map({container:'newsGlobe',style:selectedMapStyle(),center:[10,20],zoom:1.15,attributionControl:true});
+function openNewsMap(scrollToMap=true){panel.classList.add('open');btn.classList.add('active');btn.setAttribute('aria-pressed','true');updateHeaderUnderline();requestAnimationFrame(updateHeaderUnderline);if(scrollToMap)panel.scrollIntoView({behavior:'smooth',block:'start'});if(map){map.resize();return;}if(!window.maplibregl){info.textContent='Die Kartenbibliothek konnte nicht geladen werden.';return;}map=new maplibregl.Map({container:'newsGlobe',style:selectedMapStyle(),center:[10,20],zoom:1.15,attributionControl:true});
 map.getContainer().style.backgroundColor=isDarkMap()?'#111720':'#ffffff';
 map.getCanvas().addEventListener('pointerdown',()=>{rotationHoldUntil=performance.now()+4500});
 map.getCanvas().addEventListener('wheel',()=>{rotationHoldUntil=performance.now()+4500},{passive:true});
