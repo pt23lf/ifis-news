@@ -509,6 +509,82 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
 .globe-view .marker-article-overlay{display:flex;flex-direction:column;min-height:0}
 .globe-view .marker-article-overlay details{min-height:0}
 .globe-view .marker-article-overlay .marker-article-list{overflow-y:auto;overscroll-behavior:contain}
+
+/* Compact map settings: shorter rows, restrained spacing and viewport-safe scrolling.
+   Keep native controls and full tap targets rather than hiding options. */
+.globe-view details.globe-legend{
+ width:min(276px,calc(100% - 20px));
+ max-width:calc(100% - 20px);
+ max-height:min(80dvh,640px);
+ overflow:hidden;
+ display:flex;
+ flex-direction:column;
+}
+.globe-view details.globe-legend:not([open]){display:block;width:auto;max-height:none;overflow:visible}
+.globe-view details.globe-legend[open] .globe-legend-heading{
+ flex:0 0 auto;
+ min-height:42px;
+ padding:8px 12px;
+ font-size:14px;
+}
+.globe-view details.globe-legend[open] .map-legend-content{
+ overflow-y:auto;
+ overscroll-behavior:contain;
+ scrollbar-width:thin;
+ min-height:0;
+ padding:0 12px 7px;
+}
+.globe-view .map-legend-section{padding:8px 0}
+.globe-view .map-legend-section + .map-legend-section{border-top:1px solid var(--line)}
+.globe-view .map-legend-section-title{
+ margin:0 0 4px;
+ font-size:10px;
+ letter-spacing:.045em;
+}
+.globe-view .map-legend-section-title output{font-size:12px}
+.globe-view #mapTimeRange{margin:2px 0 0}
+.globe-view .map-range-labels{font-size:10px;margin-top:0}
+.globe-view .map-legend-check{
+ min-height:29px;
+ gap:7px;
+ font-size:12px;
+ line-height:1.2;
+}
+.globe-view .map-legend-check input{height:16px;width:16px}
+.globe-view .map-legend-swatch{width:11px;height:11px}
+.globe-view .map-legend-select,.globe-view .map-legend-projection{
+ min-height:32px;
+ margin:0;
+ gap:8px;
+ font-size:12px;
+}
+.globe-view .map-legend-select select{
+ max-width:65%;
+ padding:4px 7px;
+ font-size:12px;
+ min-height:27px;
+}
+.globe-view .map-legend-projection button{height:28px;min-width:32px;width:32px}
+.globe-view .globe-legend-update{font-size:10px;padding:7px 0 1px}
+@media(max-width:720px){
+ .globe-view details.globe-legend{
+  right:8px;top:8px;
+  width:min(258px,calc(100% - 16px));
+  max-width:calc(100% - 16px);
+  max-height:min(74dvh,550px);
+ }
+ .globe-view details.globe-legend[open] .globe-legend-heading{
+  min-height:39px;
+  padding:7px 11px;
+  font-size:13px
+ }
+ .globe-view details.globe-legend[open] .map-legend-content{padding:0 11px 6px}
+ .globe-view .map-legend-section{padding:7px 0}
+ .globe-view .map-legend-check{min-height:29px}
+}
+@media(max-height:600px){
+ .globe-view details.globe-legend{max-height:calc(100dvh - 90px)}
+}
 /* The icon popup and the filtered feed below the map replace the redundant bottom-left map list. */
 .globe-view #globeInfo{display:none!important}
 </style></head><body>
