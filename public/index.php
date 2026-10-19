@@ -380,6 +380,13 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
 .topbar-inner .topnav .globe-toggle.active{
  border-bottom-color:transparent!important;
 }
+/* On hover show compact location details, not the browser's slow native title. */
+.map-marker-hover{position:fixed;z-index:1000;pointer-events:none;width:max-content;max-width:min(275px,calc(100vw - 20px));padding:10px 12px;background:var(--bg,#fff);color:var(--text,#17212e);border:1px solid var(--line,#ccd3dc);border-radius:10px;box-shadow:0 5px 24px #0004;font-size:12px;line-height:1.4;display:flex;flex-direction:column;gap:3px}
+.map-marker-hover[hidden]{display:none!important}
+.map-marker-hover strong{font-size:14px;line-height:1.25;color:inherit}
+.map-marker-hover-type{font-size:10px;letter-spacing:.05em;text-transform:uppercase;font-weight:700;color:var(--accent,#2468d5)}
+.map-marker-hover small{font-size:11px;color:var(--muted,#697587);max-width:240px}
+@media(prefers-color-scheme:dark){.map-marker-hover{--bg:#15191f;--text:#e9edf3;--muted:#a0acba;--line:#313945;--accent:#8ab4ff}}
 /* The icon popup and the filtered feed below the map replace the redundant bottom-left map list. */
 .globe-view #globeInfo{display:none!important}
 </style></head><body>
@@ -695,8 +702,9 @@ function updateMapReadState(){
   const events=new Set(matching.map(story=>story.dataset.place).filter(Boolean));
   const unread=matching.filter(story=>!seenUrls.has(story.dataset.url)).length;
   el.textContent=String(source?events.size:matching.length);
-  el.title=(el._ifisLabel||'')+' · '+matching.length+' Artikel · '+(source?events.size+' Ereignisorte':new Set(matching.map(story=>story.dataset.source).filter(Boolean)).size+' Quellen')+' · '+hours.toLocaleString('de-DE')+' h'+(colorMode.value==='unseen'?' · '+unread+' ungesehen':'');
-  el.setAttribute('aria-label',el.title);
+  const description=(el._ifisLabel||'')+' · '+matching.length+' Artikel · '+(source?events.size+' Ereignisorte':new Set(matching.map(story=>story.dataset.source).filter(Boolean)).size+' Quellen')+' · '+hours.toLocaleString('de-DE')+' h'+(colorMode.value==='unseen'?' · '+unread+' ungesehen':'');
+  el.setAttribute('aria-label',description);
+  if(hoveredMarkerButton===el)showMarkerHover(el);
   el.style.backgroundColor=colorMode.value==='unseen'&&!unread?'#718096':'';
  });
  hideFarSide();
@@ -990,6 +998,47 @@ function updateSourceLinks(){
 }
 let mapSourceLines={type:'FeatureCollection',features:[]};
 function restoreSourceLineLayer(){if(!map.getSource('news-source-links'))map.addSource('news-source-links',{type:'geojson',data:mapSourceLines});if(!map.getLayer('news-source-links'))map.addLayer({id:'news-source-links',type:'line',source:'news-source-links',layout:{visibility:'none'},paint:{'line-color':'#e59a35','line-width':2,'line-opacity':0.85,'line-dasharray':[2,2]}});}
+// Shared accessible hover card. Keep it outside the MapLibre marker transforms
+// so zooming and circular marker spreading do not distort the text.
+const markerHoverCard=document.createElement('div');
+markerHoverCard.className='map-marker-hover';
+markerHoverCard.setAttribute('role','status');
+markerHoverCard.hidden=true;
+document.body.append(markerHoverCard);
+let hoveredMarkerButton=null;
+function hideMarkerHover(){hoveredMarkerButton=null;markerHoverCard.hidden=true;}
+function positionMarkerHover(button,clientX,clientY){
+ const rect=button.getBoundingClientRect();
+ const x=Number.isFinite(clientX)?clientX:rect.left+rect.width/2;
+ const y=Number.isFinite(clientY)?clientY:rect.top+rect.height/2;
+ markerHoverCard.style.left=Math.max(9,Math.min(window.innerWidth-markerHoverCard.offsetWidth-9,x+16))+'px';
+ markerHoverCard.style.top=Math.max(9,Math.min(window.innerHeight-markerHoverCard.offsetHeight-9,y+18))+'px';
+}
+function showMarkerHover(button,event){
+ if(button.style.visibility==='hidden')return;
+ hoveredMarkerButton=button;
+ const items=button._ifisTimeStories||mapTimeStories(button._ifisStories||[]);
+ const source=button.classList.contains('globe-source');
+ const count=new Set(items.map(story=>source?story.dataset.place:story.dataset.source).filter(Boolean)).size;
+ markerHoverCard.replaceChildren();
+ const heading=document.createElement('strong');heading.textContent=button._ifisLabel||'Unbekannter Ort';
+ const type=document.createElement('span');type.className='map-marker-hover-type';type.textContent=source?'Quellenstandort':'Ereignisort';
+ const details=document.createElement('span');details.textContent=items.length+' Artikel · '+count+(source?' Ereignisorte':' Quellen');
+ const note=document.createElement('small');
+ note.textContent=source?(button._ifisAuditNote||'Redaktionsstandort vorläufig zugeordnet'):'Ortszuordnung aus Meldungstitel und Kurztext';
+ markerHoverCard.append(type,heading,details,note);
+ markerHoverCard.hidden=false;
+ positionMarkerHover(button,event?.clientX,event?.clientY);
+}
+function attachMarkerHover(button){
+ button.removeAttribute('title');
+ button.addEventListener('pointerenter',event=>{if(event.pointerType!=='touch')showMarkerHover(button,event)});
+ button.addEventListener('pointermove',event=>{if(hoveredMarkerButton===button)positionMarkerHover(button,event.clientX,event.clientY)});
+ button.addEventListener('pointerleave',()=>{if(hoveredMarkerButton===button)hideMarkerHover()});
+ button.addEventListener('focus',()=>showMarkerHover(button));
+ button.addEventListener('blur',()=>{if(hoveredMarkerButton===button)hideMarkerHover()});
+ button.addEventListener('click',hideMarkerHover);
+}
 function addSourceLinks(){const features=[],sources=new Map();groups.forEach(g=>g.stories.forEach(story=>{const source=sourceFor(story);if(!source)return;const destination=[g.loc[2],g.loc[1]];if(Math.abs(destination[0]-source.coordinates[0])+Math.abs(destination[1]-source.coordinates[1])<0.1)return;sources.set(source.name,source);features.push({type:'Feature',geometry:{type:'LineString',coordinates:[source.coordinates,destination]},properties:{source:source.name,event:g.loc[0]}})}));
 stories.forEach(story=>{const source=sourceFor(story);if(source)sources.set(source.name,source);});
 mapSourceLines={type:'FeatureCollection',features};
@@ -1001,6 +1050,7 @@ groups.forEach((group,place)=>{
  dot.textContent=String(group.stories.length);
  dot.title=place+' · '+reportingSources.size+' berichtende Quellen · '+group.stories.length+' Meldungen';
  dot.setAttribute('aria-label',dot.title);
+ attachMarkerHover(dot);
  dot.addEventListener('click',()=>{
   const selected=dot._ifisTimeStories||mapTimeStories(group.stories);if(!selected.length)return;
   const selectedSources=new Set(selected.map(story=>story.dataset.source).filter(Boolean));
@@ -1020,6 +1070,8 @@ sources.forEach(source=>{
  const audits=Object.entries(sourceLocations).filter(([,loc])=>loc===source).map(([key])=>sourceImprintAudit[key]).filter(Boolean);
  const audit=audits.find(item=>item.status==='address_city_found')||audits[0];
  dot.title=source.name+' · '+places.size+' Ereignisorte · '+related.length+' Artikel · Standorthinweis: '+(audit?.status==='address_city_found'?'Adresshinweis auf offizieller Seite gefunden (noch redaktionell zu bestätigen)':audit?'Impressum ohne eindeutigen Standortnachweis':'redaktionell hinterlegt, noch nicht geprüft')+(audit?.evidence_url?' · '+audit.evidence_url:'');
+ dot._ifisAuditNote=audit?.status==='address_city_found'?'Adresshinweis auf offizieller Website gefunden · nicht abschließend geprüft':'Standort redaktionell zugeordnet · noch nicht bestätigt';
+ attachMarkerHover(dot);
  dot.addEventListener('click',()=>{
   const selected=dot._ifisTimeStories||mapTimeStories(related);if(!selected.length)return;
   const visitedPlaces=new Set(selected.map(story=>story.dataset.place).filter(Boolean));
