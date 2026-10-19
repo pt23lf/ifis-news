@@ -1664,12 +1664,15 @@ function renderFlightArcs(){
    let normalX=-chordY/chordLength,normalY=chordX/chordLength;
    const midX=(a.x+b.x)/2-globeCentre.x,midY=(a.y+b.y)/2-globeCentre.y;
    if(normalX*midX+normalY*midY<0){normalX=-normalX;normalY=-normalY;}
-   // A stronger curve on long routes; short routes stay compact.
-   const peak=flatProjection?0:Math.min(globeRadius*.34,Math.max(chordLength*.30,globeRadius*.025));
+   // Stylised altitude in screen space: greater than the ground-level
+   // great-circle curvature, but bounded to avoid loops across the sphere.
+   const peak=flatProjection?0:Math.min(globeRadius*.48,Math.max(chordLength*.52,globeRadius*.065));
    const sampled=flatProjection
     ?[{t:0,x:a.x,y:a.y,visible:true},{t:1,x:b.x,y:b.y,visible:true}]
     :points.map(({t,coordinates})=>{
-      const lift=peak*Math.sin(Math.PI*t);
+      // A parabola has a more pronounced centre section than the earlier
+      // low-amplitude sine curve, yet still meets both surface markers.
+      const lift=peak*4*t*(1-t);
       const relativeHeight=lift/globeRadius;
       const threshold=relativeHeight>0?-Math.sqrt(Math.max(0,1-1/Math.pow(1+relativeHeight,2))):0;
       const x=a.x+chordX*t+normalX*lift;
@@ -1726,6 +1729,15 @@ function renderFlightArcs(){
    curve.setAttribute('stroke-width',flatProjection?(hoveredMapStory?'3.1':'1.7'):(hoveredMapStory?'2':'1.05'));
    curve.setAttribute('stroke-opacity',flatProjection?(hoveredMapStory?'.96':'.82'):(hoveredMapStory?'.88':'.54'));
    curve.setAttribute('stroke-linecap','round');curve.setAttribute('stroke-linejoin','round');
+   // A subtle light edge distinguishes the raised path from the cartography,
+   // without affecting the flat-map connections.
+   if(!flatProjection){
+    const halo=curve.cloneNode(false);
+    halo.setAttribute('stroke','rgba(255,255,255,.75)');
+    halo.setAttribute('stroke-opacity','.35');
+    halo.setAttribute('stroke-width',hoveredMapStory?'4':'2.1');
+    flightLayer.append(halo);
+   }
    flightLayer.append(curve);
   });
  });
