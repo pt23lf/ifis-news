@@ -331,6 +331,18 @@ details[open] > summary:not([aria-label="Weitere Optionen"])::after{
  box-shadow:0 6px 20px #0003;z-index:32;pointer-events:none}
 .globe-view .marker-collection-share-actions .collection-share-button:hover::after,
 .globe-view .marker-collection-share-actions .collection-share-button:focus-visible::after{display:block}
+
+/* Compact pins that shrink on the flat world overview, sized by --marker-scale. */
+.globe-view.is-flat-map .globe-marker,
+.globe-view.is-flat-map .globe-source,
+.globe-view.is-flat-map .globe-source-batch{
+  width:calc(17px * var(--marker-scale,1))!important;
+  height:calc(17px * var(--marker-scale,1))!important;
+  min-width:0!important;min-height:0!important;
+  border-width:1px!important;padding:0!important;
+  font-size:0!important;line-height:0!important;border-radius:50%!important;
+}
+.globe-view.is-flat-map .globe-marker .constructive-count{display:none!important}
 </style><link href="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.css" rel="stylesheet"><style>.globe-view{display:none;position:relative;height:min(72vh,680px);min-height:380px;border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:16px}.globe-view.open{display:block}.globe-view #newsGlobe{width:100%;height:100%}.globe-info{position:absolute;left:12px;bottom:12px;background:var(--bg);padding:12px;border-radius:10px;max-width:320px;box-shadow:0 2px 12px #0002;font-size:13px}.globe-toggle{border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:20px;padding:6px 12px;white-space:nowrap}.globe-toggle.active{background:var(--hover);color:var(--accent)}.geo-link{font-size:12px;color:var(--accent);cursor:pointer;border:0;background:none;padding:3px 0}.trust-tools{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:9px;font-size:12px;color:var(--muted)}.trust{border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text);padding:4px}.ifis-related a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}.globe-marker{background:#0d9488;color:white;border:2px solid white;border-radius:50%;width:29px;height:29px;display:grid;place-items:center;font-size:11px;box-shadow:0 1px 7px #0005;cursor:pointer}.globe-marker .constructive-count{position:absolute;right:-10px;top:-10px;background:#177245;color:white;border:1px solid white;border-radius:10px;min-width:20px;height:19px;padding:0 3px;display:grid;place-items:center;font-size:10px;font-weight:700;line-height:1}.globe-source{background:#e59a35;color:#17212e;border:2px solid white;border-radius:50%;width:25px;height:25px;display:grid;place-items:center;font-size:13px;cursor:pointer;box-shadow:0 1px 7px #0005}.globe-legend{position:absolute;right:12px;top:12px;background:var(--bg);padding:8px 10px;border-radius:9px;font-size:12px;z-index:2}.globe-legend span{margin-left:9px}.globe-view .globe-legend{left:auto;right:12px;top:12px;width:max-content;max-width:min(265px,calc(100% - 24px));padding:12px 14px;display:flex;flex-direction:column;align-items:stretch;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:12px;box-shadow:0 3px 12px #0002;font-size:12px;line-height:1.35}
 .globe-view .globe-legend-line{display:flex;align-items:center;gap:9px;margin:0;white-space:normal}
 .globe-view .globe-legend-line input{margin:0 2px 0 0;flex-shrink:0}
@@ -1520,53 +1532,19 @@ stories.forEach(story=>{
 // Offsets are screen pixels, so the underlying geographic coordinates stay exact.
 function spreadNearbyMarkers(){
  if(!map)return;
- if(!flatProjection){
-  // Zero pixel offsets in globe mode: every dot stays on its geographic coordinate.
-  markers.forEach(marker=>{
-   const el=marker.getElement();
-   if(!el.classList.contains('globe-marker')&&!el.classList.contains('globe-source'))return;
-   marker._ifisScreenOffset=[0,0];
-   const previous=marker.getOffset();
-   if(previous.x!==0||previous.y!==0)marker.setOffset([0,0]);
-  });
-  return;
- }
- const visible=markers.filter(marker=>{
+ // No spreading on the flat map: displaced markers make geographic positions
+ // jump when zooming. Small, zoom-scaled dots may overlap naturally.
+ markers.forEach(marker=>{
   const el=marker.getElement();
-  return (el.classList.contains('globe-marker')||el.classList.contains('globe-source'))
-   &&el.style.visibility!=='hidden';
+  if(!el.classList.contains('globe-marker')&&!el.classList.contains('globe-source'))return;
+  marker._ifisScreenOffset=[0,0];
+  const previous=marker.getOffset();
+  if(previous.x!==0||previous.y!==0)marker.setOffset([0,0]);
  });
- const zoomScale=Math.max(.65,Math.min(1.65,.78+map.getZoom()*.14));
- const iconRadius=14*zoomScale;
- const origins=visible.map(marker=>({marker,point:map.project(marker.getLngLat())}));
- const clusters=[];
- const captureRadius=Math.max(19,iconRadius*2+3);
- for(const item of origins){
-  const found=clusters.find(cluster=>Math.hypot(item.point.x-cluster.center.x,item.point.y-cluster.center.y)<captureRadius);
-  if(!found){clusters.push({members:[item],center:{...item.point}});continue;}
-  found.members.push(item);
-  const n=found.members.length;
-  found.center.x+=(item.point.x-found.center.x)/n;
-  found.center.y+=(item.point.y-found.center.y)/n;
- }
- // Stable member order avoids icons exchanging places while the globe rotates.
- for(const cluster of clusters){
-  const items=cluster.members;
-  const count=items.length;
-  const ringRadius=count>1?Math.max(iconRadius*1.65,(iconRadius*1.8+5)*count/(2*Math.PI)):0;
-  items.forEach(({marker,point},i)=>{
-   let x=point.x,y=point.y;
-   if(count>1){
-    const angle=-Math.PI/2+2*Math.PI*i/count;
-    x=cluster.center.x+Math.cos(angle)*ringRadius;
-    y=cluster.center.y+Math.sin(angle)*ringRadius;
-   }
-   const offset=[Math.round(x-point.x),Math.round(y-point.y)];
-   marker._ifisScreenOffset=offset;
-   const previous=marker.getOffset();
-   if(Math.abs(previous.x-offset[0])>.5||Math.abs(previous.y-offset[1])>.5)marker.setOffset(offset);
-  });
- }
+}
+function flatMarkerScale(){
+ // Overview (~zoom 1): tiny pins; zoomed-in detail: gradually larger.
+ return Math.max(.35,Math.min(1.1,.35+Math.max(0,map.getZoom()-1)*.15));
 }
 function displayPointForMarker(coordinates,sourceName=null){
  const candidates=markers.filter(marker=>{
@@ -1583,7 +1561,7 @@ function displayPointForMarker(coordinates,sourceName=null){
 function hideFarSide(){if(!map)return;
  panel.classList.toggle('is-globe',!flatProjection);
  panel.classList.toggle('is-flat-map',flatProjection);const center=map.getCenter(),rad=Math.PI/180,a=center.lat*rad,b=center.lng*rad;markers.forEach(marker=>{const el=marker.getElement(),p=marker.getLngLat(),lat=p.lat*rad,lon=p.lng*rad;const facing=flatProjection||Math.sin(a)*Math.sin(lat)+Math.cos(a)*Math.cos(lat)*Math.cos(lon-b)>0.025;const source=el.classList.contains('globe-source')||el.classList.contains('globe-source-cluster');const enabled=source?document.getElementById('showSourceMarkers').checked:document.getElementById('showEventMarkers').checked;
- const ageVisible=!el._ifisStories||(window.ifisNewsFeed?.isSavedView?.()?el._ifisStories.some(story=>window.ifisNewsFeed.isSavedUrl(story.dataset.url)):(el._ifisTimeStories||mapTimeStories(el._ifisStories)).length>0);const screen=map.project(p);const bounds=map.getContainer().getBoundingClientRect();const inside=screen.x>=18&&screen.y>=18&&screen.x<=bounds.width-18&&screen.y<=bounds.height-18;el.style.visibility=facing&&enabled&&inside&&ageVisible?'visible':'hidden';el.style.opacity=source?(focusMode.value==='source'?'1':'.72'):(focusMode.value==='event'?'1':'.55');const zoomScale=Math.max(.65,Math.min(1.65,.78+map.getZoom()*.14));el.style.setProperty('--marker-scale',String(zoomScale));el.style.zIndex=source?(focusMode.value==='source'?'5':'2'):(focusMode.value==='event'?'5':'2')});spreadNearbyMarkers();updateSourceLinks();connector.style.display=(hoveredMapStory||document.getElementById('showSourceLinks').checked||selectedPlace||selectedSource)?'block':'none';}
+ const ageVisible=!el._ifisStories||(window.ifisNewsFeed?.isSavedView?.()?el._ifisStories.some(story=>window.ifisNewsFeed.isSavedUrl(story.dataset.url)):(el._ifisTimeStories||mapTimeStories(el._ifisStories)).length>0);const screen=map.project(p);const bounds=map.getContainer().getBoundingClientRect();const inside=screen.x>=18&&screen.y>=18&&screen.x<=bounds.width-18&&screen.y<=bounds.height-18;el.style.visibility=facing&&enabled&&inside&&ageVisible?'visible':'hidden';el.style.opacity=source?(focusMode.value==='source'?'1':'.72'):(focusMode.value==='event'?'1':'.55');const zoomScale=flatProjection?flatMarkerScale():Math.max(.65,Math.min(1.65,.78+map.getZoom()*.14));el.style.setProperty('--marker-scale',String(zoomScale));el.style.zIndex=source?(focusMode.value==='source'?'5':'2'):(focusMode.value==='event'?'5':'2')});spreadNearbyMarkers();updateSourceLinks();connector.style.display=(hoveredMapStory||document.getElementById('showSourceLinks').checked||selectedPlace||selectedSource)?'block':'none';}
 function nightGeoJSON(){const now=new Date(),jd=now.getTime()/86400000+2440587.5,n=jd-2451545,mean=(280.46+0.9856474*n)*Math.PI/180,anomaly=(357.528+0.9856003*n)*Math.PI/180,lambda=mean+(1.915*Math.sin(anomaly)+0.020*Math.sin(2*anomaly))*Math.PI/180,epsilon=(23.439-0.0000004*n)*Math.PI/180,decl=Math.asin(Math.sin(epsilon)*Math.sin(lambda)),ra=Math.atan2(Math.cos(epsilon)*Math.sin(lambda),Math.cos(lambda)),gmst=(280.46061837+360.98564736629*(jd-2451545))*Math.PI/180,subLon=((ra-gmst)*180/Math.PI+540)%360-180;const features=[],rad=Math.PI/180;for(let lat=-90;lat<90;lat+=5){for(let lon=-180;lon<180;lon+=5){const phi=(lat+2.5)*rad,h=(lon+2.5-subLon)*rad,elevation=Math.asin(Math.sin(phi)*Math.sin(decl)+Math.cos(phi)*Math.cos(decl)*Math.cos(h))*180/Math.PI;if(elevation>=0)continue;features.push({type:'Feature',properties:{opacity:Math.min(.68,Math.max(.08,-elevation/22*.30))},geometry:{type:'Polygon',coordinates:[[[lon,lat],[lon+5,lat],[lon+5,lat+5],[lon,lat+5],[lon,lat]]]}})}}return {type:'FeatureCollection',features}}
 function addNightLayer(){if(map.getSource('night'))return;map.addSource('night',{type:'geojson',data:nightGeoJSON()});map.addLayer({id:'night',type:'fill',source:'night',layout:{visibility:nightToggle.checked?'visible':'none'},paint:{'fill-color':'#071326','fill-opacity':['get','opacity']}})}
 nightToggle.addEventListener('change',()=>{if(map?.getLayer('night'))map.setLayoutProperty('night','visibility',nightToggle.checked?'visible':'none')});
