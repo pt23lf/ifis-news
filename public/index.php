@@ -1447,7 +1447,28 @@ function renderFlightArcs(){
  if(!(hoveredMarkerButton||hoveredMapStory||document.getElementById('showSourceLinks').checked||selectedPlace||selectedSource)||!document.getElementById('showEventMarkers').checked||!document.getElementById('showSourceMarkers').checked)return;
  const size=map.getContainer(),width=size.clientWidth,height=size.clientHeight;
  flightLayer.setAttribute('viewBox','0 0 '+width+' '+height);
- const globeCentre=map.project(map.getCenter()),globeRadius=Math.min(width,height)*.48;
+ const globeCentre=map.project(map.getCenter());
+ // Derive the visible limb from MapLibre's current globe projection, rather
+ // than assuming a fixed pixel radius (which breaks on zoom and resize).
+ const cameraCenter=map.getCenter(),theta=Math.PI/2-0.002,phi=cameraCenter.lat*Math.PI/180;
+ const horizonLat=Math.asin(Math.sin(phi)*Math.cos(theta));
+ const horizonLon=cameraCenter.lng+Math.atan2(Math.sin(theta),Math.cos(phi)*Math.cos(theta))*180/Math.PI;
+ const limb=map.project([horizonLon,horizonLat*180/Math.PI]);
+ const projectedRadius=Math.hypot(limb.x-globeCentre.x,limb.y-globeCentre.y);
+ const globeRadius=Number.isFinite(projectedRadius)&&projectedRadius>8?projectedRadius:Math.min(width,height)*.48;
+ // SVG is painted above the map canvas. Explicitly mask routes to the earth
+ // disk so elevated arcs never float over space beyond the actual horizon.
+ let clip=flightLayer.querySelector('clipPath');
+ if(!clip){
+  clip=document.createElementNS('http://www.w3.org/2000/svg','clipPath');
+  clip.id='news-flight-horizon-clip';
+  const circle=document.createElementNS('http://www.w3.org/2000/svg','circle');
+  clip.append(circle);flightLayer.append(clip);
+ }
+ const boundary=clip.firstElementChild;
+ boundary.setAttribute('cx',globeCentre.x);boundary.setAttribute('cy',globeCentre.y);
+ boundary.setAttribute('r',Math.max(0,globeRadius-2));
+
  const center=map.getCenter(),rad=Math.PI/180;
  const facing=coordinates=>Math.sin(center.lat*rad)*Math.sin(coordinates[1]*rad)+Math.cos(center.lat*rad)*Math.cos(coordinates[1]*rad)*Math.cos((coordinates[0]-center.lng)*rad);
  const unique=new Set();
@@ -1504,6 +1525,7 @@ function renderFlightArcs(){
    curve.setAttribute('stroke-width',flatProjection?(hoveredMapStory?'3.1':'1.7'):(hoveredMapStory?'2':'1.05'));
    curve.setAttribute('stroke-opacity',flatProjection?(hoveredMapStory?'.96':'.82'):(hoveredMapStory?'.88':'.54'));
    curve.setAttribute('stroke-linecap','round');curve.setAttribute('stroke-linejoin','round');
+   if(!flatProjection)curve.setAttribute('clip-path','url(#news-flight-horizon-clip)');
    flightLayer.append(curve);
   });
  });
