@@ -767,7 +767,7 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
   <div class="map-legend-section-title">Anzeigen</div>
   <label class="map-legend-check"><input id="showEventMarkers" type="checkbox" checked><span class="map-legend-swatch map-legend-event" aria-hidden="true"></span><span>Ereignisorte</span></label>
   <label class="map-legend-check"><input id="showSourceMarkers" type="checkbox" checked><span class="map-legend-swatch map-legend-source" aria-hidden="true"></span><span>Quellenorte</span></label>
-  <label class="map-legend-check"><input id="showSourceLinks" type="checkbox" checked><span class="map-legend-swatch map-legend-connection" aria-hidden="true"></span><span>Verbindungslinien</span></label>
+  <label class="map-legend-check"><input id="showSourceLinks" type="checkbox"><span class="map-legend-swatch map-legend-connection" aria-hidden="true"></span><span>Verbindungslinien</span></label>
   <label class="map-legend-check"><input id="nightToggle" type="checkbox"><span class="map-legend-swatch map-legend-night" aria-hidden="true"></span><span>Tag/Nacht</span></label>
  </section>
  <section class="map-legend-section" aria-label="Darstellung">
