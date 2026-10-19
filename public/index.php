@@ -1637,31 +1637,33 @@ function renderFlightArcs(){
    const a=displayPointForMarker(from,source.name),b=displayPointForMarker(to);
    if(Math.hypot(b.x-a.x,b.y-a.y)<3)return;
    const {points,angle}=flightRoutePoints(from,to);
-   // A flat projection uses a straight, surface-level connection.
-   // On the globe the arc is lifted in screen space, away from the
-   // source-to-target chord; front-facing samples are masked at the limb.
-   // Flat map: straight segment. Globe: an upward parabolic arch with a
-   // moderate screen-space rise; never bend sideways around the planet.
-   const chordX=b.x-a.x,chordY=b.y-a.y;
-   const distance=Math.hypot(chordX,chordY);
-   const peak=flatProjection?0:Math.min(globeRadius*.36,globeRadius*(.035+.18*Math.min(1,angle/Math.PI)));
-   const sampled=flatProjection?[{t:0,x:a.x,y:a.y,visible:true},{t:1,x:b.x,y:b.y,visible:true}]:points.map(({t,coordinates})=>{
-    const p=map.project(coordinates);
-    let x=p.x,y=p.y;
-    if(!flatProjection){
-     const dx=x-globeCentre.x,dy=y-globeCentre.y;
-     const norm=Math.hypot(dx,dy);
-     // Lift away from the globe silhouette, not merely toward the top of the screen.
-     const altitude=peak*Math.sin(Math.PI*t);
-     if(norm>1){x+=dx/norm*altitude;y+=dy/norm*altitude}
-     else y-=altitude;
-    }
-    // Raised routes remain visible slightly beyond the surface horizon:
-    // the globe hides them only when its curvature actually occludes their altitude.
-    const relativeHeight=flatProjection?0:(peak/globeRadius)*Math.sin(Math.PI*t);
-    const threshold=relativeHeight>0?-Math.sqrt(Math.max(0,1-1/Math.pow(1+relativeHeight,2))):0;
-    return {x,y,visible:flatProjection||facing(coordinates)>threshold};
-   });
+   // Flat map: straight projected connection. Globe: compute points in 3-D
+   // (spherical coordinates + physical altitude), then project onto the
+   // oriented visible globe disc. Avoid lifting a 2-D map projection.
+   const peakHeight=flatProjection?0:Math.min(.32,.09+.23*Math.min(1,angle/Math.PI));
+   const bearing=map.getBearing()*rad,cosBearing=Math.cos(bearing),sinBearing=Math.sin(bearing);
+   const lat0=center.lat*rad,lon0=center.lng*rad;
+   const sinLat0=Math.sin(lat0),cosLat0=Math.cos(lat0);
+   const sampled=flatProjection
+    ?[{t:0,x:a.x,y:a.y,visible:true},{t:1,x:b.x,y:b.y,visible:true}]
+    :points.map(({t,coordinates})=>{
+      const latitude=coordinates[1]*rad,deltaLongitude=(coordinates[0]*rad-lon0);
+      const sinLat=Math.sin(latitude),cosLat=Math.cos(latitude);
+      const east=cosLat*Math.sin(deltaLongitude);
+      const north=cosLat0*sinLat-sinLat0*cosLat*Math.cos(deltaLongitude);
+      const front=sinLat0*sinLat+cosLat0*cosLat*Math.cos(deltaLongitude);
+      // Radius of the route point in Earth radii, with a raised sine profile.
+      const height=peakHeight*Math.sin(Math.PI*t);
+      const radius=1+height;
+      // Orthographic camera basis; rotate with MapLibre's map bearing.
+      const screenEast=east*cosBearing+north*sinBearing;
+      const screenNorth=-east*sinBearing+north*cosBearing;
+      const x=globeCentre.x+globeRadius*radius*screenEast;
+      const y=globeCentre.y-globeRadius*radius*screenNorth;
+      // A point is hidden only if the Earth sphere occludes it.
+      const occlusion=height>0?-Math.sqrt(Math.max(0,1-1/(radius*radius))):0;
+      return {t,x,y,visible:front>=occlusion};
+     });
    // Keep endpoints at the visible edges of the marker circles.
    const radiusScale=Math.max(.65,Math.min(1.65,.78+map.getZoom()*.14));
    const sourceRadius=flatProjection?9*radiusScale+2:5.5,eventRadius=flatProjection?10*radiusScale+2:5.5;
