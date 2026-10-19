@@ -989,12 +989,20 @@ function showMarkerArticles(coordinates,title,articles,routePoints=[],descriptio
   if(activeMapPopup!==selectedPopup)return;
   const popupEl=selectedPopup.getElement();
   if(!popupEl)return;
-  const popupHeight=popupEl.getBoundingClientRect().height;
   const mapBox=mapContainer.getBoundingClientRect();
   // Use the viewport-visible part of the map (important on mobile browsers).
   const visibleTop=Math.max(8,Math.min(mapHeight-90,Math.max(0,64-mapBox.top)));
   const visibleBottom=Math.min(mapHeight-8,Math.max(visibleTop+90,window.innerHeight-mapBox.top-12));
   const freeHeight=visibleBottom-visibleTop;
+  // Apply the height limit before measuring, so centering uses final dimensions.
+  const availableCardHeight=Math.max(95,Math.floor(freeHeight-gap-28));
+  popupEl.style.setProperty('max-height',availableCardHeight+'px','important');
+  const popupContent=popupEl.querySelector('.maplibregl-popup-content');
+  if(popupContent){
+   popupContent.style.setProperty('max-height',availableCardHeight+'px','important');
+   popupContent.style.overflow='auto';
+  }
+  const popupHeight=Math.min(popupEl.getBoundingClientRect().height,availableCardHeight);
   const targetX=mapWidth/2;
   // At tiny viewport sizes, always keep the icon beneath the card.
   const desiredY=visibleTop+Math.max(0,(freeHeight-popupHeight-gap)/2)+popupHeight+gap;
@@ -1004,15 +1012,6 @@ function showMarkerArticles(coordinates,title,articles,routePoints=[],descriptio
   const shiftX=currentX-targetX,shiftY=currentY-desiredY;
   if(Math.abs(shiftX)>1||Math.abs(shiftY)>1)
    map.panBy([shiftX,shiftY],{duration:300,essential:true});
-  // Make space on very short screens without clipping the popup.
-  const availableCardHeight=Math.max(95,Math.floor(freeHeight-gap-28));
-  popupEl.style.setProperty('max-height',availableCardHeight+'px','important');
-  popupEl.style.overflow='visible';
-  const popupContent=popupEl.querySelector('.maplibregl-popup-content');
-  if(popupContent){
-   popupContent.style.setProperty('max-height',availableCardHeight+'px','important');
-   popupContent.style.overflow='auto';
-  }
  }));
  const popupForSelection=activeMapPopup;
  popupForSelection.on('close',()=>{if(activeMapPopup!==popupForSelection)return;setHoveredMapStory(null);activeMapPopup=null;mapOverlayOpen=false;selectedPlace=null;selectedSource=null;window.ifisNewsFeed.clearMapStories();info.replaceChildren();info.textContent='Nachrichten geografisch entdecken. Wähle einen Ort auf der Karte.';info.classList.remove('has-selection');updateSourceLinks()});
