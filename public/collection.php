@@ -268,7 +268,7 @@ details[open] > summary:not([aria-label="Weitere Optionen"])::after{
 <div class="type"><?= $kind==='saved'?'Gemerktliste':($kind==='source'?'Quellenort':'Ereignisort') ?> · Feste Sammlung</div>
 <h1><?=h($name)?></h1>
 <p class="muted"><?=count($articles)?> Artikel · Gespeichert am <?=h($created?gmdate('d.m.Y \u\m H:i',strtotime($created)).' UTC':'unbekannt')?></p>
-<div class="links"><button id="share" type="button">↗ Diese feste Sammlung teilen</button><a href="<?=h($dynamic)?>">Zur dynamischen Sammlung</a></div>
+<div class="links"><button id="share" type="button">↗ Diese feste Sammlung teilen</button><?php if($kind!=='saved'): ?><a href="<?=h($dynamic)?>">Zur dynamischen Sammlung</a><?php endif; ?></div>
 <?php if($kind!=='saved'): ?><div class="map-key"><span class="key-source">Quellenorte</span><span>Ereignisorte</span><span class="key-line">Verbindungen</span></div>
 <div class="map-wrap">
 <div id="collectionMap" role="region" aria-label="Karte der in dieser Sammlung dokumentierten Quellen und Ereignisorte"></div>
@@ -293,6 +293,7 @@ details[open] > summary:not([aria-label="Weitere Optionen"])::after{
 <script src="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.js"></script>
 <script>
 (()=>{
+ if(<?= $kind==='saved'?'true':'false' ?>)return;
  const items=<?=json_encode($mapEntries,JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_UNESCAPED_UNICODE|JSON_INVALID_UTF8_SUBSTITUTE)?>;
  const nodes=<?=json_encode($mapNodes,JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_UNESCAPED_UNICODE|JSON_INVALID_UTF8_SUBSTITUTE)?>;
  const lines=<?=json_encode($mapLines,JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_UNESCAPED_UNICODE|JSON_INVALID_UTF8_SUBSTITUTE)?>;
