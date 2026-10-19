@@ -255,7 +255,7 @@ const stories=[...document.querySelectorAll('.story')],search=document.getElemen
 const base=title.textContent;
 const gridToggle=document.getElementById('gridToggle'),gridCount=document.getElementById('gridCount'),storyContainer=document.getElementById('stories');let gridCols=Number(localStorage.getItem(prefix+'grid-cols'))||1;if(![1,2,3].includes(gridCols))gridCols=1;function setGrid(n){gridCols=n;storyContainer.classList.remove('grid-1','grid-2','grid-3');storyContainer.classList.add('grid-'+n);gridCount.textContent=String(n);gridToggle.setAttribute('aria-label',n+' Spalten, zur nächsten Ansicht wechseln');localStorage.setItem(prefix+'grid-cols',String(n))}gridToggle.addEventListener('click',()=>setGrid(gridCols===3?1:gridCols+1));setGrid(gridCols);
 
-let direction='all';const constructive=['restoration','restores','restored','regenerat','reforestation','reforest','clean energy','renewable energy','conservation','cooperation','peace agreement','recovery','reduces emissions','protects biodiversity','recycling','renaturier','wiederaufforst','erneuerbare energie','entsiegel','kooperation','friedensabkommen','emissionen senken','nachhaltig'];
+let mapSelectedStoryIds=null;let direction='all';const constructive=['restoration','restores','restored','regenerat','reforestation','reforest','clean energy','renewable energy','conservation','cooperation','peace agreement','recovery','reduces emissions','protects biodiversity','recycling','renaturier','wiederaufforst','erneuerbare energie','entsiegel','kooperation','friedensabkommen','emissionen senken','nachhaltig'];
 const harmful=['deforestation','pollution','habitat loss','mass extinction','war crimes','oil spill','toxic waste','biodiversity loss','environmental destruction','illegal logging','entwald','verschmutzung','artensterben','lebensraumverlust','kriegsverbrechen','ölkatastrophe','umweltzerstörung'];
 const hasTerms=(s,terms)=>terms.some(term=>s.includes(term));
 stories.forEach(el=>{const s=el.dataset.search.toLowerCase(),yes=hasTerms(s,constructive),no=hasTerms(s,harmful);el.dataset.direction=yes&&no?'mixed':yes?'constructive':no?'harmful':'unknown';});
@@ -286,7 +286,7 @@ function closeDockOverlays(){
 statsToggle.addEventListener('click',()=>{const opening=statsPanel.hidden;closeDockOverlays();statsPanel.hidden=!opening;statsToggle.setAttribute('aria-expanded',String(!statsPanel.hidden));renderNewsStats();if(!statsPanel.hidden)positionDockPanel(statsPanel,statsToggle)});
 document.getElementById('statsClose').addEventListener('click',()=>{statsPanel.hidden=true;statsToggle.setAttribute('aria-expanded','false')});
 function renderNewsStats(){if(statsPanel.hidden)return;const available=stories.filter(el=>enabledSources.includes(el.querySelector('.meta').textContent.split(' · ').slice(0,-1).join(' · ').trim()));const visible=available.filter(el=>!el.classList.contains('hide'));document.getElementById('statsScope').textContent=available.length+' Meldungen aus aktivierten Quellen · '+visible.length+' aktuell angezeigt';const categories=[['Clickbait-Verdacht','bait',[['Verdacht','yes'],['Kein Treffer','no']]],['Tonlage','tone',[['Hoffnungsvoll','positive'],['Sachlich / gemischt','balanced'],['Belastend','negative'],['Nicht bestimmbar','unknown']]],['Entwicklungsrichtung','direction',[['Konstruktiv','constructive'],['Problemverstärkend','harmful'],['Gemischt','mixed'],['Nicht bestimmbar','unknown']]]];const root=document.getElementById('statsContent');root.replaceChildren();for(const [name,key,groups] of categories){const section=document.createElement('div');section.className='stats-group';const heading=document.createElement('strong');heading.textContent=name;section.append(heading);for(const [label,value] of groups){const n=available.filter(el=>el.dataset[key]===value).length;const row=document.createElement('div');row.className='stats-row';const caption=document.createElement('span');caption.textContent=label+' · '+n+' ('+(available.length?Math.round(n/available.length*100):0)+' %)';const bar=document.createElement('div');bar.className='stats-track';const fill=document.createElement('div');fill.className='stats-fill';fill.style.width=(available.length?n/available.length*100:0)+'%';bar.append(fill);row.append(caption,bar);section.append(row)}root.append(section)}}
-function refresh(){let count=0;for(const el of stories){const url=el.dataset.url;const show=(mode==='saved'?saved.includes(url):mode==='hidden'?hidden.includes(url):!hidden.includes(url))&&(cat==='Alle'||el.dataset.cat===cat)&&(direction==='all'||el.dataset.direction===direction)&&enabledSources.includes(el.querySelector('.meta').textContent.split(' · ').slice(0,-1).join(' · ').trim())&&el.dataset.search.includes(search.value.trim().toLocaleLowerCase())&&(toneFilter.value==='all'||el.dataset.tone===toneFilter.value)&&(showBait?el.dataset.bait==='yes':(!baitFilter.checked||el.dataset.bait!=='yes'));el.classList.toggle('hide',!show);el.querySelector('.save').textContent=saved.includes(url)?'★':'☆';el.querySelector('.save').classList.toggle('saved',saved.includes(url));el.querySelector('.dismiss').textContent=mode==='hidden'?'↶':'×';el.querySelector('.dismiss').title=mode==='hidden'?'Wieder anzeigen':'Ausblenden';if(show)count++}
+function refresh(){let count=0;for(const el of stories){const url=el.dataset.url;const show=(!mapSelectedStoryIds||mapSelectedStoryIds.has(el.id))&&(mode==='saved'?saved.includes(url):mode==='hidden'?hidden.includes(url):!hidden.includes(url))&&(cat==='Alle'||el.dataset.cat===cat)&&(direction==='all'||el.dataset.direction===direction)&&enabledSources.includes(el.querySelector('.meta').textContent.split(' · ').slice(0,-1).join(' · ').trim())&&el.dataset.search.includes(search.value.trim().toLocaleLowerCase())&&(toneFilter.value==='all'||el.dataset.tone===toneFilter.value)&&(showBait?el.dataset.bait==='yes':(!baitFilter.checked||el.dataset.bait!=='yes'));el.classList.toggle('hide',!show);el.querySelector('.save').textContent=saved.includes(url)?'★':'☆';el.querySelector('.save').classList.toggle('saved',saved.includes(url));el.querySelector('.dismiss').textContent=mode==='hidden'?'↶':'×';el.querySelector('.dismiss').title=mode==='hidden'?'Wieder anzeigen':'Ausblenden';if(show)count++}
 empty.classList.toggle('hide',stories.length>0||mode!=='all'||cat!=='Alle'||!!search.value);
 noMatches.classList.toggle('hide',count>0||(!stories.length&&mode==='all'&&cat==='Alle'&&!search.value));
 title.textContent=mode==='saved'?'Gemerkt':mode==='hidden'?'Ausgeblendet':cat==='Alle'?base:cat;
@@ -446,7 +446,28 @@ try{seenUrls=new Set(JSON.parse(localStorage.getItem(seenStorageKey)||'[]'))}cat
 const colorMode=document.getElementById('mapColorMode');
 const focusMode=document.getElementById('mapFocusMode');
 focusMode.addEventListener('change',()=>{if(map){hideFarSide();updateConnector();}});
-function appendMapArticle(info,story){const a=document.createElement('a');a.className='globe-story-link';a.href='#'+story.id;const title=document.createElement('span');title.textContent=story.querySelector('h2')?.textContent||'Artikel öffnen';const meta=document.createElement('small');meta.textContent=story.querySelector('.meta')?.textContent?.trim()||'';a.append(title,meta);a.addEventListener('click',e=>{e.preventDefault();if(story.classList.contains('hide')){mode='all';cat='Alle';direction='all';search.value='';refresh()}markStorySeen(story);story.scrollIntoView({behavior:'smooth',block:'center'});history.replaceState(null,'','#'+story.id)});info.append(a)}
+function filterMapStories(articles){
+ mapSelectedStoryIds=new Set(articles.map(story=>story.id));
+ mode='all';cat='Alle';direction='all';search.value='';
+ if(typeof toneFilter!=='undefined')toneFilter.value='all';
+ if(typeof baitFilter!=='undefined')baitFilter.checked=false;
+ if(typeof showBait!=='undefined')showBait=false;
+ refresh();
+}
+function openMapStory(story){
+ if(!story)return;
+ // Ensure the selected story is visible even if a saved, source or search filter hid it.
+ mapSelectedStoryIds=new Set([story.id]);
+ mode='all';cat='Alle';direction='all';search.value='';
+ if(typeof toneFilter!=='undefined')toneFilter.value='all';
+ if(typeof baitFilter!=='undefined')baitFilter.checked=false;
+ if(typeof showBait!=='undefined')showBait=false;
+ refresh();
+ story.classList.remove('hide');
+ markStorySeen(story);
+ requestAnimationFrame(()=>{story.scrollIntoView({behavior:'smooth',block:'center'});history.replaceState(null,'','#'+story.id)});
+}
+function appendMapArticle(info,story){const a=document.createElement('a');a.className='globe-story-link';a.href='#'+story.id;const title=document.createElement('span');title.textContent=story.querySelector('h2')?.textContent||'Artikel öffnen';const meta=document.createElement('small');meta.textContent=story.querySelector('.meta')?.textContent?.trim()||'';a.append(title,meta);a.addEventListener('click',e=>{e.preventDefault();openMapStory(story)});info.append(a)}
 function markStorySeen(story){
  if(!story||!story.dataset.url||seenUrls.has(story.dataset.url))return;
  seenUrls.add(story.dataset.url);
@@ -465,6 +486,7 @@ let activeMapPopup=null;
 function showMarkerArticles(coordinates,title,articles,routePoints=[]){
  if(activeMapPopup){activeMapPopup.remove();activeMapPopup=null;}
  mapOverlayOpen=true;
+ filterMapStories(articles);
  info.classList.remove('has-selection');info.classList.add('is-collapsed');
  articlePanelToggle.setAttribute('aria-expanded','false');articlePanelToggle.textContent='+ Artikelliste';
  const wrapper=document.createElement('div');wrapper.className='marker-article-overlay';
@@ -624,7 +646,7 @@ sources.forEach(source=>{const dot=document.createElement('button');dot.classNam
 let selectedPlace=null;
 let selectedSource=null;
 let mapOverlayOpen=false;
-function closeMapOverlay(){if(activeMapPopup){activeMapPopup.remove();activeMapPopup=null;}if(!mapOverlayOpen)return;mapOverlayOpen=false;selectedPlace=null;selectedSource=null;info.replaceChildren();updateSourceLinks();info.classList.remove('has-selection');info.textContent='Nachrichten geografisch entdecken. Wähle einen Ort auf der Karte.';connector.style.display='block';}
+function closeMapOverlay(){mapSelectedStoryIds=null;refresh();if(activeMapPopup){activeMapPopup.remove();activeMapPopup=null;}if(!mapOverlayOpen)return;mapOverlayOpen=false;selectedPlace=null;selectedSource=null;info.replaceChildren();updateSourceLinks();info.classList.remove('has-selection');info.textContent='Nachrichten geografisch entdecken. Wähle einen Ort auf der Karte.';connector.style.display='block';}
 const articlePanelToggle=document.createElement('button');
 articlePanelToggle.type='button';
 articlePanelToggle.className='globe-info-toggle';
@@ -651,7 +673,7 @@ function updateConnector(){connector.style.display='block';renderFlightArcs();re
 function choose(place){
  mapOverlayOpen=true;
  const group=groups.get(place);if(!group)return;
- selectedPlace=place;selectedSource=null;updateSourceLinks();info.replaceChildren();info.classList.add('has-selection');
+ selectedPlace=place;selectedSource=null;filterMapStories(group.stories);updateSourceLinks();info.replaceChildren();info.classList.add('has-selection');
  const heading=document.createElement('strong');
  const reportingSources=new Set(group.stories.map(sourceFor).filter(Boolean).map(source=>source.name));
  heading.textContent=place+' · '+reportingSources.size+' berichtende Quellen · '+group.stories.length+' Meldungen';
