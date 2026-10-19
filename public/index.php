@@ -871,8 +871,61 @@ const sourceLocations={
 function sourceFor(story){const name=story.dataset.source||story.querySelector('.meta')?.textContent||'';return Object.entries(sourceLocations).find(([key])=>name.includes(key))?.[1]||null}
 function storiesForSource(source){return stories.filter(story=>sourceFor(story)?.name===source.name)}
 
+// Lay out different event/source markers around their projected shared location.
+// Offsets are screen pixels, so the underlying geographic coordinates stay exact.
+function spreadNearbyMarkers(){
+ if(!map)return;
+ const visible=markers.filter(marker=>{
+  const el=marker.getElement();
+  return (el.classList.contains('globe-marker')||el.classList.contains('globe-source'))
+   &&el.style.visibility!=='hidden';
+ });
+ const zoomScale=Math.max(.65,Math.min(1.65,.78+map.getZoom()*.14));
+ const iconRadius=18*zoomScale;
+ const origins=visible.map(marker=>({marker,point:map.project(marker.getLngLat())}));
+ const clusters=[];
+ const captureRadius=Math.max(22,iconRadius*2+6);
+ for(const item of origins){
+  const found=clusters.find(cluster=>Math.hypot(item.point.x-cluster.center.x,item.point.y-cluster.center.y)<captureRadius);
+  if(!found){clusters.push({members:[item],center:{...item.point}});continue;}
+  found.members.push(item);
+  const n=found.members.length;
+  found.center.x+=(item.point.x-found.center.x)/n;
+  found.center.y+=(item.point.y-found.center.y)/n;
+ }
+ // Stable member order avoids icons exchanging places while the globe rotates.
+ for(const cluster of clusters){
+  const items=cluster.members;
+  const count=items.length;
+  const ringRadius=count>1?Math.max(iconRadius*2.1,(iconRadius*2+8)*count/(2*Math.PI)):0;
+  items.forEach(({marker,point},i)=>{
+   let x=point.x,y=point.y;
+   if(count>1){
+    const angle=-Math.PI/2+2*Math.PI*i/count;
+    x=cluster.center.x+Math.cos(angle)*ringRadius;
+    y=cluster.center.y+Math.sin(angle)*ringRadius;
+   }
+   const offset=[Math.round(x-point.x),Math.round(y-point.y)];
+   marker._ifisScreenOffset=offset;
+   const previous=marker.getOffset();
+   if(Math.abs(previous.x-offset[0])>.5||Math.abs(previous.y-offset[1])>.5)marker.setOffset(offset);
+  });
+ }
+}
+function displayPointForMarker(coordinates,sourceName=null){
+ const candidates=markers.filter(marker=>{
+  const p=marker.getLngLat();
+  const matched=Math.abs(p.lng-coordinates[0])<.0001&&Math.abs(p.lat-coordinates[1])<.0001;
+  if(!matched)return false;
+  const el=marker.getElement();
+  return sourceName?el.classList.contains('globe-source')&&el._ifisLabel===sourceName:el.classList.contains('globe-marker');
+ });
+ const marker=candidates[0];
+ const point=map.project(coordinates),offset=marker?marker._ifisScreenOffset||[0,0]:[0,0];
+ return {x:point.x+offset[0],y:point.y+offset[1]};
+}
 function hideFarSide(){if(!map)return;const center=map.getCenter(),rad=Math.PI/180,a=center.lat*rad,b=center.lng*rad;markers.forEach(marker=>{const el=marker.getElement(),p=marker.getLngLat(),lat=p.lat*rad,lon=p.lng*rad;const facing=flatProjection||Math.sin(a)*Math.sin(lat)+Math.cos(a)*Math.cos(lat)*Math.cos(lon-b)>0.025;const source=el.classList.contains('globe-source')||el.classList.contains('globe-source-cluster');const enabled=source?document.getElementById('showSourceMarkers').checked:document.getElementById('showEventMarkers').checked;
- const ageVisible=!el._ifisStories||(el._ifisTimeStories||mapTimeStories(el._ifisStories)).length>0;const screen=map.project(p);const bounds=map.getContainer().getBoundingClientRect();const inside=screen.x>=18&&screen.y>=18&&screen.x<=bounds.width-18&&screen.y<=bounds.height-18;el.style.visibility=facing&&enabled&&inside&&ageVisible?'visible':'hidden';el.style.opacity=source?(focusMode.value==='source'?'1':'.72'):(focusMode.value==='event'?'1':'.55');const zoomScale=Math.max(.65,Math.min(1.65,.78+map.getZoom()*.14));el.style.setProperty('--marker-scale',String(zoomScale));el.style.zIndex=source?(focusMode.value==='source'?'5':'2'):(focusMode.value==='event'?'5':'2')});updateSourceLinks();connector.style.display=(hoveredMapStory||document.getElementById('showSourceLinks').checked||selectedPlace||selectedSource)?'block':'none';}
+ const ageVisible=!el._ifisStories||(el._ifisTimeStories||mapTimeStories(el._ifisStories)).length>0;const screen=map.project(p);const bounds=map.getContainer().getBoundingClientRect();const inside=screen.x>=18&&screen.y>=18&&screen.x<=bounds.width-18&&screen.y<=bounds.height-18;el.style.visibility=facing&&enabled&&inside&&ageVisible?'visible':'hidden';el.style.opacity=source?(focusMode.value==='source'?'1':'.72'):(focusMode.value==='event'?'1':'.55');const zoomScale=Math.max(.65,Math.min(1.65,.78+map.getZoom()*.14));el.style.setProperty('--marker-scale',String(zoomScale));el.style.zIndex=source?(focusMode.value==='source'?'5':'2'):(focusMode.value==='event'?'5':'2')});spreadNearbyMarkers();updateSourceLinks();connector.style.display=(hoveredMapStory||document.getElementById('showSourceLinks').checked||selectedPlace||selectedSource)?'block':'none';}
 function nightGeoJSON(){const now=new Date(),jd=now.getTime()/86400000+2440587.5,n=jd-2451545,mean=(280.46+0.9856474*n)*Math.PI/180,anomaly=(357.528+0.9856003*n)*Math.PI/180,lambda=mean+(1.915*Math.sin(anomaly)+0.020*Math.sin(2*anomaly))*Math.PI/180,epsilon=(23.439-0.0000004*n)*Math.PI/180,decl=Math.asin(Math.sin(epsilon)*Math.sin(lambda)),ra=Math.atan2(Math.cos(epsilon)*Math.sin(lambda),Math.cos(lambda)),gmst=(280.46061837+360.98564736629*(jd-2451545))*Math.PI/180,subLon=((ra-gmst)*180/Math.PI+540)%360-180;const features=[],rad=Math.PI/180;for(let lat=-90;lat<90;lat+=5){for(let lon=-180;lon<180;lon+=5){const phi=(lat+2.5)*rad,h=(lon+2.5-subLon)*rad,elevation=Math.asin(Math.sin(phi)*Math.sin(decl)+Math.cos(phi)*Math.cos(decl)*Math.cos(h))*180/Math.PI;if(elevation>=0)continue;features.push({type:'Feature',properties:{opacity:Math.min(.68,Math.max(.08,-elevation/22*.30))},geometry:{type:'Polygon',coordinates:[[[lon,lat],[lon+5,lat],[lon+5,lat+5],[lon,lat+5],[lon,lat]]]}})}}return {type:'FeatureCollection',features}}
 function addNightLayer(){if(map.getSource('night'))return;map.addSource('night',{type:'geojson',data:nightGeoJSON()});map.addLayer({id:'night',type:'fill',source:'night',layout:{visibility:nightToggle.checked?'visible':'none'},paint:{'fill-color':'#071326','fill-opacity':['get','opacity']}})}
 nightToggle.addEventListener('change',()=>{if(map?.getLayer('night'))map.setLayoutProperty('night','visibility',nightToggle.checked?'visible':'none')});
@@ -893,7 +946,7 @@ function renderFlightArcs(){
    const key=source.name+'|'+place;if(unique.has(key))return;unique.add(key);
    const from=source.coordinates,to=[group.loc[2],group.loc[1]];
    if(!visibleHemisphere(from)||!visibleHemisphere(to))return;
-   const a=map.project(from),b=map.project(to),dx=b.x-a.x,dy=b.y-a.y,distance=Math.hypot(dx,dy);
+   const a=displayPointForMarker(from,source.name),b=displayPointForMarker(to),dx=b.x-a.x,dy=b.y-a.y,distance=Math.hypot(dx,dy);
    if(distance<3)return;
    const lift=Math.min(110,Math.max(10,distance*.16));
    const mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
