@@ -43,6 +43,7 @@ $queue=$db->prepare("INSERT INTO article_analysis(article_id,input_hash,status,u
  updated_at=CASE WHEN article_analysis.input_hash!=excluded.input_hash THEN CURRENT_TIMESTAMP ELSE article_analysis.updated_at END");
 $articleId=$db->prepare("SELECT id,title,summary FROM articles WHERE url=?");
 $feeds = json_decode(file_get_contents($base . '/config/feeds.json'), true, 512, JSON_THROW_ON_ERROR);
+$articlesBeforeImport=(int)$db->query('SELECT COUNT(*) FROM articles')->fetchColumn();
 $stmt = $db->prepare("INSERT INTO articles(url,title,source,section,published_at,summary,image_url,first_seen_at) VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(url) DO UPDATE SET image_url=CASE WHEN excluded.image_url != '' THEN excluded.image_url ELSE articles.image_url END");
 foreach ($feeds as $feed) {
  $url = $feed['url'] ?? '';
@@ -102,5 +103,8 @@ foreach ($feeds as $feed) {
  }
  if ($feed['name'] === 'IFIS · Artikel') echo "IFIS RSS: $imported Artikel verarbeitet\\n";
 }
+$articlesAfterImport=(int)$db->query('SELECT COUNT(*) FROM articles')->fetchColumn();
+$importStats=['at'=>gmdate('c'),'new'=>max(0,$articlesAfterImport-$articlesBeforeImport),'total'=>$articlesAfterImport];
+file_put_contents(dirname(__DIR__).'/storage/news-last-import-stats.json',json_encode($importStats,JSON_UNESCAPED_UNICODE),LOCK_EX);
 file_put_contents(dirname(__DIR__).'/storage/news-last-import.txt',gmdate('c'),LOCK_EX);
 echo "Import complete\\n";
