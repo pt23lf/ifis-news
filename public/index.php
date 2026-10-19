@@ -213,7 +213,7 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
 .globe-view .maplibregl-marker{z-index:1!important}
 .globe-view .globe-legend{z-index:8}
 .globe-view .globe-info{z-index:7}
-.globe-view .globe-source-cluster{transform:none}
+.globe-view .globe-source-cluster{transform-origin:center center}
 .globe-view .globe-source-cluster::after{display:none}
 .topbar,.topbar-inner,.topnav{z-index:30}
 .globe-view #newsGlobe{background:#142b3a}
@@ -456,6 +456,7 @@ function filterMapStories(articles){
 }
 function openMapStory(story){
  if(!story)return;
+ if(activeMapPopup){const popup=activeMapPopup;activeMapPopup=null;popup.remove();}
  // Ensure the selected story is visible even if a saved, source or search filter hid it.
  mapSelectedStoryIds=new Set([story.id]);
  mode='all';cat='Alle';direction='all';search.value='';
@@ -484,7 +485,7 @@ colorMode.addEventListener('change',updateMapReadState);
 stories.forEach(story=>story.querySelectorAll('h2 a').forEach(link=>link.addEventListener('click',()=>markStorySeen(story))));
 let activeMapPopup=null;
 function showMarkerArticles(coordinates,title,articles,routePoints=[]){
- if(activeMapPopup){activeMapPopup.remove();activeMapPopup=null;}
+ if(activeMapPopup){const previous=activeMapPopup;activeMapPopup=null;previous.remove();}
  mapOverlayOpen=true;
  filterMapStories(articles);
  info.classList.remove('has-selection');info.classList.add('is-collapsed');
@@ -498,7 +499,8 @@ function showMarkerArticles(coordinates,title,articles,routePoints=[]){
  else{const empty=document.createElement('p');empty.textContent='Keine zugeordneten Artikel in der aktuell geladenen Liste. Bitte Zeitraum oder Nachrichtenansicht erweitern.';list.append(empty);}
  details.append(list);wrapper.append(details);
  activeMapPopup=new maplibregl.Popup({closeButton:true,closeOnClick:false,anchor:'top',offset:[0,20],maxWidth:'min(360px,85vw)',className:'marker-article-popup'}).setLngLat(coordinates).setDOMContent(wrapper).addTo(map);
- activeMapPopup.on('close',()=>{activeMapPopup=null;mapOverlayOpen=false;selectedPlace=null;selectedSource=null;mapSelectedStoryIds=null;refresh();updateSourceLinks()});
+ const popupForSelection=activeMapPopup;
+ popupForSelection.on('close',()=>{if(activeMapPopup!==popupForSelection)return;activeMapPopup=null;mapOverlayOpen=false;selectedPlace=null;selectedSource=null;mapSelectedStoryIds=null;refresh();updateSourceLinks()});
  const points=[coordinates,...routePoints].filter(p=>Array.isArray(p)&&p.length===2&&p.every(Number.isFinite));
  if(points.length>1){
   const lngs=points.map(p=>p[0]),lats=points.map(p=>p[1]);
