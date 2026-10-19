@@ -1427,7 +1427,7 @@ function flightRoutePoints(from,to){
 function renderFlightArcs(){
  if(!map||!flightLayer)return;
  flightLayer.replaceChildren();
- if(!(hoveredMapStory||document.getElementById('showSourceLinks').checked||selectedPlace||selectedSource)||!document.getElementById('showEventMarkers').checked||!document.getElementById('showSourceMarkers').checked)return;
+ if(!(hoveredMarkerButton||hoveredMapStory||document.getElementById('showSourceLinks').checked||selectedPlace||selectedSource)||!document.getElementById('showEventMarkers').checked||!document.getElementById('showSourceMarkers').checked)return;
  const size=map.getContainer(),width=size.clientWidth,height=size.clientHeight;
  flightLayer.setAttribute('viewBox','0 0 '+width+' '+height);
  const globeCentre=map.project(map.getCenter()),globeRadius=Math.min(width,height)*.48;
@@ -1435,11 +1435,15 @@ function renderFlightArcs(){
  const facing=coordinates=>Math.sin(center.lat*rad)*Math.sin(coordinates[1]*rad)+Math.cos(center.lat*rad)*Math.cos(coordinates[1]*rad)*Math.cos((coordinates[0]-center.lng)*rad);
  const unique=new Set();
  groups.forEach((group,place)=>{
-  if(hoveredMapStory&&hoveredMapStory.dataset.place!==place)return;
+  if(hoveredMarkerButton?.classList.contains('globe-marker')&&hoveredMarkerButton._ifisLabel!==place)return;
+  if(!hoveredMarkerButton&&hoveredMapStory&&hoveredMapStory.dataset.place!==place)return;
   if(!hoveredMapStory&&selectedPlace&&place!==selectedPlace)return;
   group.stories.forEach(story=>{
-   if(hoveredMapStory&&hoveredMapStory!==story)return;
-   const source=sourceFor(story);if(!source||(!hoveredMapStory&&selectedSource&&source.name!==selectedSource))return;
+   if(!hoveredMarkerButton&&hoveredMapStory&&hoveredMapStory!==story)return;
+   const source=sourceFor(story);
+   if(!source)return;
+   if(hoveredMarkerButton?.classList.contains('globe-source')&&hoveredMarkerButton._ifisLabel!==source.name)return;
+   if(!hoveredMarkerButton&&!hoveredMapStory&&selectedSource&&source.name!==selectedSource)return;
    const key=source.name+'|'+place;if(unique.has(key))return;unique.add(key);
    const from=source.coordinates,to=[group.loc[2],group.loc[1]];
    const a=displayPointForMarker(from,source.name),b=displayPointForMarker(to);
@@ -1502,7 +1506,7 @@ markerHoverCard.setAttribute('role','status');
 markerHoverCard.hidden=true;
 document.body.append(markerHoverCard);
 let hoveredMarkerButton=null;
-function hideMarkerHover(){hoveredMarkerButton=null;markerHoverCard.hidden=true;}
+function hideMarkerHover(){hoveredMarkerButton=null;markerHoverCard.hidden=true;renderFlightArcs();}
 function positionMarkerHover(button,clientX,clientY){
  const rect=button.getBoundingClientRect();
  const x=Number.isFinite(clientX)?clientX:rect.left+rect.width/2;
@@ -1513,6 +1517,7 @@ function positionMarkerHover(button,clientX,clientY){
 function showMarkerHover(button,event){
  if(button.style.visibility==='hidden')return;
  hoveredMarkerButton=button;
+ renderFlightArcs();
  const items=button._ifisTimeStories||mapTimeStories(button._ifisStories||[]);
  const source=button.classList.contains('globe-source');
  const count=new Set(items.map(story=>source?story.dataset.place:story.dataset.source).filter(Boolean)).size;
