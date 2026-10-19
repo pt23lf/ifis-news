@@ -26,7 +26,7 @@ if (is_file($dbPath) && extension_loaded('pdo_sqlite')) {
   $query->execute(['section'=>$view]);
   $items = $query->fetchAll(PDO::FETCH_ASSOC);
   // Keep IFIS articles selectable even if the general 400-item news window moves on.
-  if($view==='ifis'){
+  if(true){
    $ifisQuery=$db->prepare("SELECT title,url,source,published_at,summary,image_url FROM articles WHERE section='ifis' AND source=:source ORDER BY published_at DESC LIMIT 250");
    $ifisQuery->execute(['source'=>'IFIS · Artikel']);
    $extra=$ifisQuery->fetchAll(PDO::FETCH_ASSOC);
@@ -700,13 +700,13 @@ stories.forEach(el=>{const s=el.dataset.search.toLowerCase(),yes=hasTerms(s,cons
 document.querySelectorAll('[data-direction]').forEach(button=>button.addEventListener('click',()=>{direction=button.dataset.direction;document.querySelectorAll('[data-direction]').forEach(b=>b.classList.toggle('active',b===button));refresh()}));
 const sourceKey=prefix+'sources-'+(location.search.includes('view=world')?'world':'ifis');
 const sourceNames=[...new Set(stories.map(el=>el.dataset.source).filter(Boolean))].sort();
-if(!location.search.includes('view=world')&&!sourceNames.includes('IFIS · Artikel'))sourceNames.push('IFIS · Artikel');
+if(!sourceNames.includes('IFIS · Artikel'))sourceNames.push('IFIS · Artikel');
 sourceNames.sort();
 let enabledSources;
 try{enabledSources=JSON.parse(localStorage.getItem(sourceKey)||'null')}catch{}
 if(!Array.isArray(enabledSources))enabledSources=[...sourceNames];
 else{
- const migrationKey=sourceKey+'-source-names-v2';
+ const migrationKey=sourceKey+'-ifis-source-v3';
  const valid=new Set(sourceNames);
  enabledSources=enabledSources.map(name=>valid.has(name)?name:sourceNames.find(src=>name.startsWith(src+' · '))).filter(Boolean);
  if(!localStorage.getItem(migrationKey)){
