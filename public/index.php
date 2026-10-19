@@ -334,6 +334,15 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
  .filter-dock .filter-toolbar button .dock-symbol{font-size:31px!important;min-height:36px}
 }
 
+/* Base-map mode also styles map controls and article popups in dark mode. */
+.globe-view.map-dark{--bg:#161e29;--text:#ecf1f7;--muted:#aab9ca;--line:#344358;--hover:#27354a;color:var(--text)}
+.globe-view.map-dark #newsGlobe{background:#111720}
+.globe-view.map-dark #mapLegend,.globe-view.map-dark .marker-article-popup .maplibregl-popup-content{background:var(--bg);color:var(--text);border-color:var(--line)}
+.globe-view.map-dark .map-legend-select select,.globe-view.map-dark .map-legend-projection button{color:var(--text);background:var(--bg);border-color:var(--line)}
+.globe-view.map-dark .maplibregl-popup-tip{border-top-color:var(--bg)}
+.globe-view .map-legend-content{max-height:min(75vh,680px);overflow-y:auto;overscroll-behavior:contain}
+.globe-view .map-legend-section-title{margin-bottom:7px}
+@media(max-width:600px){.globe-view .map-legend-content{max-height:min(65vh,540px)}}
 /* The icon popup and the filtered feed below the map replace the redundant bottom-left map list. */
 .globe-view #globeInfo{display:none!important}
 </style></head><body>
@@ -357,6 +366,9 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
  </section>
  <section class="map-legend-section" aria-label="Darstellung">
   <div class="map-legend-section-title">Darstellung</div>
+  <label class="map-legend-select">Kartentyp <select id="mapBasemap" aria-label="Kartentyp"><option value="geographic">Geografisch</option><option value="political">Politisch</option><option value="satellite">Satellit</option></select></label>
+  <label class="map-legend-select">Hintergrund <select id="mapBrightness" aria-label="Kartenhintergrund"><option value="auto">System</option><option value="light">Weiß</option><option value="dark">Dunkel</option></select></label>
+  <label class="map-legend-select">Globus dreht <select id="mapAutoRotate" aria-label="Geschwindigkeit der Globusrotation"><option value="0">Aus</option><option value="1.5">Langsam</option><option value="4">Normal</option><option value="9">Schnell</option></select></label>
   <label class="map-legend-select">Hervorheben <select id="mapFocusMode" aria-label="Kartenobjekte hervorheben"><option value="event">Ereignisorte</option><option value="source">Quellenorte</option></select></label>
   <label class="map-legend-select">Farbmodus <select id="mapColorMode" aria-label="Farbmodus der Karte"><option value="age">Veröffentlichungszeit</option><option value="unseen">Noch nicht gesehen</option></select></label>
   <div class="map-legend-projection"><span>Kartenform</span><button id="mapProjectionToggle" type="button" class="map-projection-toggle" title="Flache Karte anzeigen" aria-label="Flache Karte anzeigen" aria-pressed="false">▤</button></div>
