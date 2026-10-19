@@ -26,7 +26,7 @@ a.link{color:var(--accent);text-decoration:underline;text-underline-offset:3px}
 .site-footer{display:flex;flex-wrap:wrap;gap:10px 24px;max-width:1100px;margin:0 auto;padding:24px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
 .site-footer a.active{color:var(--accent);font-weight:650}
 @media(max-width:720px){.topbar{height:107px;align-items:flex-start}.topbar-inner{height:60px;padding:0 15px;justify-content:space-between;gap:8px}.brand{font-size:23px}.topnav{position:absolute;top:60px;left:0;right:0;height:47px;justify-content:center;gap:5px;border-bottom:1px solid var(--line);background:var(--bg)}.topnav a{font-size:12px;height:47px;padding:12px 12px 8px}main{padding:28px 16px 55px}.site-footer{padding:20px 16px}}
-</style></head><body><header class="topbar"><div class="topbar-inner"><a class="brand" href="/?view=ifis"><strong>IFIS</strong></a><nav class="topnav" aria-label="Bereiche"><a href="/?view=ifis">Potenzial</a><a href="/?view=ifis#globeView">Karte</a><a href="/?view=world">Weltlage</a></nav></div></header><main>
+</style></head><body><header class="topbar"><div class="topbar-inner"><a class="brand" href="/?view=ifis"><strong>IFIS</strong></a><nav class="topnav" aria-label="Bereiche"><a href="/?view=ifis&amp;map=0">Potenzial</a><a href="/?view=ifis#globeView">Karte</a><a href="/?view=world&amp;map=0">Weltlage</a></nav></div></header><main>
 <h1><?=h($pages[$page])?></h1>
 <?php if($page==='about'): ?>
 <p><strong>IFIS News zeigt ausschließlich Nachrichten externer Quellen.</strong> Die Meldungen werden nach Kriterien des Instituts für funktionale innere Strukturen (IFIS) ausgewählt, gefiltert und übersichtlich präsentiert. IFIS News betreibt keine eigene Nachrichtenredaktion.</p>
