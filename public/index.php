@@ -499,6 +499,9 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
 }
 
 .globe-view .marker-collection-share{display:flex;flex-direction:column;gap:4px;margin:8px 0 10px}
+.globe-view .marker-collection-share-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.globe-view .marker-collection-share-actions button{min-width:0;padding:9px 5px;font-size:11px;white-space:nowrap}
+.globe-view .marker-collection-share-actions button:disabled{opacity:.55;cursor:wait}
 .globe-view .collection-share-button{border:1px solid var(--line);border-radius:9px;background:var(--soft);color:var(--text);font-size:12px;font-weight:650;padding:9px 12px;text-align:center;cursor:pointer}
 .globe-view .collection-share-button:hover,.globe-view .collection-share-button:focus-visible{border-color:var(--accent);color:var(--accent)}
 .globe-view .marker-collection-share small{font-size:11px;overflow-wrap:anywhere;color:var(--muted)}
@@ -981,9 +984,7 @@ function collectionShareUrl(selection){
  url.hash='';
  return url.href;
 }
-async function shareNewsCollection(selection,feedback){
- const link=collectionShareUrl(selection);
- const title=selection.name+' · '+(selection.kind==='event'?'Ereignisort':'Quellenort')+' · IFIS News';
+async function shareNewsLink(link,title,feedback){
  if(navigator.share){
   try{await navigator.share({title,text:'Artikelsammlung auf IFIS News',url:link});return}
   catch(error){if(error?.name==='AbortError')return}
@@ -995,10 +996,35 @@ async function shareNewsCollection(selection,feedback){
    document.body.append(field);field.select();const success=document.execCommand('copy');field.remove();
    if(!success)throw Error('Kopieren nicht unterstützt');
   }
-  feedback.textContent='Link zur Artikelsammlung kopiert';
+  feedback.textContent='Link kopiert';
  }catch(error){
-  feedback.textContent='Link markieren und kopieren: '+link;
+  feedback.textContent='Link zum Kopieren: '+link;
  }
+}
+async function shareNewsCollection(selection,articles,mode,feedback,button){
+ const title=selection.name+' · '+(selection.kind==='event'?'Ereignisort':'Quellenort')+' · IFIS News';
+ if(mode==='dynamic'){
+  await shareNewsLink(collectionShareUrl(selection),title,feedback);
+  return;
+ }
+ if(button)button.disabled=true;
+ feedback.textContent='Feste Auswahl wird gespeichert …';
+ try{
+  const response=await fetch('collection.php',{
+   method:'POST',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({
+    kind:selection.kind,name:selection.name,
+    view:new URLSearchParams(location.search).get('view')==='world'?'world':'ifis',
+    urls:articles.slice(0,40).map(story=>story.dataset.url).filter(Boolean)
+   })
+  });
+  const result=await response.json();
+  if(!response.ok||!result.url)throw Error(result.error||'Speichern nicht möglich');
+  feedback.textContent='Feste Sammlung gespeichert ('+result.count+' Artikel)';
+  await shareNewsLink(result.url,title+' · fest',feedback);
+ }catch(error){
+  feedback.textContent='Feste Sammlung konnte nicht gespeichert werden: '+error.message;
+ }finally{if(button)button.disabled=false}
 }
 function showMarkerArticles(coordinates,title,articles,routePoints=[],description='',shareSelection=null){
  articles=[...articles].sort((a,b)=>(Date.parse(b.querySelector('time')?.getAttribute('datetime')||'')||0)-(Date.parse(a.querySelector('time')?.getAttribute('datetime')||'')||0));
@@ -1019,11 +1045,17 @@ function showMarkerArticles(coordinates,title,articles,routePoints=[],descriptio
  details.append(list);
  if(shareSelection){
   const controls=document.createElement('div');controls.className='marker-collection-share';
-  const share=document.createElement('button');share.type='button';share.className='collection-share-button';
-  share.textContent='↗ Artikelsammlung teilen';
+  const fixed=document.createElement('button');fixed.type='button';fixed.className='collection-share-button';
+  fixed.textContent='↗ Fest teilen';
+  fixed.title='Diese Artikelauswahl unveränderlich speichern und teilen';
+  const dynamic=document.createElement('button');dynamic.type='button';dynamic.className='collection-share-button';
+  dynamic.textContent='↻ Dynamisch teilen';
+  dynamic.title='Die Artikel ändern sich entsprechend der aktuellen Nachrichtenlage';
   const feedback=document.createElement('small');feedback.setAttribute('role','status');
-  share.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();shareNewsCollection(shareSelection,feedback)});
-  controls.append(share,feedback);wrapper.append(controls);
+  const actions=document.createElement('div');actions.className='marker-collection-share-actions';
+  fixed.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();shareNewsCollection(shareSelection,articles,'fixed',feedback,fixed)});
+  dynamic.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();shareNewsCollection(shareSelection,articles,'dynamic',feedback,dynamic)});
+  actions.append(fixed,dynamic);controls.append(actions,feedback);wrapper.append(controls);
  }
  wrapper.append(details);
  // The whole unit (popup + selected location) is centered together.
