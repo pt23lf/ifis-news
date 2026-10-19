@@ -426,6 +426,25 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
  font-size:11px;line-height:1.45;color:var(--muted)
 }
 .globe-view .marker-article-list .globe-story-places span{white-space:normal}
+
+/* Keep the three main tabs in the same mobile header row as the brand. */
+@media(max-width:720px){
+ .topbar{height:60px!important;min-height:60px!important;padding-top:0!important;padding-bottom:0!important}
+ .topbar .topbar-inner{display:flex!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:space-between!important;height:60px!important;min-height:60px!important;padding:0 11px!important;gap:4px!important}
+ .topbar .brand{align-self:center!important;flex:0 0 auto!important;margin:0 5px 0 0!important;line-height:1.2!important}
+ .topbar-inner .topnav{position:relative!important;top:auto!important;left:auto!important;right:auto!important;align-self:stretch!important;display:flex!important;flex:0 1 auto!important;min-width:0!important;height:60px!important;margin:0!important;padding:0!important;gap:0!important;align-items:stretch!important;justify-content:center!important;border-bottom:0!important}
+ .topbar-inner .topnav a,.topbar-inner .topnav .globe-toggle{display:flex!important;align-items:center!important;justify-content:center!important;align-self:stretch!important;height:60px!important;min-height:60px!important;margin:0!important;padding:0 7px!important;font-size:13px!important;line-height:1.2!important;white-space:nowrap!important}
+ .topbar-inner .top-actions{flex:0 0 auto!important;align-self:center!important;margin:0!important}
+ .topbar-inner .grid-toggle{flex:0 0 auto!important;align-self:center!important;margin:0!important;padding:4px!important}
+ .topbar-inner .mobile-search-toggle{width:30px!important;height:36px!important}
+}
+@media(max-width:395px){
+ .topbar .topbar-inner{padding:0 6px!important;gap:2px!important}
+ .topbar .brand{margin-right:2px!important;font-size:19px!important}
+ .topbar-inner .topnav a,.topbar-inner .topnav .globe-toggle{padding:0 4px!important;font-size:12px!important}
+ .topbar-inner .grid-toggle{padding:2px!important}
+ .topbar-inner .mobile-search-toggle{width:25px!important}
+}
 /* The icon popup and the filtered feed below the map replace the redundant bottom-left map list. */
 .globe-view #globeInfo{display:none!important}
 </style></head><body>
@@ -1082,7 +1101,7 @@ function renderFlightArcs(){
    const endY=b.y+(control.y-b.y)/endLength*eventRadius;
    const curve=document.createElementNS('http://www.w3.org/2000/svg','path');
    curve.setAttribute('d','M '+startX+' '+startY+' Q '+control.x+' '+control.y+' '+endX+' '+endY);
-   curve.setAttribute('fill','none');curve.setAttribute('stroke','#e59a35');curve.setAttribute('stroke-width',hoveredMapStory?'3.6':'1.7');curve.setAttribute('stroke-opacity',hoveredMapStory?'1':'.82');curve.setAttribute('stroke-linecap','round');
+   curve.setAttribute('fill','none');curve.setAttribute('stroke','#e59a35');curve.setAttribute('stroke-width',flatProjection?(hoveredMapStory?'3.1':'1.7'):(hoveredMapStory?'1.8':'0.9'));curve.setAttribute('stroke-opacity',flatProjection?(hoveredMapStory?'.96':'.82'):(hoveredMapStory?'.82':'.48'));curve.setAttribute('stroke-linecap','round');
    flightLayer.append(curve);
   });
  });
