@@ -256,6 +256,17 @@ details[open] > summary:not([aria-label="Weitere Optionen"])::after{
 .globe-view.is-flat-map .globe-marker{width:calc(16px * var(--marker-scale,1))!important;height:calc(16px * var(--marker-scale,1))!important;font-size:calc(8px * var(--marker-scale,1))!important;border-width:1.5px!important}
 .globe-view.is-flat-map .globe-source{width:calc(15px * var(--marker-scale,1))!important;height:calc(15px * var(--marker-scale,1))!important;font-size:calc(8px * var(--marker-scale,1))!important;border-width:1.5px!important}
 .globe-view.is-flat-map .globe-source-batch{width:calc(19px * var(--marker-scale,1))!important;height:calc(19px * var(--marker-scale,1))!important;font-size:calc(9px * var(--marker-scale,1))!important}
+
+/* Independent header switch: remains visible with closed details. */
+.globe-view .map-legend-shell{position:absolute;right:12px;top:12px;z-index:18;width:min(320px,calc(100% - 24px))}
+.globe-view .map-legend-shell>.globe-legend{position:relative;top:auto;right:auto;width:100%;max-width:none}
+.globe-view .map-legend-shell>.map-projection-header-control{position:absolute;right:53px;top:8px;z-index:24;display:block!important}
+.globe-view .map-legend-shell>.map-projection-header-control .map-projection-toggle{width:40px;height:38px;padding:0;display:flex;align-items:center;justify-content:center}
+.globe-view .map-legend-shell .globe-legend-heading{padding-right:112px!important}
+.globe-view .map-legend-shell .globe-legend-heading::after{right:18px!important}
+.projection-symbol-globe{width:26px!important;height:26px!important;border:2px solid currentColor!important;border-radius:50%!important;position:relative}
+.projection-symbol-globe::before{content:"";position:absolute;inset:3px;background:currentColor;border-radius:50%}
+.projection-symbol-map{width:25px!important;height:23px!important;border:2px solid currentColor!important;border-radius:4px!important}
 </style><link href="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.css" rel="stylesheet"><style>.globe-view{display:none;position:relative;height:min(72vh,680px);min-height:380px;border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:16px}.globe-view.open{display:block}.globe-view #newsGlobe{width:100%;height:100%}.globe-info{position:absolute;left:12px;bottom:12px;background:var(--bg);padding:12px;border-radius:10px;max-width:320px;box-shadow:0 2px 12px #0002;font-size:13px}.globe-toggle{border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:20px;padding:6px 12px;white-space:nowrap}.globe-toggle.active{background:var(--hover);color:var(--accent)}.geo-link{font-size:12px;color:var(--accent);cursor:pointer;border:0;background:none;padding:3px 0}.trust-tools{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:9px;font-size:12px;color:var(--muted)}.trust{border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text);padding:4px}.ifis-related a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}.globe-marker{background:#0d9488;color:white;border:2px solid white;border-radius:50%;width:29px;height:29px;display:grid;place-items:center;font-size:11px;box-shadow:0 1px 7px #0005;cursor:pointer}.globe-marker .constructive-count{position:absolute;right:-10px;top:-10px;background:#177245;color:white;border:1px solid white;border-radius:10px;min-width:20px;height:19px;padding:0 3px;display:grid;place-items:center;font-size:10px;font-weight:700;line-height:1}.globe-source{background:#e59a35;color:#17212e;border:2px solid white;border-radius:50%;width:25px;height:25px;display:grid;place-items:center;font-size:13px;cursor:pointer;box-shadow:0 1px 7px #0005}.globe-legend{position:absolute;right:12px;top:12px;background:var(--bg);padding:8px 10px;border-radius:9px;font-size:12px;z-index:2}.globe-legend span{margin-left:9px}.globe-view .globe-legend{left:auto;right:12px;top:12px;width:max-content;max-width:min(265px,calc(100% - 24px));padding:12px 14px;display:flex;flex-direction:column;align-items:stretch;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:12px;box-shadow:0 3px 12px #0002;font-size:12px;line-height:1.35}
 .globe-view .globe-legend-line{display:flex;align-items:center;gap:9px;margin:0;white-space:normal}
 .globe-view .globe-legend-line input{margin:0 2px 0 0;flex-shrink:0}
@@ -669,7 +680,7 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
  <span><strong><?= $lastImportCount===null?'–':number_format($lastImportCount,0,',','.') ?></strong> neu beim letzten Import</span>
  <span>Letzter Import: <strong><?=esc($lastImportShown)?></strong><?= $lastImportShown!=='–'?' Uhr':'' ?></span>
  </div>
-<div class="globe-view" id="globeView"><div id="newsGlobe"></div><svg id="globeConnector" class="globe-connector" aria-hidden="true"><path id="globeConnectorPath"></path><circle id="globeConnectorEnd" r="4"></circle></svg><details class="globe-legend" id="mapLegend"><summary class="globe-legend-heading">Karte einstellen</summary><div class="map-projection-header-control"><button id="mapProjectionToggle" type="button" class="map-projection-toggle" title="Flache Karte anzeigen" aria-label="Flache Karte anzeigen" aria-pressed="false"><span class="projection-symbol projection-symbol-globe" aria-hidden="true"></span></button></div>
+<div class="globe-view" id="globeView"><div id="newsGlobe"></div><svg id="globeConnector" class="globe-connector" aria-hidden="true"><path id="globeConnectorPath"></path><circle id="globeConnectorEnd" r="4"></circle></svg><div class="map-legend-shell"><div class="map-projection-header-control"><button id="mapProjectionToggle" type="button" class="map-projection-toggle" title="Flache Karte anzeigen" aria-label="Flache Karte anzeigen" aria-pressed="false"><span class="projection-symbol projection-symbol-globe" aria-hidden="true"></span></button></div><details class="globe-legend" id="mapLegend"><summary class="globe-legend-heading">Karte einstellen</summary>
 <div class="map-legend-content">
  <section class="map-legend-section" aria-label="Zeitraum">
   <div class="map-legend-section-title">Zeitraum <output id="mapTimeValue" for="mapTimeRange">24 h</output></div>
@@ -693,7 +704,7 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
   
  </section>
  <div class="globe-legend-update"><?=esc($lastImportLabel)?></div>
-</div></details><div class="globe-info" id="globeInfo">Nachrichten geografisch entdecken. Punkte zeigen erkannte Ereignisorte, nicht den Sitz der Redaktion. Die Zuordnung ist vorläufig.</div></div><div class="filter-dock" id="filterDock"><button class="filter-dock-toggle" id="filterDockToggle" type="button" aria-label="Filterleiste ein- oder ausklappen" aria-expanded="false">☷</button><div class="filter-toolbar" aria-label="Nachrichtenfilter"><button type="button" data-open-filter="direction" aria-expanded="false" title="Entwicklungsrichtung"><span class="dock-symbol" aria-hidden="true">↗</span><span>Richtung</span></button><button type="button" data-open-filter="topics" aria-expanded="false" title="Themen"><span class="dock-symbol" aria-hidden="true">▦</span><span>Themen</span></button><button type="button" data-open-filter="quality" aria-expanded="false" title="Tonlage und Quellen"><span class="dock-symbol" aria-hidden="true">⚑</span><span>Qualität</span></button><button type="button" id="statsToggle" title="Nachrichtenbilanz" aria-expanded="false"><span class="dock-symbol" aria-hidden="true">▥</span><span>Bilanz</span></button><button type="button" data-open-filter="saved" title="Gemerkt"><span class="dock-symbol" aria-hidden="true">☆</span><span>Gemerkt</span></button><button type="button" data-open-filter="hidden" title="Ausgeblendet"><span class="dock-symbol" aria-hidden="true">⊘</span><span>Verborgen</span></button><button type="button" id="infoPagesToggle" title="Infoseiten" aria-expanded="false" aria-controls="infoPagesPanel"><span class="dock-symbol" aria-hidden="true">☷</span><span>Seiten</span></button><label class="dock-language" title="Sprache auswählen"><select id="language" aria-label="Sprache auswählen" title="Sprache" style="border:1px solid var(--line);border-radius:16px;background:var(--bg);color:var(--text);padding:6px"><option value="de">DE</option><option value="en">EN</option></select></label></div></div><nav id="infoPagesPanel" class="info-pages-panel" aria-label="Informationsseiten" hidden>
+</div></details></div><div class="globe-info" id="globeInfo">Nachrichten geografisch entdecken. Punkte zeigen erkannte Ereignisorte, nicht den Sitz der Redaktion. Die Zuordnung ist vorläufig.</div></div><div class="filter-dock" id="filterDock"><button class="filter-dock-toggle" id="filterDockToggle" type="button" aria-label="Filterleiste ein- oder ausklappen" aria-expanded="false">☷</button><div class="filter-toolbar" aria-label="Nachrichtenfilter"><button type="button" data-open-filter="direction" aria-expanded="false" title="Entwicklungsrichtung"><span class="dock-symbol" aria-hidden="true">↗</span><span>Richtung</span></button><button type="button" data-open-filter="topics" aria-expanded="false" title="Themen"><span class="dock-symbol" aria-hidden="true">▦</span><span>Themen</span></button><button type="button" data-open-filter="quality" aria-expanded="false" title="Tonlage und Quellen"><span class="dock-symbol" aria-hidden="true">⚑</span><span>Qualität</span></button><button type="button" id="statsToggle" title="Nachrichtenbilanz" aria-expanded="false"><span class="dock-symbol" aria-hidden="true">▥</span><span>Bilanz</span></button><button type="button" data-open-filter="saved" title="Gemerkt"><span class="dock-symbol" aria-hidden="true">☆</span><span>Gemerkt</span></button><button type="button" data-open-filter="hidden" title="Ausgeblendet"><span class="dock-symbol" aria-hidden="true">⊘</span><span>Verborgen</span></button><button type="button" id="infoPagesToggle" title="Infoseiten" aria-expanded="false" aria-controls="infoPagesPanel"><span class="dock-symbol" aria-hidden="true">☷</span><span>Seiten</span></button><label class="dock-language" title="Sprache auswählen"><select id="language" aria-label="Sprache auswählen" title="Sprache" style="border:1px solid var(--line);border-radius:16px;background:var(--bg);color:var(--text);padding:6px"><option value="de">DE</option><option value="en">EN</option></select></label></div></div><nav id="infoPagesPanel" class="info-pages-panel" aria-label="Informationsseiten" hidden>
 <a href="info.php?page=about">Über IFIS News</a><a href="info.php?page=method">Quellen &amp; Methodik</a>
 <a href="info.php?page=imprint">Impressum</a><a href="info.php?page=privacy">Datenschutz</a><a href="https://ifis.net/">IFIS.net ↗</a>
 </nav><section id="newsStats" class="news-stats" hidden><div class="news-stats-head"><strong>Nachrichtenbilanz</strong><button type="button" id="statsClose" aria-label="Schließen">×</button></div><p id="statsScope"></p><div id="statsContent"></div><p class="stats-disclaimer">Automatische Stichwort-Schätzungen aus Titel und Kurztext. Clickbait-Verdacht ist kein Qualitätsurteil; Tonlage und Entwicklungsrichtung sind unterschiedliche Dimensionen. „Nicht bestimmbar“ wird mitgezählt.</p></section><div class="direction-nav filter-section" data-filter-section="direction"><span class="direction-label">Planetare Entwicklungsrichtung <span title="Vorläufige Zuordnung aus Titel und Kurztext; keine Wirkungsanalyse">ⓘ</span></span><div class="direction-buttons"><button data-direction="all" class="active">Alle</button><button data-direction="constructive">↗ Konstruktiv</button><button data-direction="harmful">↘ Problematisch</button><button data-direction="mixed">↔ Ambivalent</button><button data-direction="unknown">? Offen</button></div></div><div class="chips filter-section" data-filter-section="topics" id="chips" aria-label="Themenfilter"><button class="chip active" data-cat="Alle">Alle</button><?php foreach(['Politik','Gesellschaft','Wirtschaft','Technologie','Umwelt','Gesundheit','Bildung','Wissenschaft','Weitere'] as $c): ?><button class="chip" data-cat="<?=esc($c)?>"><?=esc($c)?></button><?php endforeach; ?></div>
@@ -1574,25 +1585,23 @@ function renderFlightArcs(){
    const a=displayPointForMarker(from,source.name),b=displayPointForMarker(to);
    if(Math.hypot(b.x-a.x,b.y-a.y)<3)return;
    const {points,angle}=flightRoutePoints(from,to);
-   // The arc grows with geographic distance, but is capped to avoid visual clutter.
-   const peak=flatProjection?0:Math.min(globeRadius*.28,globeRadius*(.04+.16*Math.min(1,angle/Math.PI)));
-   const sampled=points.map(({t,coordinates})=>{
-    const p=map.project(coordinates);
-    let x=p.x,y=p.y;
-    if(!flatProjection){
-     const dx=x-globeCentre.x,dy=y-globeCentre.y;
-     const norm=Math.hypot(dx,dy);
-     // Lift away from the globe silhouette, not merely toward the top of the screen.
-     const altitude=peak*Math.sin(Math.PI*t);
-     if(norm>1){x+=dx/norm*altitude;y+=dy/norm*altitude}
-     else y-=altitude;
-    }
-    // Raised routes remain visible slightly beyond the surface horizon:
-    // the globe hides them only when its curvature actually occludes their altitude.
-    const relativeHeight=flatProjection?0:(peak/globeRadius)*Math.sin(Math.PI*t);
-    const threshold=relativeHeight>0?-Math.sqrt(Math.max(0,1-1/Math.pow(1+relativeHeight,2))):0;
-    return {x,y,visible:flatProjection||facing(coordinates)>threshold};
-   });
+   // A flat projection uses a straight, surface-level connection.
+   // On the globe the arc is lifted in screen space, away from the
+   // source-to-target chord; front-facing samples are masked at the limb.
+   const peak=flatProjection?0:Math.min(globeRadius*.30,globeRadius*(.055+.20*Math.min(1,angle/Math.PI)));
+   const chordX=b.x-a.x,chordY=b.y-a.y,chordLength=Math.hypot(chordX,chordY)||1;
+   let normalX=-chordY/chordLength,normalY=chordX/chordLength;
+   const midpointX=(a.x+b.x)/2-globeCentre.x,midpointY=(a.y+b.y)/2-globeCentre.y;
+   if(normalX*midpointX+normalY*midpointY<0){normalX=-normalX;normalY=-normalY;}
+   const sampled=flatProjection
+    ?[{t:0,x:a.x,y:a.y,visible:true},{t:1,x:b.x,y:b.y,visible:true}]
+    :points.map(({t,coordinates})=>{
+      const p=map.project(coordinates);
+      const lift=peak*Math.sin(Math.PI*t);
+      // Lift perpendicular to the chord to form a recognizable ballistic bow.
+      return {t,x:p.x+normalX*lift,y:p.y+normalY*lift,
+       visible:facing(coordinates)>=-0.004};
+     });
    // Keep endpoints at the visible edges of the marker circles.
    const radiusScale=Math.max(.65,Math.min(1.65,.78+map.getZoom()*.14));
    const sourceRadius=flatProjection?9*radiusScale+2:5.5,eventRadius=flatProjection?10*radiusScale+2:5.5;
