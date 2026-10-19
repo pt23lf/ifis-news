@@ -502,6 +502,13 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
 .globe-view .collection-share-button{border:1px solid var(--line);border-radius:9px;background:var(--soft);color:var(--text);font-size:12px;font-weight:650;padding:9px 12px;text-align:center;cursor:pointer}
 .globe-view .collection-share-button:hover,.globe-view .collection-share-button:focus-visible{border-color:var(--accent);color:var(--accent)}
 .globe-view .marker-collection-share small{font-size:11px;overflow-wrap:anywhere;color:var(--muted)}
+
+/* Keep the selected location and its complete popup together in all projections. */
+.globe-view .maplibregl-popup.marker-article-popup{max-width:calc(100% - 24px);z-index:18}
+.globe-view .marker-article-popup .maplibregl-popup-content{overflow:auto;overscroll-behavior:contain}
+.globe-view .marker-article-overlay{display:flex;flex-direction:column;min-height:0}
+.globe-view .marker-article-overlay details{min-height:0}
+.globe-view .marker-article-overlay .marker-article-list{overflow-y:auto;overscroll-behavior:contain}
 /* The icon popup and the filtered feed below the map replace the redundant bottom-left map list. */
 .globe-view #globeInfo{display:none!important}
 </style></head><body>
@@ -943,29 +950,69 @@ function showMarkerArticles(coordinates,title,articles,routePoints=[],descriptio
   controls.append(share,feedback);wrapper.append(controls);
  }
  wrapper.append(details);
- // Prefer above/below the selected marker on narrow touchscreens, leaving the
- // actual point uncovered. The popup body scrolls internally if space is scarce.
- const mobilePopup=window.matchMedia('(max-width:720px)').matches;
- const projected=map.project(coordinates);
- const verticalAnchor=projected.y>map.getContainer().clientHeight*.53?'bottom':'top';
- const popupOptions={closeButton:true,closeOnClick:false,offset:mobilePopup?22:18,
-  maxWidth:mobilePopup?'min(340px,calc(100vw - 28px))':'min(360px,85vw)',
-  className:'marker-article-popup'};
- if(mobilePopup)popupOptions.anchor=verticalAnchor;
+ // The whole unit (popup + selected location) is centered together.
+ // Keeping the popup above its point guarantees the chosen point stays visible.
+ const mapContainer=map.getContainer();
+ const mapHeight=mapContainer.clientHeight;
+ const mapWidth=mapContainer.clientWidth;
+ const compact=window.matchMedia('(max-width:720px)').matches;
+ const gap=compact?24:23;
+ // Reserve space for the marker beneath the card and comfortable exterior margins.
+ const maxPopupHeight=Math.max(120,Math.min(compact?410:440,Math.floor(mapHeight*.58)));
+ const cardList=list;
+ cardList.style.setProperty('max-height',Math.max(64,Math.min(compact?220:260,maxPopupHeight-125))+'px','important');
+ wrapper.style.setProperty('max-height',Math.max(80,maxPopupHeight-20)+'px','important');
+ wrapper.style.overflowY='auto';
+ wrapper.style.overscrollBehavior='contain';
+ const popupOptions={
+  closeButton:true,closeOnClick:false,
+  anchor:'bottom',offset:gap,
+  maxWidth:compact?'min(340px,calc(100vw - 28px))':'min(360px,85vw)',
+  className:'marker-article-popup'
+ };
  activeMapPopup=new maplibregl.Popup(popupOptions).setLngLat(coordinates).setDOMContent(wrapper).addTo(map);
- // After layout, pan only as much as needed to bring the whole popup into the
- // visible map. Both popup and marker move together, preserving their gap.
- if(mobilePopup)requestAnimationFrame(()=>requestAnimationFrame(()=>{
-  if(!activeMapPopup||activeMapPopup.getElement()?.querySelector('.marker-article-overlay')!==wrapper)return;
-  const popupRect=activeMapPopup.getElement()?.getBoundingClientRect();
-  const mapRect=map.getContainer().getBoundingClientRect();
-  if(!popupRect)return;
-  const margin=12;
-  const dx=popupRect.left<mapRect.left+margin?mapRect.left+margin-popupRect.left:
-    popupRect.right>mapRect.right-margin?mapRect.right-margin-popupRect.right:0;
-  const dy=popupRect.top<mapRect.top+margin?mapRect.top+margin-popupRect.top:
-    popupRect.bottom>mapRect.bottom-margin?mapRect.bottom-margin-popupRect.bottom:0;
-  if(dx||dy)map.panBy([dx,dy],{duration:200,essential:true});
+ const selectedPopup=activeMapPopup;
+ // Find the actual marker, including a flat-map ring offset if one exists.
+ // The geographical point is unchanged; only the popup receives the same offset.
+ const selectedMarker=markers.find(candidate=>{
+  const el=candidate.getElement(),p=candidate.getLngLat();
+  if(Math.abs(p.lng-coordinates[0])>.0001||Math.abs(p.lat-coordinates[1])>.0001)return false;
+  if(!shareSelection)return true;
+  return el._ifisLabel===shareSelection.name &&
+   el.classList.contains(shareSelection.kind==='source'?'globe-source':'globe-marker');
+ });
+ const markerOffset=selectedMarker?selectedMarker._ifisScreenOffset||[0,0]:[0,0];
+ if(markerOffset[0]||markerOffset[1])
+  selectedPopup.setOffset({bottom:[markerOffset[0],markerOffset[1]-gap]});
+ // First let the popup get its actual height; then center the complete unit.
+ requestAnimationFrame(()=>requestAnimationFrame(()=>{
+  if(activeMapPopup!==selectedPopup)return;
+  const popupEl=selectedPopup.getElement();
+  if(!popupEl)return;
+  const popupHeight=popupEl.getBoundingClientRect().height;
+  const mapBox=mapContainer.getBoundingClientRect();
+  // Use the viewport-visible part of the map (important on mobile browsers).
+  const visibleTop=Math.max(8,Math.min(mapHeight-90,Math.max(0,64-mapBox.top)));
+  const visibleBottom=Math.min(mapHeight-8,Math.max(visibleTop+90,window.innerHeight-mapBox.top-12));
+  const freeHeight=visibleBottom-visibleTop;
+  const targetX=mapWidth/2;
+  // At tiny viewport sizes, always keep the icon beneath the card.
+  const desiredY=visibleTop+Math.max(0,(freeHeight-popupHeight-gap)/2)+popupHeight+gap;
+  const point=map.project(coordinates);
+  const currentX=point.x+markerOffset[0],currentY=point.y+markerOffset[1];
+  // panBy moves screen features opposite to its delta.
+  const shiftX=currentX-targetX,shiftY=currentY-desiredY;
+  if(Math.abs(shiftX)>1||Math.abs(shiftY)>1)
+   map.panBy([shiftX,shiftY],{duration:300,essential:true});
+  // Make space on very short screens without clipping the popup.
+  const availableCardHeight=Math.max(95,Math.floor(freeHeight-gap-28));
+  popupEl.style.setProperty('max-height',availableCardHeight+'px','important');
+  popupEl.style.overflow='visible';
+  const popupContent=popupEl.querySelector('.maplibregl-popup-content');
+  if(popupContent){
+   popupContent.style.setProperty('max-height',availableCardHeight+'px','important');
+   popupContent.style.overflow='auto';
+  }
  }));
  const popupForSelection=activeMapPopup;
  popupForSelection.on('close',()=>{if(activeMapPopup!==popupForSelection)return;setHoveredMapStory(null);activeMapPopup=null;mapOverlayOpen=false;selectedPlace=null;selectedSource=null;window.ifisNewsFeed.clearMapStories();info.replaceChildren();info.textContent='Nachrichten geografisch entdecken. Wähle einen Ort auf der Karte.';info.classList.remove('has-selection');updateSourceLinks()});
