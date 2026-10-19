@@ -81,7 +81,12 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 if($_SERVER['REQUEST_METHOD']!=='GET'){
  header('Allow: GET, POST');outJson(405,['error'=>'Methode nicht unterstützt.']);
 }
-$id=(string)($_GET['id']??'');
+$id=trim((string)($_GET['id']??''));
+// Some share targets append the human-readable share caption to the URL.
+// Accept that specific legacy suffix without relaxing the random 128-bit ID.
+if(preg_match('/^([a-f0-9]{32})\s+Artikelsammlung auf IFIS News$/Du',$id,$sharedLinkMatch)){
+ $id=$sharedLinkMatch[1];
+}
 if(!preg_match('/^[a-f0-9]{32}$/D',$id)){
  http_response_code(404);header('Content-Type: text/plain; charset=utf-8');echo 'Im Link fehlt eine gültige Sammlungs-ID. Bitte den vollständigen Teilen-Link einschließlich ?id=… öffnen.';exit;
 }
