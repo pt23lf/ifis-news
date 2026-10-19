@@ -294,8 +294,8 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
 .projection-symbol-map::before,.projection-symbol-map::after{content:"";position:absolute;top:0;bottom:0;width:2px;background:currentColor}
 .projection-symbol-map::before{left:7px}.projection-symbol-map::after{right:7px}
 .projection-symbol-globe{border:2px solid currentColor;border-radius:50%}
-.projection-symbol-globe::before{content:"";position:absolute;inset:4px;border:2px solid currentColor;border-radius:50%}
-.projection-symbol-globe::after{content:"";position:absolute;top:10px;left:0;right:0;border-top:2px solid currentColor}
+.projection-symbol-globe::before{content:"";position:absolute;inset:4px;background:currentColor;border-radius:50%}
+
 .map-projection-toggle:focus-visible{outline:2px solid currentColor;outline-offset:3px}
 .globe-view .globe-legend{max-width:min(320px,calc(100% - 24px))}
 .globe-view .globe-legend-line:has(#mapTimeRange){display:grid;grid-template-columns:auto minmax(100px,1fr) auto;align-items:center;gap:9px;white-space:nowrap}
@@ -669,7 +669,7 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
  <span><strong><?= $lastImportCount===null?'–':number_format($lastImportCount,0,',','.') ?></strong> neu beim letzten Import</span>
  <span>Letzter Import: <strong><?=esc($lastImportShown)?></strong><?= $lastImportShown!=='–'?' Uhr':'' ?></span>
  </div>
-<div class="globe-view" id="globeView"><div id="newsGlobe"></div><svg id="globeConnector" class="globe-connector" aria-hidden="true"><path id="globeConnectorPath"></path><circle id="globeConnectorEnd" r="4"></circle></svg><details class="globe-legend" id="mapLegend"><summary class="globe-legend-heading">Karte einstellen</summary><div class="map-projection-header-control"><button id="mapProjectionToggle" type="button" class="map-projection-toggle" title="Flache Karte anzeigen" aria-label="Flache Karte anzeigen" aria-pressed="false"><span class="projection-symbol projection-symbol-map" aria-hidden="true"></span></button></div>
+<div class="globe-view" id="globeView"><div id="newsGlobe"></div><svg id="globeConnector" class="globe-connector" aria-hidden="true"><path id="globeConnectorPath"></path><circle id="globeConnectorEnd" r="4"></circle></svg><details class="globe-legend" id="mapLegend"><summary class="globe-legend-heading">Karte einstellen</summary><div class="map-projection-header-control"><button id="mapProjectionToggle" type="button" class="map-projection-toggle" title="Flache Karte anzeigen" aria-label="Flache Karte anzeigen" aria-pressed="false"><span class="projection-symbol projection-symbol-globe" aria-hidden="true"></span></button></div>
 <div class="map-legend-content">
  <section class="map-legend-section" aria-label="Zeitraum">
   <div class="map-legend-section-title">Zeitraum <output id="mapTimeValue" for="mapTimeRange">24 h</output></div>
@@ -1378,14 +1378,14 @@ function rotateMap(timestamp){
 mapAutoRotate.addEventListener('change',()=>rememberMapPreference('rotation',mapAutoRotate.value));
 window.requestAnimationFrame(rotateMap);
 let flatProjection=incomingMapParams.get('projection')==='flat';
-if(flatProjection){const control=document.getElementById('mapProjectionToggle');control.setAttribute('aria-pressed','true');control.title='Globus anzeigen';control.setAttribute('aria-label','Globus anzeigen');control.querySelector('.projection-symbol').className='projection-symbol projection-symbol-globe';}
+if(flatProjection){const control=document.getElementById('mapProjectionToggle');control.setAttribute('aria-pressed','true');control.title='Globus anzeigen';control.setAttribute('aria-label','Globus anzeigen');control.querySelector('.projection-symbol').className='projection-symbol projection-symbol-map';}
 document.getElementById('mapProjectionToggle').addEventListener('click',event=>{event.preventDefault();event.stopPropagation();
  flatProjection=!flatProjection;
  const control=document.getElementById('mapProjectionToggle');
  control.setAttribute('aria-pressed',String(flatProjection));
  control.title=flatProjection?'Globus anzeigen':'Flache Karte anzeigen';
  control.setAttribute('aria-label',flatProjection?'Globus anzeigen':'Flache Karte anzeigen');
- control.querySelector('.projection-symbol').className='projection-symbol '+(flatProjection?'projection-symbol-globe':'projection-symbol-map');
+ control.querySelector('.projection-symbol').className='projection-symbol '+(flatProjection?'projection-symbol-map':'projection-symbol-globe');
  if(map){try{map.setProjection({type:flatProjection?'mercator':'globe'});}catch(e){console.warn('Kartenprojektion konnte nicht gewechselt werden',e)}updateMapReadState();updateConnector();}
 });
 const sourceImprintAudit=<?=json_encode($sourceImprintAudit,JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_UNESCAPED_UNICODE)?>;
