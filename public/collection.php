@@ -67,6 +67,11 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
    @unlink($file);
    outJson(503,['error'=>'Speichern fehlgeschlagen.']);
   }
+  clearstatcache(true,$file);
+  if(!is_file($file)||!is_readable($file)||!is_array(json_decode((string)@file_get_contents($file),true))){
+   @unlink($file);
+   outJson(503,['error'=>'Die gespeicherte Sammlung konnte nicht wieder eingelesen werden.']);
+  }
   outJson(201,['url'=>'https://news.ifis.net/collection.php?id='.$id,'id'=>$id,'count'=>count($articles)]);
  }catch(Throwable $e){
   error_log('IFIS collection: '.$e->getMessage());
@@ -78,11 +83,11 @@ if($_SERVER['REQUEST_METHOD']!=='GET'){
 }
 $id=(string)($_GET['id']??'');
 if(!preg_match('/^[a-f0-9]{32}$/D',$id)){
- http_response_code(404);echo 'Sammlung nicht gefunden.';exit;
+ http_response_code(404);header('Content-Type: text/plain; charset=utf-8');echo 'Im Link fehlt eine gültige Sammlungs-ID. Bitte den vollständigen Teilen-Link einschließlich ?id=… öffnen.';exit;
 }
 $file=$directory.'/'.$id.'.json';
 if(!is_file($file)){
- http_response_code(404);echo 'Sammlung nicht gefunden.';exit;
+ http_response_code(404);header('Content-Type: text/plain; charset=utf-8');echo 'Die gespeicherte Artikelsammlung ist nicht vorhanden. Bitte überprüfen, ob der vollständige Link benutzt wurde und ob der Sammlungsspeicher auf dem Server erhalten geblieben ist.';exit;
 }
 $data=json_decode((string)file_get_contents($file),true);
 if(!is_array($data)||!isset($data['articles'])||!is_array($data['articles'])){
