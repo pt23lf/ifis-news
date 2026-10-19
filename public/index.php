@@ -496,6 +496,11 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
   overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
  .globe-view .marker-article-overlay summary{font-size:13px;padding-right:28px}
 }
+
+.globe-view .marker-collection-share{display:flex;flex-direction:column;gap:4px;margin:8px 0 10px}
+.globe-view .collection-share-button{border:1px solid var(--line);border-radius:9px;background:var(--soft);color:var(--text);font-size:12px;font-weight:650;padding:9px 12px;text-align:center;cursor:pointer}
+.globe-view .collection-share-button:hover,.globe-view .collection-share-button:focus-visible{border-color:var(--accent);color:var(--accent)}
+.globe-view .marker-collection-share small{font-size:11px;overflow-wrap:anywhere;color:var(--muted)}
 /* The icon popup and the filtered feed below the map replace the redundant bottom-left map list. */
 .globe-view #globeInfo{display:none!important}
 </style></head><body>
@@ -876,7 +881,35 @@ document.addEventListener('pointerdown',event=>{
  if(target.closest('.marker-article-popup,.globe-marker,.globe-source,#mapLegend,#stories'))return;
  activeMapPopup.remove();
 });
-function showMarkerArticles(coordinates,title,articles,routePoints=[],description=''){
+function collectionShareUrl(selection){
+ const url=new URL(location.href);
+ url.searchParams.set('map','1');
+ url.searchParams.set('collection',selection.kind);
+ url.searchParams.set('name',selection.name);
+ url.searchParams.set('hours',document.getElementById('mapTimeRange').value);
+ url.hash='';
+ return url.href;
+}
+async function shareNewsCollection(selection,feedback){
+ const link=collectionShareUrl(selection);
+ const title=selection.name+' · '+(selection.kind==='event'?'Ereignisort':'Quellenort')+' · IFIS News';
+ if(navigator.share){
+  try{await navigator.share({title,text:'Artikelsammlung auf IFIS News',url:link});return}
+  catch(error){if(error?.name==='AbortError')return}
+ }
+ try{
+  if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(link);
+  else{
+   const field=document.createElement('textarea');field.value=link;field.style.position='fixed';field.style.opacity='0';
+   document.body.append(field);field.select();const success=document.execCommand('copy');field.remove();
+   if(!success)throw Error('Kopieren nicht unterstützt');
+  }
+  feedback.textContent='Link zur Artikelsammlung kopiert';
+ }catch(error){
+  feedback.textContent='Link markieren und kopieren: '+link;
+ }
+}
+function showMarkerArticles(coordinates,title,articles,routePoints=[],description='',shareSelection=null){
  articles=[...articles].sort((a,b)=>(Date.parse(b.querySelector('time')?.getAttribute('datetime')||'')||0)-(Date.parse(a.querySelector('time')?.getAttribute('datetime')||'')||0));
  setHoveredMapStory(null);
  if(activeMapPopup){const previous=activeMapPopup;activeMapPopup=null;previous.remove();}
@@ -892,7 +925,16 @@ function showMarkerArticles(coordinates,title,articles,routePoints=[],descriptio
  const list=document.createElement('div');list.className='marker-article-list';
  if(articles.length)articles.slice(0,40).forEach(story=>appendMapArticle(list,story));
  else{const empty=document.createElement('p');empty.textContent='Keine zugeordneten Artikel in der aktuell geladenen Liste. Bitte Zeitraum oder Nachrichtenansicht erweitern.';list.append(empty);}
- details.append(list);wrapper.append(details);
+ details.append(list);
+ if(shareSelection){
+  const controls=document.createElement('div');controls.className='marker-collection-share';
+  const share=document.createElement('button');share.type='button';share.className='collection-share-button';
+  share.textContent='↗ Artikelsammlung teilen';
+  const feedback=document.createElement('small');feedback.setAttribute('role','status');
+  share.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();shareNewsCollection(shareSelection,feedback)});
+  controls.append(share,feedback);wrapper.append(controls);
+ }
+ wrapper.append(details);
  // Prefer above/below the selected marker on narrow touchscreens, leaving the
  // actual point uncovered. The popup body scrolls internally if space is scarce.
  const mobilePopup=window.matchMedia('(max-width:720px)').matches;
@@ -1263,7 +1305,7 @@ groups.forEach((group,place)=>{
   const selectedSources=new Set(selected.map(story=>story.dataset.source).filter(Boolean));
   selectedPlace=place;selectedSource=null;updateSourceLinks();
   const routePoints=[...new Map(selected.map(story=>sourceFor(story)).filter(Boolean).map(src=>[src.name,src.coordinates])).values()];
-  showMarkerArticles([group.loc[2],group.loc[1]],place,selected,routePoints,selectedSources.size+' Quellen');
+  showMarkerArticles([group.loc[2],group.loc[1]],place,selected,routePoints,selectedSources.size+' Quellen',{kind:'event',name:place});
  });
  markers.push(new maplibregl.Marker({element:dot,anchor:'center'}).setLngLat([group.loc[2],group.loc[1]]).addTo(map));
 });
@@ -1284,7 +1326,7 @@ sources.forEach(source=>{
   const visitedPlaces=new Set(selected.map(story=>story.dataset.place).filter(Boolean));
   selectedPlace=null;selectedSource=source.name;updateSourceLinks();
   const points=selected.map(story=>groups.get(story.dataset.place)?.loc).filter(Boolean).map(loc=>[loc[2],loc[1]]);
-  showMarkerArticles(source.coordinates,source.name,selected,points,visitedPlaces.size+' Ereignisorte');
+  showMarkerArticles(source.coordinates,source.name,selected,points,visitedPlaces.size+' Ereignisorte',{kind:'source',name:source.name});
  });
  markers.push(new maplibregl.Marker({element:dot,anchor:'center'}).setLngLat(source.coordinates).addTo(map));
 });
@@ -1308,7 +1350,7 @@ function choose(place){
  const group=groups.get(place);if(!group||!map)return;
  selectedPlace=place;selectedSource=null;updateSourceLinks();
  const reportingSources=new Set(group.stories.map(story=>story.dataset.source).filter(Boolean));
- showMarkerArticles([group.loc[2],group.loc[1]],place,group.stories,[...new Map(group.stories.map(story=>sourceFor(story)).filter(Boolean).map(src=>[src.name,src.coordinates])).values()],reportingSources.size+' Quellen');
+ showMarkerArticles([group.loc[2],group.loc[1]],place,group.stories,[...new Map(group.stories.map(story=>sourceFor(story)).filter(Boolean).map(src=>[src.name,src.coordinates])).values()],reportingSources.size+' Quellen',{kind:'event',name:place});
 }
 // The selected routes remain visible until the same marker is clicked again.
 // Route selection is controlled by its origin marker.
