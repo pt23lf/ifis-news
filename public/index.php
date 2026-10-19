@@ -251,6 +251,11 @@ details[open] > summary:not([aria-label="Weitere Optionen"])::after{
 .globe-view .map-projection-header-control .projection-symbol{width:23px;height:23px}
 .globe-view .globe-legend-heading{padding-right:104px!important;min-height:55px;box-sizing:border-box}
 .globe-view .globe-legend-heading::after{right:17px!important}
+
+/* Flat map uses restrained pin sizes; do not affect globe sizing. */
+.globe-view.is-flat-map .globe-marker{width:calc(16px * var(--marker-scale,1))!important;height:calc(16px * var(--marker-scale,1))!important;font-size:calc(8px * var(--marker-scale,1))!important;border-width:1.5px!important}
+.globe-view.is-flat-map .globe-source{width:calc(15px * var(--marker-scale,1))!important;height:calc(15px * var(--marker-scale,1))!important;font-size:calc(8px * var(--marker-scale,1))!important;border-width:1.5px!important}
+.globe-view.is-flat-map .globe-source-batch{width:calc(19px * var(--marker-scale,1))!important;height:calc(19px * var(--marker-scale,1))!important;font-size:calc(9px * var(--marker-scale,1))!important}
 </style><link href="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.css" rel="stylesheet"><style>.globe-view{display:none;position:relative;height:min(72vh,680px);min-height:380px;border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:16px}.globe-view.open{display:block}.globe-view #newsGlobe{width:100%;height:100%}.globe-info{position:absolute;left:12px;bottom:12px;background:var(--bg);padding:12px;border-radius:10px;max-width:320px;box-shadow:0 2px 12px #0002;font-size:13px}.globe-toggle{border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:20px;padding:6px 12px;white-space:nowrap}.globe-toggle.active{background:var(--hover);color:var(--accent)}.geo-link{font-size:12px;color:var(--accent);cursor:pointer;border:0;background:none;padding:3px 0}.trust-tools{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:9px;font-size:12px;color:var(--muted)}.trust{border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text);padding:4px}.ifis-related a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}.globe-marker{background:#0d9488;color:white;border:2px solid white;border-radius:50%;width:29px;height:29px;display:grid;place-items:center;font-size:11px;box-shadow:0 1px 7px #0005;cursor:pointer}.globe-marker .constructive-count{position:absolute;right:-10px;top:-10px;background:#177245;color:white;border:1px solid white;border-radius:10px;min-width:20px;height:19px;padding:0 3px;display:grid;place-items:center;font-size:10px;font-weight:700;line-height:1}.globe-source{background:#e59a35;color:#17212e;border:2px solid white;border-radius:50%;width:25px;height:25px;display:grid;place-items:center;font-size:13px;cursor:pointer;box-shadow:0 1px 7px #0005}.globe-legend{position:absolute;right:12px;top:12px;background:var(--bg);padding:8px 10px;border-radius:9px;font-size:12px;z-index:2}.globe-legend span{margin-left:9px}.globe-view .globe-legend{left:auto;right:12px;top:12px;width:max-content;max-width:min(265px,calc(100% - 24px));padding:12px 14px;display:flex;flex-direction:column;align-items:stretch;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:12px;box-shadow:0 3px 12px #0002;font-size:12px;line-height:1.35}
 .globe-view .globe-legend-line{display:flex;align-items:center;gap:9px;margin:0;white-space:normal}
 .globe-view .globe-legend-line input{margin:0 2px 0 0;flex-shrink:0}
@@ -1540,6 +1545,16 @@ function renderFlightArcs(){
  const limb=map.project([horizonLon,horizonLat*180/Math.PI]);
  const projectedRadius=Math.hypot(limb.x-globeCentre.x,limb.y-globeCentre.y);
  const globeRadius=Number.isFinite(projectedRadius)&&projectedRadius>8?projectedRadius:Math.min(width,height)*.48;
+ // Keep elevated arcs within the actual visible globe disc, independently of
+ // the altitude-based back-side visibility test.
+ if(!flatProjection){
+  const clip=document.createElementNS('http://www.w3.org/2000/svg','clipPath');
+  clip.setAttribute('id','ifis-flight-visible-disc');
+  const circle=document.createElementNS('http://www.w3.org/2000/svg','circle');
+  circle.setAttribute('cx',String(globeCentre.x));circle.setAttribute('cy',String(globeCentre.y));
+  circle.setAttribute('r',String(Math.max(1,globeRadius)));
+  clip.append(circle);flightLayer.append(clip);
+ }
  const center=map.getCenter(),rad=Math.PI/180;
  const facing=coordinates=>Math.sin(center.lat*rad)*Math.sin(coordinates[1]*rad)+Math.cos(center.lat*rad)*Math.cos(coordinates[1]*rad)*Math.cos((coordinates[0]-center.lng)*rad);
  const unique=new Set();
@@ -1601,6 +1616,7 @@ function renderFlightArcs(){
    curve.setAttribute('stroke-width',flatProjection?(hoveredMapStory?'3.1':'1.7'):(hoveredMapStory?'2':'1.05'));
    curve.setAttribute('stroke-opacity',flatProjection?(hoveredMapStory?'.96':'.82'):(hoveredMapStory?'.88':'.54'));
    curve.setAttribute('stroke-linecap','round');curve.setAttribute('stroke-linejoin','round');
+   if(!flatProjection)curve.setAttribute('clip-path','url(#ifis-flight-visible-disc)');
    flightLayer.append(curve);
   });
  });
