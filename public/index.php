@@ -241,6 +241,9 @@ details[open] > summary:not([aria-label="Weitere Optionen"])::after{
 .feedhead:has(#shareSaved:not([hidden])){justify-content:flex-start!important;align-items:center!important;gap:12px!important}
 .globe-view .globe-legend-heading{gap:16px!important;padding-right:28px!important}
 .globe-view .globe-legend-heading::after{right:10px!important}
+
+.globe-view .globe-marker{width:calc(25px * var(--marker-scale,1))!important;height:calc(25px * var(--marker-scale,1))!important;font-size:calc(10px * var(--marker-scale,1))!important;min-width:0!important;min-height:0!important;border-radius:50%!important}
+.globe-view .globe-source{width:calc(23px * var(--marker-scale,1))!important;height:calc(23px * var(--marker-scale,1))!important;font-size:calc(10px * var(--marker-scale,1))!important;min-width:0!important;min-height:0!important;border-radius:50%!important}
 </style><link href="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.css" rel="stylesheet"><style>.globe-view{display:none;position:relative;height:min(72vh,680px);min-height:380px;border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:16px}.globe-view.open{display:block}.globe-view #newsGlobe{width:100%;height:100%}.globe-info{position:absolute;left:12px;bottom:12px;background:var(--bg);padding:12px;border-radius:10px;max-width:320px;box-shadow:0 2px 12px #0002;font-size:13px}.globe-toggle{border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:20px;padding:6px 12px;white-space:nowrap}.globe-toggle.active{background:var(--hover);color:var(--accent)}.geo-link{font-size:12px;color:var(--accent);cursor:pointer;border:0;background:none;padding:3px 0}.trust-tools{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:9px;font-size:12px;color:var(--muted)}.trust{border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text);padding:4px}.ifis-related a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}.globe-marker{background:#0d9488;color:white;border:2px solid white;border-radius:50%;width:29px;height:29px;display:grid;place-items:center;font-size:11px;box-shadow:0 1px 7px #0005;cursor:pointer}.globe-marker .constructive-count{position:absolute;right:-10px;top:-10px;background:#177245;color:white;border:1px solid white;border-radius:10px;min-width:20px;height:19px;padding:0 3px;display:grid;place-items:center;font-size:10px;font-weight:700;line-height:1}.globe-source{background:#e59a35;color:#17212e;border:2px solid white;border-radius:50%;width:25px;height:25px;display:grid;place-items:center;font-size:13px;cursor:pointer;box-shadow:0 1px 7px #0005}.globe-legend{position:absolute;right:12px;top:12px;background:var(--bg);padding:8px 10px;border-radius:9px;font-size:12px;z-index:2}.globe-legend span{margin-left:9px}.globe-view .globe-legend{left:auto;right:12px;top:12px;width:max-content;max-width:min(265px,calc(100% - 24px));padding:12px 14px;display:flex;flex-direction:column;align-items:stretch;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:12px;box-shadow:0 3px 12px #0002;font-size:12px;line-height:1.35}
 .globe-view .globe-legend-line{display:flex;align-items:center;gap:9px;margin:0;white-space:normal}
 .globe-view .globe-legend-line input{margin:0 2px 0 0;flex-shrink:0}
@@ -683,6 +686,7 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
 <script src="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.js"></script><script>
 (()=>{'use strict';
 window.ifisReferenceArticles=<?=json_encode($ifisIndex,JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_UNESCAPED_UNICODE|JSON_INVALID_UTF8_SUBSTITUTE)?>;
+let map=null;
 const prefix='ifis-news-v1-',load=(k)=>{try{return JSON.parse(localStorage.getItem(prefix+k)||'[]')}catch{return []}},store=(k,v)=>{try{localStorage.setItem(prefix+k,JSON.stringify(v))}catch{}};
 let saved=load('saved'),hidden=load('hidden'),mode='all',cat='Alle';
 const stories=[...document.querySelectorAll('.story')],search=document.getElementById('search'),empty=document.getElementById('empty'),noMatches=document.getElementById('noMatches'),title=document.getElementById('feedTitle');
@@ -902,7 +906,7 @@ const locations=[
 ['Nigeria',9,8,['nigeria','nigerian']],
 ['Indonesien',-2,118,['indonesia','indonesien','jakarta']]
 ];
-const stories=[...document.querySelectorAll('.story')],btn=document.getElementById('globeToggle'),panel=document.getElementById('globeView'),info=document.getElementById('globeInfo');let map=null,markers=[];const nightToggle=document.getElementById('nightToggle');
+const stories=[...document.querySelectorAll('.story')],btn=document.getElementById('globeToggle'),panel=document.getElementById('globeView'),info=document.getElementById('globeInfo');let markers=[];const nightToggle=document.getElementById('nightToggle');
 const normalize=t=>' '+t.toLocaleLowerCase()+' ';
 const freshness=(group)=>{
  const timestamps=group.stories.map(story=>{
