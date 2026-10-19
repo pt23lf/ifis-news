@@ -290,6 +290,24 @@ details[open] > summary:not([aria-label="Weitere Optionen"])::after{
 .globe-view .map-legend-shell:not(:has(.globe-legend[open])) .globe-legend-heading{padding:10px 88px 10px 14px!important;min-height:46px!important;font-size:14px!important}
 .globe-view .map-legend-shell:not(:has(.globe-legend[open]))>.map-projection-header-control{top:4px!important;right:35px!important}
 .globe-view .map-legend-shell:not(:has(.globe-legend[open])) .globe-legend-heading::after{right:12px!important}
+
+/* Both legend states share identical typography and header geometry. */
+.globe-view .map-legend-shell{width:min(300px,calc(100% - 24px))!important}
+.globe-view .map-legend-shell:has(.globe-legend[open]){width:min(320px,calc(100% - 24px))!important}
+.globe-view .map-legend-shell .globe-legend-heading,
+.globe-view .map-legend-shell:not(:has(.globe-legend[open])) .globe-legend-heading{
+ font-size:16px!important;font-weight:600!important;line-height:1.3!important;
+ min-height:52px!important;padding:13px 90px 13px 16px!important;
+ display:flex!important;align-items:center!important;
+}
+.globe-view .map-legend-shell>.map-projection-header-control,
+.globe-view .map-legend-shell:not(:has(.globe-legend[open]))>.map-projection-header-control{
+ top:9px!important;right:43px!important;
+}
+.globe-view .map-legend-shell .globe-legend-heading::after,
+.globe-view .map-legend-shell:not(:has(.globe-legend[open])) .globe-legend-heading::after{
+ right:15px!important;
+}
 </style><link href="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.css" rel="stylesheet"><style>.globe-view{display:none;position:relative;height:min(72vh,680px);min-height:380px;border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:16px}.globe-view.open{display:block}.globe-view #newsGlobe{width:100%;height:100%}.globe-info{position:absolute;left:12px;bottom:12px;background:var(--bg);padding:12px;border-radius:10px;max-width:320px;box-shadow:0 2px 12px #0002;font-size:13px}.globe-toggle{border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:20px;padding:6px 12px;white-space:nowrap}.globe-toggle.active{background:var(--hover);color:var(--accent)}.geo-link{font-size:12px;color:var(--accent);cursor:pointer;border:0;background:none;padding:3px 0}.trust-tools{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:9px;font-size:12px;color:var(--muted)}.trust{border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text);padding:4px}.ifis-related a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}.globe-marker{background:#0d9488;color:white;border:2px solid white;border-radius:50%;width:29px;height:29px;display:grid;place-items:center;font-size:11px;box-shadow:0 1px 7px #0005;cursor:pointer}.globe-marker .constructive-count{position:absolute;right:-10px;top:-10px;background:#177245;color:white;border:1px solid white;border-radius:10px;min-width:20px;height:19px;padding:0 3px;display:grid;place-items:center;font-size:10px;font-weight:700;line-height:1}.globe-source{background:#e59a35;color:#17212e;border:2px solid white;border-radius:50%;width:25px;height:25px;display:grid;place-items:center;font-size:13px;cursor:pointer;box-shadow:0 1px 7px #0005}.globe-legend{position:absolute;right:12px;top:12px;background:var(--bg);padding:8px 10px;border-radius:9px;font-size:12px;z-index:2}.globe-legend span{margin-left:9px}.globe-view .globe-legend{left:auto;right:12px;top:12px;width:max-content;max-width:min(265px,calc(100% - 24px));padding:12px 14px;display:flex;flex-direction:column;align-items:stretch;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:12px;box-shadow:0 3px 12px #0002;font-size:12px;line-height:1.35}
 .globe-view .globe-legend-line{display:flex;align-items:center;gap:9px;margin:0;white-space:normal}
 .globe-view .globe-legend-line input{margin:0 2px 0 0;flex-shrink:0}
@@ -1611,24 +1629,19 @@ function renderFlightArcs(){
    // A flat projection uses a straight, surface-level connection.
    // On the globe the arc is lifted in screen space, away from the
    // source-to-target chord; front-facing samples are masked at the limb.
-   const peak=flatProjection?0:Math.min(globeRadius*.35,globeRadius*(.075+.27*Math.min(1,angle/Math.PI)));
-   const chordX=b.x-a.x,chordY=b.y-a.y,chordLength=Math.hypot(chordX,chordY)||1;
-   let normalX=-chordY/chordLength,normalY=chordX/chordLength;
-   const midpointX=(a.x+b.x)/2-globeCentre.x,midpointY=(a.y+b.y)/2-globeCentre.y;
-   if(normalX*midpointX+normalY*midpointY<0){normalX=-normalX;normalY=-normalY;}
-   // On the globe, use the projected endpoints as the chord and a single
-   // sinusoidal elevation. Surface-projected intermediate positions previously
-   // flattened the bow and created broken/looping shapes near the horizon.
+   // Flat map: straight segment. Globe: an upward parabolic arch with a
+   // moderate screen-space rise; never bend sideways around the planet.
+   const chordX=b.x-a.x,chordY=b.y-a.y;
+   const distance=Math.hypot(chordX,chordY);
+   const peak=flatProjection?0:Math.min(globeRadius*.19,Math.max(12,distance*.23));
    const sampled=flatProjection
     ?[{t:0,x:a.x,y:a.y,visible:true},{t:1,x:b.x,y:b.y,visible:true}]
     :points.map(({t,coordinates})=>{
-      const elevation=peak*Math.sin(Math.PI*t);
-      const surface=map.project(coordinates);
+      const rise=peak*4*t*(1-t);
       const face=facing(coordinates);
-      const allowance=elevation>0?-Math.sqrt(Math.max(0,1-1/Math.pow(1+elevation/globeRadius,2))):0;
-      return {t,x:a.x+chordX*t+normalX*elevation,
-       y:a.y+chordY*t+normalY*elevation,
-       visible:Number.isFinite(surface.x)&&face>=allowance};
+      const height=rise/globeRadius;
+      const allowance=height>0?-Math.sqrt(Math.max(0,1-1/((1+height)*(1+height)))):0;
+      return {t,x:a.x+chordX*t,y:a.y+chordY*t-rise,visible:face>=allowance};
      });
    // Keep endpoints at the visible edges of the marker circles.
    const radiusScale=Math.max(.65,Math.min(1.65,.78+map.getZoom()*.14));
