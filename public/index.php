@@ -1513,6 +1513,20 @@ function renderFlightArcs(){
  const limb=map.project([horizonLon,horizonLat*180/Math.PI]);
  const projectedRadius=Math.hypot(limb.x-globeCentre.x,limb.y-globeCentre.y);
  const globeRadius=Number.isFinite(projectedRadius)&&projectedRadius>8?projectedRadius:Math.min(width,height)*.48;
+ // Mask against the projected earth silhouette. Altitude remains visible
+ // within the globe, but no SVG stroke can escape into the surrounding sky.
+ // The clip is rebuilt on each repaint after flightLayer.replaceChildren().
+ if(!flatProjection){
+  const clip=document.createElementNS('http://www.w3.org/2000/svg','clipPath');
+  clip.setAttribute('id','ifis-news-flight-limb');
+  clip.setAttribute('clipPathUnits','userSpaceOnUse');
+  const disc=document.createElementNS('http://www.w3.org/2000/svg','circle');
+  disc.setAttribute('cx',String(globeCentre.x));
+  disc.setAttribute('cy',String(globeCentre.y));
+  disc.setAttribute('r',String(Math.max(1,globeRadius-1.5)));
+  clip.append(disc);
+  flightLayer.append(clip);
+ }
  const center=map.getCenter(),rad=Math.PI/180;
  const facing=coordinates=>Math.sin(center.lat*rad)*Math.sin(coordinates[1]*rad)+Math.cos(center.lat*rad)*Math.cos(coordinates[1]*rad)*Math.cos((coordinates[0]-center.lng)*rad);
  const unique=new Set();
@@ -1573,6 +1587,7 @@ function renderFlightArcs(){
    curve.setAttribute('stroke-width',flatProjection?(hoveredMapStory?'3.1':'1.7'):(hoveredMapStory?'2':'1.05'));
    curve.setAttribute('stroke-opacity',flatProjection?(hoveredMapStory?'.96':'.82'):(hoveredMapStory?'.88':'.54'));
    curve.setAttribute('stroke-linecap','round');curve.setAttribute('stroke-linejoin','round');
+   if(!flatProjection)curve.setAttribute('clip-path','url(#ifis-news-flight-limb)');
    flightLayer.append(curve);
   });
  });
