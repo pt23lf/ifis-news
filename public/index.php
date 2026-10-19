@@ -1600,24 +1600,19 @@ function renderFlightArcs(){
  const size=map.getContainer(),width=size.clientWidth,height=size.clientHeight;
  flightLayer.setAttribute('viewBox','0 0 '+width+' '+height);
  const globeCentre=map.project(map.getCenter());
- // Derive the visible limb from MapLibre's current globe projection, rather
- // than assuming a fixed pixel radius (which breaks on zoom and resize).
- const cameraCenter=map.getCenter(),theta=Math.PI/2-0.002,phi=cameraCenter.lat*Math.PI/180;
- const horizonLat=Math.asin(Math.sin(phi)*Math.cos(theta));
- const horizonLon=cameraCenter.lng+Math.atan2(Math.sin(theta),Math.cos(phi)*Math.cos(theta))*180/Math.PI;
- const limb=map.project([horizonLon,horizonLat*180/Math.PI]);
- const projectedRadius=Math.hypot(limb.x-globeCentre.x,limb.y-globeCentre.y);
- const globeRadius=Number.isFinite(projectedRadius)&&projectedRadius>8?projectedRadius:Math.min(width,height)*.48;
- // Keep elevated arcs within the actual visible globe disc, independently of
- // the altitude-based back-side visibility test.
- if(!flatProjection){
-  const clip=document.createElementNS('http://www.w3.org/2000/svg','clipPath');
-  clip.setAttribute('id','ifis-flight-visible-disc');
-  const circle=document.createElementNS('http://www.w3.org/2000/svg','circle');
-  circle.setAttribute('cx',String(globeCentre.x));circle.setAttribute('cy',String(globeCentre.y));
-  circle.setAttribute('r',String(Math.max(1,globeRadius)));
-  clip.append(circle);flightLayer.append(clip);
- }
+ // Restore the original flight-arc scale. Do not infer the visible globe
+ // silhouette from one near-horizon point: MapLibre uses perspective there.
+ const globeRadius=Math.min(width,height)*.48;
+ // MapLibre knows the real on-screen horizon, including zoom and camera angle.
+ // Keep a circular fallback for implementations without this transform method.
+ const pointOnGlobe=(x,y)=>{
+  if(!Number.isFinite(x)||!Number.isFinite(y))return false;
+  if(flatProjection)return true;
+  if(typeof map.transform?.isPointOnMapSurface==='function'){
+   try{return map.transform.isPointOnMapSurface({x,y});}catch(error){}
+  }
+  return Math.hypot(x-globeCentre.x,y-globeCentre.y)<=globeRadius;
+ };
  const center=map.getCenter(),rad=Math.PI/180;
  const facing=coordinates=>Math.sin(center.lat*rad)*Math.sin(coordinates[1]*rad)+Math.cos(center.lat*rad)*Math.cos(coordinates[1]*rad)*Math.cos((coordinates[0]-center.lng)*rad);
  const unique=new Set();
@@ -1660,7 +1655,7 @@ function renderFlightArcs(){
     // the globe hides them only when its curvature actually occludes their altitude.
     const relativeHeight=flatProjection?0:(peak/globeRadius)*Math.sin(Math.PI*t);
     const threshold=relativeHeight>0?-Math.sqrt(Math.max(0,1-1/Math.pow(1+relativeHeight,2))):0;
-    return {x,y,visible:flatProjection||facing(coordinates)>threshold};
+    return {x,y,visible:flatProjection||(facing(coordinates)>threshold&&pointOnGlobe(x,y))};
    });
    // Keep endpoints at the visible edges of the marker circles.
    const radiusScale=Math.max(.65,Math.min(1.65,.78+map.getZoom()*.14));
@@ -1673,10 +1668,37 @@ function renderFlightArcs(){
    first.y=a.y+(fNext.y-a.y)/Math.max(1,Math.hypot(fNext.x-a.x,fNext.y-a.y))*Math.min(sourceRadius,fd*.85);
    last.x=b.x+(lPrev.x-b.x)/Math.max(1,Math.hypot(lPrev.x-b.x,lPrev.y-b.y))*Math.min(eventRadius,ld*.85);
    last.y=b.y+(lPrev.y-b.y)/Math.max(1,Math.hypot(lPrev.x-b.x,lPrev.y-b.y))*Math.min(eventRadius,ld*.85);
-   let d='',drawing=false;
-   sampled.forEach(p=>{
-    if(!p.visible||!Number.isFinite(p.x)||!Number.isFinite(p.y)){drawing=false;return}
-    d+=(drawing?' L ':' M ')+p.x.toFixed(1)+' '+p.y.toFixed(1);drawing=true;
+   // Extend crossing segments to the true globe limb instead of stopping
+   // one sample short. Skip large jumps from back-hemisphere projections.
+   const edgePoint=(inside,outside)=>{
+    if(flatProjection||pointOnGlobe(outside.x,outside.y))return inside;
+    let a=inside,b=outside;
+    for(let i=0;i<11;i++){
+     const middle={x:(a.x+b.x)/2,y:(a.y+b.y)/2};
+     if(pointOnGlobe(middle.x,middle.y))a=middle;else b=middle;
+    }
+    return a;
+   };
+   const move=(point)=>' M '+point.x.toFixed(1)+' '+point.y.toFixed(1);
+   const line=(point)=>' L '+point.x.toFixed(1)+' '+point.y.toFixed(1);
+   let d='',drawing=false,previous=null;
+   sampled.forEach(point=>{
+    const valid=point.visible&&Number.isFinite(point.x)&&Number.isFinite(point.y);
+    const near=previous&&Number.isFinite(previous.x)&&Number.isFinite(previous.y)
+     &&Math.hypot(point.x-previous.x,point.y-previous.y)<globeRadius*.65;
+    if(valid){
+     if(!drawing){
+      if(near&&previous&&!previous.visible&&!flatProjection){
+       const edge=edgePoint(point,previous);
+       d+=move(edge)+line(point);
+      }else d+=move(point);
+     }else d+=line(point);
+     drawing=true;
+    }else{
+     if(drawing&&near&&!flatProjection)d+=line(edgePoint(previous,point));
+     drawing=false;
+    }
+    previous=point;
    });
    if(!d.trim())return;
    const curve=document.createElementNS('http://www.w3.org/2000/svg','path');
@@ -1685,7 +1707,6 @@ function renderFlightArcs(){
    curve.setAttribute('stroke-width',flatProjection?(hoveredMapStory?'3.1':'1.7'):(hoveredMapStory?'2':'1.05'));
    curve.setAttribute('stroke-opacity',flatProjection?(hoveredMapStory?'.96':'.82'):(hoveredMapStory?'.88':'.54'));
    curve.setAttribute('stroke-linecap','round');curve.setAttribute('stroke-linejoin','round');
-   if(!flatProjection)curve.setAttribute('clip-path','url(#ifis-flight-visible-disc)');
    flightLayer.append(curve);
   });
  });
