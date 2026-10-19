@@ -225,6 +225,16 @@ details[open] > summary:not([aria-label="Weitere Optionen"])::after{
  color:var(--muted);font-size:12px;line-height:1.5;padding:5px 0 9px;margin:0 0 5px;border-bottom:1px solid var(--line)}
 .news-import-strip strong{font-weight:650;color:var(--text);font-variant-numeric:tabular-nums}
 @media(max-width:720px){.news-import-strip{font-size:11px;gap:3px 12px;padding:3px 0 8px;margin:0 0 3px}}
+
+.news-share-trigger{background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--text);font-size:13px;padding:6px 11px;cursor:pointer}
+.news-share-trigger[hidden],.news-share-overlay[hidden]{display:none!important}
+.news-share-overlay{position:fixed;inset:0;z-index:1000;background:#0006;display:flex;align-items:center;justify-content:center;padding:16px}
+.news-share-dialog{background:var(--bg);color:var(--text);border:1px solid var(--line);width:min(350px,100%);padding:18px;border-radius:16px;box-shadow:0 12px 36px #0003}
+.news-share-header{display:flex;align-items:center;justify-content:space-between}.news-share-header button{border:0;background:transparent;color:inherit;font-size:24px;cursor:pointer}
+.news-share-dialog p{font-size:13px;color:var(--muted)}.news-share-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.news-share-grid button{font:inherit;font-size:13px;padding:10px;background:var(--soft);border:1px solid var(--line);border-radius:9px;color:inherit;cursor:pointer}
+#savedShareFeedback{display:block;margin-top:12px;color:var(--muted)}
+@media(max-width:600px){.news-share-overlay{align-items:flex-end;padding:0}.news-share-dialog{border-radius:16px 16px 0 0;width:100%;padding-bottom:calc(20px + env(safe-area-inset-bottom,0px))}}
 </style><link href="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.css" rel="stylesheet"><style>.globe-view{display:none;position:relative;height:min(72vh,680px);min-height:380px;border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:16px}.globe-view.open{display:block}.globe-view #newsGlobe{width:100%;height:100%}.globe-info{position:absolute;left:12px;bottom:12px;background:var(--bg);padding:12px;border-radius:10px;max-width:320px;box-shadow:0 2px 12px #0002;font-size:13px}.globe-toggle{border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:20px;padding:6px 12px;white-space:nowrap}.globe-toggle.active{background:var(--hover);color:var(--accent)}.geo-link{font-size:12px;color:var(--accent);cursor:pointer;border:0;background:none;padding:3px 0}.trust-tools{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:9px;font-size:12px;color:var(--muted)}.trust{border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text);padding:4px}.ifis-related a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}.globe-marker{background:#0d9488;color:white;border:2px solid white;border-radius:50%;width:29px;height:29px;display:grid;place-items:center;font-size:11px;box-shadow:0 1px 7px #0005;cursor:pointer}.globe-marker .constructive-count{position:absolute;right:-10px;top:-10px;background:#177245;color:white;border:1px solid white;border-radius:10px;min-width:20px;height:19px;padding:0 3px;display:grid;place-items:center;font-size:10px;font-weight:700;line-height:1}.globe-source{background:#e59a35;color:#17212e;border:2px solid white;border-radius:50%;width:25px;height:25px;display:grid;place-items:center;font-size:13px;cursor:pointer;box-shadow:0 1px 7px #0005}.globe-legend{position:absolute;right:12px;top:12px;background:var(--bg);padding:8px 10px;border-radius:9px;font-size:12px;z-index:2}.globe-legend span{margin-left:9px}.globe-view .globe-legend{left:auto;right:12px;top:12px;width:max-content;max-width:min(265px,calc(100% - 24px));padding:12px 14px;display:flex;flex-direction:column;align-items:stretch;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:12px;box-shadow:0 3px 12px #0002;font-size:12px;line-height:1.35}
 .globe-view .globe-legend-line{display:flex;align-items:center;gap:9px;margin:0;white-space:normal}
 .globe-view .globe-legend-line input{margin:0 2px 0 0;flex-shrink:0}
@@ -623,13 +633,13 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
 .globe-view #globeInfo{display:none!important}
 </style></head><body>
 <header class="topbar"><div class="topbar-inner"><a class="brand" href="?view=world"><strong>IFIS</strong></a><nav class="topnav" aria-label="Bereiche"><a href="?view=ifis&amp;map=0" class="<?= $view==='ifis'?'active':'' ?>" data-subtitle-de="Nachrichten mit Veränderungspotenzial" data-subtitle-en="News with potential for change">Potenzial</a><button class="globe-toggle" id="globeToggle" type="button" aria-pressed="false" data-subtitle-de="Nachrichten geografisch entdecken" data-subtitle-en="Explore news geographically">Karte</button><a href="?view=world&amp;map=0" class="<?= $view==='world'?'active':'' ?>" data-subtitle-de="Nachrichten aus aller Welt" data-subtitle-en="News from around the world">Weltlage</a></nav><button type="button" id="gridToggle" class="grid-toggle" title="Spaltenzahl ändern" aria-label="Spaltenzahl ändern"><svg class="grid-toggle-symbol" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="2.5" y="13.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="13.5" width="8" height="8" rx="1.3"/></svg><span id="gridCount">1</span></button><div class="top-actions"><button type="button" id="mobileSearchToggle" class="mobile-search-toggle" aria-label="Suche öffnen" aria-expanded="false" title="Nachrichten suchen"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg></button><input class="search" id="search" type="search" placeholder="Nachrichten durchsuchen …" aria-label="Nachrichten durchsuchen"></div></div></header>
-<div class="layout">
+<div id="savedShareOverlay" class="news-share-overlay" hidden><div class="news-share-dialog" role="dialog" aria-modal="true" aria-labelledby="savedShareHeading"><div class="news-share-header"><strong id="savedShareHeading">Gemerktliste teilen</strong><button id="savedShareClose" type="button" aria-label="Schließen">×</button></div><p>Die gemerkten Artikel als unveränderliche Sammlung teilen.</p><div class="news-share-grid"><button id="savedShareCopy" type="button">Link kopieren</button><button id="savedShareSystem" type="button">Teilen …</button><button id="savedShareEmail" type="button">E-Mail</button><button id="savedShareWhatsapp" type="button">WhatsApp</button></div><small id="savedShareFeedback" role="status"></small></div></div><div class="layout">
 
 <main id="main"><div class="news-import-strip" role="status" aria-label="Nachrichtenbestand und Aktualisierung">
  <span><strong><?= $articleTotal===null?'–':number_format($articleTotal,0,',','.') ?></strong> Artikel gesamt</span>
  <span><strong><?= $lastImportCount===null?'–':number_format($lastImportCount,0,',','.') ?></strong> neu beim letzten Import</span>
  <span>Letzter Import: <strong><?=esc($lastImportShown)?></strong><?= $lastImportShown!=='–'?' Uhr':'' ?></span>
- </div><div class="feedhead"><h1 id="feedTitle"><?= $view==='ifis'?'Potenzial':'Weltlage' ?></h1></div>
+ </div><div class="feedhead"><h1 id="feedTitle"><?= $view==='ifis'?'Potenzial':'Weltlage' ?></h1><button id="shareSaved" type="button" class="news-share-trigger" hidden aria-label="Gemerktliste teilen">↗ Teilen</button></div>
 <div class="globe-view" id="globeView"><div id="newsGlobe"></div><svg id="globeConnector" class="globe-connector" aria-hidden="true"><path id="globeConnectorPath"></path><circle id="globeConnectorEnd" r="4"></circle></svg><details class="globe-legend" id="mapLegend"><summary class="globe-legend-heading">Karte einstellen</summary>
 <div class="map-legend-content">
  <section class="map-legend-section" aria-label="Zeitraum">
@@ -727,7 +737,7 @@ empty.classList.toggle('hide',stories.length>0||mode!=='all'||cat!=='Alle'||!!se
 noMatches.classList.toggle('hide',count>0||(!stories.length&&mode==='all'&&cat==='Alle'&&!search.value));
 title.textContent=mode==='saved'?'☆':mode==='hidden'?'Ausgeblendet':cat==='Alle'?base:cat;
 title.classList.toggle('feed-title-saved',mode==='saved');
-title.setAttribute('aria-label',mode==='saved'?'Gemerkt':title.textContent);
+title.setAttribute('aria-label',mode==='saved'?'Gemerkt':title.textContent);document.getElementById('shareSaved').hidden=mode!=='saved';
 document.querySelectorAll('[data-cat]').forEach(b=>b.classList.toggle('active',mode==='all'&&b.dataset.cat===cat));
 renderNewsStats();document.querySelector('[data-open-filter="saved"]').classList.toggle('active',mode==='saved');document.querySelector('[data-open-filter="hidden"]').classList.toggle('active',mode==='hidden');
 }
@@ -738,6 +748,37 @@ document.querySelectorAll('.story-menu button').forEach(b=>b.addEventListener('c
 document.querySelectorAll('.story time').forEach(t=>{const dt=new Date(t.dateTime);if(!Number.isFinite(dt.getTime()))return;const delta=Math.max(0,Date.now()-dt.getTime()),hours=Math.floor(delta/3600000),days=Math.floor(hours/24);t.textContent=days?days+' T':hours?hours+' h':Math.max(1,Math.floor(delta/60000))+' min'});
 document.querySelectorAll('.save').forEach(b=>b.addEventListener('click',()=>{const u=b.closest('.story').dataset.url;saved=saved.includes(u)?saved.filter(x=>x!==u):[...saved,u];store('saved',saved);refresh()}));
 document.querySelectorAll('.dismiss').forEach(b=>b.addEventListener('click',()=>{const u=b.closest('.story').dataset.url;hidden=hidden.includes(u)?hidden.filter(x=>x!==u):[...hidden,u];store('hidden',hidden);refresh()}));
+
+const shareSavedOverlay=document.getElementById('savedShareOverlay');
+const shareSavedFeedback=document.getElementById('savedShareFeedback');
+let lastSavedSignature='',lastSavedLink='';
+function closeSavedShare(){shareSavedOverlay.hidden=true;}
+document.getElementById('shareSaved').addEventListener('click',()=>{shareSavedOverlay.hidden=false;shareSavedFeedback.textContent='';});
+document.getElementById('savedShareClose').addEventListener('click',closeSavedShare);
+shareSavedOverlay.addEventListener('click',e=>{if(e.target===shareSavedOverlay)closeSavedShare()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!shareSavedOverlay.hidden)closeSavedShare()});
+async function getSavedShareLink(){
+ const articles=stories.filter(story=>saved.includes(story.dataset.url));
+ if(!articles.length){shareSavedFeedback.textContent='Keine gemerkten Artikel in dieser Ansicht.';return ''}
+ const signature=articles.map(story=>story.dataset.url).join('|');
+ if(signature===lastSavedSignature&&lastSavedLink)return lastSavedLink;
+ shareSavedFeedback.textContent='Gemerktliste wird gespeichert …';
+ try{
+  const response=await fetch('collection.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+   kind:'saved',name:'Gemerktliste',view:new URLSearchParams(location.search).get('view')==='world'?'world':'ifis',
+   urls:articles.map(story=>story.dataset.url)
+  })});
+  const result=await response.json();
+  if(!response.ok||!result.url)throw Error(result.error||'Speichern fehlgeschlagen');
+  lastSavedSignature=signature;lastSavedLink=result.url;
+  shareSavedFeedback.textContent=articles.length+' Artikel als feste Sammlung gespeichert';
+  return result.url;
+ }catch(error){shareSavedFeedback.textContent=error.message;return ''}
+}
+document.getElementById('savedShareCopy').addEventListener('click',async()=>{const url=await getSavedShareLink();if(!url)return;try{await navigator.clipboard.writeText(url);shareSavedFeedback.textContent='Link kopiert'}catch{shareSavedFeedback.textContent=url}});
+document.getElementById('savedShareSystem').addEventListener('click',async()=>{const url=await getSavedShareLink();if(!url)return;if(navigator.share){try{await navigator.share({title:'IFIS News · Gemerktliste',url})}catch(e){if(e.name!=='AbortError')shareSavedFeedback.textContent='Teilen nicht möglich'}}else{try{await navigator.clipboard.writeText(url);shareSavedFeedback.textContent='Link kopiert'}catch{shareSavedFeedback.textContent=url}}});
+document.getElementById('savedShareEmail').addEventListener('click',async()=>{const url=await getSavedShareLink();if(url)location.href='mailto:?subject='+encodeURIComponent('IFIS News · Gemerktliste')+'&body='+encodeURIComponent(url)});
+document.getElementById('savedShareWhatsapp').addEventListener('click',async()=>{const url=await getSavedShareLink();if(url)window.open('https://wa.me/?text='+encodeURIComponent(url),'_blank','noopener,noreferrer')});
 function showSaved(){window.ifisNewsFeed.clearMapStories();mode='saved';cat='Alle';search.value='';toneFilter.value='all';baitFilter.checked=false;showBait=false;direction='all';refresh();document.getElementById('stories').scrollIntoView({block:'start',behavior:'smooth'})}
 
 
