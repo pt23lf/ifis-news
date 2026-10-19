@@ -234,6 +234,8 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
 .globe-view .marker-article-list{max-height:min(34vh,250px);overflow-y:auto;overscroll-behavior:contain}
 .globe-view .marker-article-list .globe-story-link{display:block;padding:8px 3px;border-top:1px solid var(--line)}
 .globe-view .marker-article-popup .maplibregl-popup-close-button{font-size:21px;color:var(--text);padding:2px 7px}
+/* The icon popup and the filtered feed below the map replace the redundant bottom-left map list. */
+.globe-view #globeInfo{display:none!important}
 </style></head><body>
 <header class="topbar"><div class="topbar-inner"><a class="brand" href="?view=world"><strong>IFIS</strong></a><nav class="topnav" aria-label="Bereiche"><a href="?view=world" class="<?= $view==='world'?'active':'' ?>" data-subtitle-de="Nachrichten aus aller Welt" data-subtitle-en="News from around the world">World</a><a href="?view=ifis" class="<?= $view==='ifis'?'active':'' ?>" data-subtitle-de="Nachrichten mit Veränderungspotenzial" data-subtitle-en="News with potential for change">Potenzial</a><button class="globe-toggle" id="globeToggle" type="button" aria-pressed="false" data-subtitle-de="Nachrichten geografisch entdecken" data-subtitle-en="Explore news geographically">Karte</button></nav><button type="button" id="gridToggle" class="grid-toggle" title="Spaltenzahl ändern" aria-label="Spaltenzahl ändern"><svg class="grid-toggle-symbol" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="2.5" y="13.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="13.5" width="8" height="8" rx="1.3"/></svg><span id="gridCount">1</span></button><div class="top-actions"><button type="button" id="mobileSearchToggle" class="mobile-search-toggle" aria-label="Suche öffnen" aria-expanded="false" title="Nachrichten suchen"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg></button><input class="search" id="search" type="search" placeholder="Nachrichten durchsuchen …" aria-label="Nachrichten durchsuchen"></div></div></header>
 <div class="layout">
@@ -504,9 +506,7 @@ function showMarkerArticles(coordinates,title,articles,routePoints=[],descriptio
  filterMapStories(articles);
  info.classList.add('has-selection');info.classList.remove('is-collapsed');
  info.replaceChildren();
- const panelHeading=document.createElement('strong');panelHeading.textContent=title+' · '+articles.length+' Artikel'+(description?' · '+description:'');info.append(panelHeading);
- articles.forEach(story=>appendMapArticle(info,story));
- articlePanelToggle.setAttribute('aria-expanded','true');articlePanelToggle.textContent='− Artikelliste';
+
  const wrapper=document.createElement('div');wrapper.className='marker-article-overlay';
  const details=document.createElement('details');details.open=true;
  const summary=document.createElement('summary');summary.textContent=title+' · '+articles.length+' Artikel'+(description?' · '+description:'');
@@ -689,18 +689,6 @@ let selectedPlace=null;
 let selectedSource=null;
 let mapOverlayOpen=false;
 function closeMapOverlay(){window.ifisNewsFeed.clearMapStories();if(activeMapPopup){const popup=activeMapPopup;activeMapPopup=null;popup.remove();}if(!mapOverlayOpen)return;mapOverlayOpen=false;selectedPlace=null;selectedSource=null;info.replaceChildren();updateSourceLinks();info.classList.remove('has-selection');info.textContent='Nachrichten geografisch entdecken. Wähle einen Ort auf der Karte.';connector.style.display='block';}
-const articlePanelToggle=document.createElement('button');
-articlePanelToggle.type='button';
-articlePanelToggle.className='globe-info-toggle';
-articlePanelToggle.setAttribute('aria-controls','globeInfo');
-articlePanelToggle.setAttribute('aria-expanded','true');
-articlePanelToggle.textContent='− Artikelliste';
-articlePanelToggle.addEventListener('click',()=>{
- const collapsed=info.classList.toggle('is-collapsed');
- articlePanelToggle.setAttribute('aria-expanded',String(!collapsed));
- articlePanelToggle.textContent=collapsed?'+ Artikelliste':'− Artikelliste';
-});
-panel.append(articlePanelToggle);
 const connector=document.getElementById('globeConnector'),connectorPath=document.getElementById('globeConnectorPath'),connectorEnd=document.getElementById('globeConnectorEnd');
 function updateConnector(){connector.style.display='block';renderFlightArcs();return;
  if(!map||!selectedPlace||!groups.has(selectedPlace) ){connector.style.display='none';return;}
