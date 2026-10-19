@@ -368,6 +368,18 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
 .globe-view #newsGlobe>.globe-connector{position:absolute;inset:0;z-index:2!important;pointer-events:none}
 .globe-view #newsGlobe>.maplibregl-marker{z-index:4!important}
 .globe-view #newsGlobe>.maplibregl-popup{z-index:8!important}
+/* One seamless selection underline: active section alone, or section + map. */
+.topbar-inner .topnav{position:relative!important;--selection-left:0px;--selection-width:0px}
+.topbar-inner .topnav::after{
+ content:"";position:absolute;bottom:0;left:var(--selection-left);
+ width:var(--selection-width);height:3px;background:var(--accent);
+ border-radius:0;pointer-events:none;z-index:1;
+ transition:left .18s ease,width .18s ease
+}
+.topbar-inner .topnav a.active,
+.topbar-inner .topnav .globe-toggle.active{
+ border-bottom-color:transparent!important;
+}
 /* The icon popup and the filtered feed below the map replace the redundant bottom-left map list. */
 .globe-view #globeInfo{display:none!important}
 </style></head><body>
@@ -1042,7 +1054,23 @@ function choose(place){
 // The selected routes remain visible until the same marker is clicked again.
 // Route selection is controlled by its origin marker.
 // Clicking outside the map does not reset the route selection.
-function openNewsMap(scrollToMap=true){panel.classList.add('open');btn.classList.add('active');btn.setAttribute('aria-pressed','true');if(scrollToMap)panel.scrollIntoView({behavior:'smooth',block:'start'});if(map){map.resize();return;}if(!window.maplibregl){info.textContent='Die Kartenbibliothek konnte nicht geladen werden.';return;}map=new maplibregl.Map({container:'newsGlobe',style:selectedMapStyle(),center:[10,20],zoom:1.15,attributionControl:true});
+function updateHeaderUnderline(){
+ const nav=document.querySelector('.topbar-inner .topnav');
+ if(!nav)return;
+ const section=nav.querySelector('a.active');
+ const selected=section?[section]:[];
+ if(panel.classList.contains('open'))selected.push(btn);
+ if(!selected.length)return;
+ const navBounds=nav.getBoundingClientRect();
+ const bounds=selected.map(el=>el.getBoundingClientRect());
+ const start=Math.min(...bounds.map(rect=>rect.left))-navBounds.left;
+ const end=Math.max(...bounds.map(rect=>rect.right))-navBounds.left;
+ nav.style.setProperty('--selection-left',Math.round(start)+'px');
+ nav.style.setProperty('--selection-width',Math.round(end-start)+'px');
+}
+window.addEventListener('resize',updateHeaderUnderline);
+if(document.fonts?.ready)document.fonts.ready.then(updateHeaderUnderline);
+function openNewsMap(scrollToMap=true){updateHeaderUnderline();panel.classList.add('open');btn.classList.add('active');btn.setAttribute('aria-pressed','true');if(scrollToMap)panel.scrollIntoView({behavior:'smooth',block:'start'});if(map){map.resize();return;}if(!window.maplibregl){info.textContent='Die Kartenbibliothek konnte nicht geladen werden.';return;}map=new maplibregl.Map({container:'newsGlobe',style:selectedMapStyle(),center:[10,20],zoom:1.15,attributionControl:true});
 map.getContainer().style.backgroundColor=isDarkMap()?'#111720':'#ffffff';
 map.getCanvas().addEventListener('pointerdown',()=>{rotationHoldUntil=performance.now()+4500});
 map.getCanvas().addEventListener('wheel',()=>{rotationHoldUntil=performance.now()+4500},{passive:true});
@@ -1053,5 +1081,6 @@ btn.addEventListener('click',()=>openNewsMap(true));
 // Direct visits begin with the map; choosing Potential or World explicitly
 // requests an article-only view with ?map=0. Map then opens that same section.
 if(new URLSearchParams(location.search).get('map')!=='0')openNewsMap(false);
+requestAnimationFrame(updateHeaderUnderline);
 })();
 </script></body></html>
