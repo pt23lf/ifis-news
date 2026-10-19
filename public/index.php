@@ -634,10 +634,22 @@ function openMapStory(story){
  if(!story)return;
  // Close the popup without clearing the icon's article selection.
  if(activeMapPopup){const popup=activeMapPopup;activeMapPopup=null;popup.remove();}
+ setHoveredMapStory(null);
  markStorySeen(story);
  requestAnimationFrame(()=>{story.scrollIntoView({behavior:'smooth',block:'center'});history.replaceState(null,'','#'+story.id)});
 }
-function appendMapArticle(info,story){const a=document.createElement('a');a.className='globe-story-link';a.href='#'+story.id;const title=document.createElement('span');title.textContent=story.querySelector('h2')?.textContent||'Artikel öffnen';const meta=document.createElement('small');meta.textContent=story.querySelector('.meta')?.textContent?.trim()||'';a.append(title,meta);a.addEventListener('click',e=>{e.preventDefault();openMapStory(story)});info.append(a)}
+function appendMapArticle(info,story){
+ const a=document.createElement('a');a.className='globe-story-link';a.href='#'+story.id;
+ const title=document.createElement('span');title.textContent=story.querySelector('h2')?.textContent||'Artikel öffnen';
+ const meta=document.createElement('small');meta.textContent=story.querySelector('.meta')?.textContent?.trim()||'';
+ a.append(title,meta);
+ a.addEventListener('pointerenter',event=>{if(event.pointerType!=='touch')setHoveredMapStory(story)});
+ a.addEventListener('pointerleave',()=>{if(hoveredMapStory===story)setHoveredMapStory(null)});
+ a.addEventListener('focus',()=>setHoveredMapStory(story));
+ a.addEventListener('blur',()=>{if(hoveredMapStory===story)setHoveredMapStory(null)});
+ a.addEventListener('click',e=>{e.preventDefault();setHoveredMapStory(null);openMapStory(story)});
+ info.append(a);
+}
 function markStorySeen(story){
  if(!story||!story.dataset.url||seenUrls.has(story.dataset.url))return;
  seenUrls.add(story.dataset.url);
@@ -668,6 +680,8 @@ function updateMapReadState(){
 colorMode.addEventListener('change',updateMapReadState);
 stories.forEach(story=>story.querySelectorAll('h2 a').forEach(link=>link.addEventListener('click',()=>markStorySeen(story))));
 let activeMapPopup=null;
+let hoveredMapStory=null;
+function setHoveredMapStory(story){if(hoveredMapStory===story)return;hoveredMapStory=story;renderFlightArcs();}
 // Clicking beside an article popup dismisses it. Keep marker changes and links
 // into the filtered article feed usable without premature selection resets.
 document.addEventListener('pointerdown',event=>{
@@ -679,6 +693,7 @@ document.addEventListener('pointerdown',event=>{
 });
 function showMarkerArticles(coordinates,title,articles,routePoints=[],description=''){
  articles=[...articles].sort((a,b)=>(Date.parse(b.querySelector('time')?.getAttribute('datetime')||'')||0)-(Date.parse(a.querySelector('time')?.getAttribute('datetime')||'')||0));
+ setHoveredMapStory(null);
  if(activeMapPopup){const previous=activeMapPopup;activeMapPopup=null;previous.remove();}
  mapOverlayOpen=true;
  filterMapStories(articles);
@@ -695,7 +710,7 @@ function showMarkerArticles(coordinates,title,articles,routePoints=[],descriptio
  details.append(list);wrapper.append(details);
  activeMapPopup=new maplibregl.Popup({closeButton:true,closeOnClick:false,offset:18,maxWidth:'min(360px,85vw)',className:'marker-article-popup'}).setLngLat(coordinates).setDOMContent(wrapper).addTo(map);
  const popupForSelection=activeMapPopup;
- popupForSelection.on('close',()=>{if(activeMapPopup!==popupForSelection)return;activeMapPopup=null;mapOverlayOpen=false;selectedPlace=null;selectedSource=null;window.ifisNewsFeed.clearMapStories();info.replaceChildren();info.textContent='Nachrichten geografisch entdecken. Wähle einen Ort auf der Karte.';info.classList.remove('has-selection');updateSourceLinks()});
+ popupForSelection.on('close',()=>{if(activeMapPopup!==popupForSelection)return;setHoveredMapStory(null);activeMapPopup=null;mapOverlayOpen=false;selectedPlace=null;selectedSource=null;window.ifisNewsFeed.clearMapStories();info.replaceChildren();info.textContent='Nachrichten geografisch entdecken. Wähle einen Ort auf der Karte.';info.classList.remove('has-selection');updateSourceLinks()});
  // Keep the clicked marker and its popup in view. Fitting to every reported place
  // moved the popup offscreen whenever a source covered distant events.
  requestAnimationFrame(()=>{hideFarSide();renderFlightArcs()});
@@ -844,7 +859,7 @@ function sourceFor(story){const name=story.dataset.source||story.querySelector('
 function storiesForSource(source){return stories.filter(story=>sourceFor(story)?.name===source.name)}
 
 function hideFarSide(){if(!map)return;const center=map.getCenter(),rad=Math.PI/180,a=center.lat*rad,b=center.lng*rad;markers.forEach(marker=>{const el=marker.getElement(),p=marker.getLngLat(),lat=p.lat*rad,lon=p.lng*rad;const facing=flatProjection||Math.sin(a)*Math.sin(lat)+Math.cos(a)*Math.cos(lat)*Math.cos(lon-b)>0.025;const source=el.classList.contains('globe-source')||el.classList.contains('globe-source-cluster');const enabled=source?document.getElementById('showSourceMarkers').checked:document.getElementById('showEventMarkers').checked;
- const ageVisible=!el._ifisStories||(el._ifisTimeStories||mapTimeStories(el._ifisStories)).length>0;const screen=map.project(p);const bounds=map.getContainer().getBoundingClientRect();const inside=screen.x>=18&&screen.y>=18&&screen.x<=bounds.width-18&&screen.y<=bounds.height-18;el.style.visibility=facing&&enabled&&inside&&ageVisible?'visible':'hidden';el.style.opacity=source?(focusMode.value==='source'?'1':'.72'):(focusMode.value==='event'?'1':'.55');const zoomScale=Math.max(.65,Math.min(1.65,.78+map.getZoom()*.14));el.style.setProperty('--marker-scale',String(zoomScale));el.style.zIndex=source?(focusMode.value==='source'?'5':'2'):(focusMode.value==='event'?'5':'2')});updateSourceLinks();connector.style.display=(document.getElementById('showSourceLinks').checked||selectedPlace||selectedSource)?'block':'none';}
+ const ageVisible=!el._ifisStories||(el._ifisTimeStories||mapTimeStories(el._ifisStories)).length>0;const screen=map.project(p);const bounds=map.getContainer().getBoundingClientRect();const inside=screen.x>=18&&screen.y>=18&&screen.x<=bounds.width-18&&screen.y<=bounds.height-18;el.style.visibility=facing&&enabled&&inside&&ageVisible?'visible':'hidden';el.style.opacity=source?(focusMode.value==='source'?'1':'.72'):(focusMode.value==='event'?'1':'.55');const zoomScale=Math.max(.65,Math.min(1.65,.78+map.getZoom()*.14));el.style.setProperty('--marker-scale',String(zoomScale));el.style.zIndex=source?(focusMode.value==='source'?'5':'2'):(focusMode.value==='event'?'5':'2')});updateSourceLinks();connector.style.display=(hoveredMapStory||document.getElementById('showSourceLinks').checked||selectedPlace||selectedSource)?'block':'none';}
 function nightGeoJSON(){const now=new Date(),jd=now.getTime()/86400000+2440587.5,n=jd-2451545,mean=(280.46+0.9856474*n)*Math.PI/180,anomaly=(357.528+0.9856003*n)*Math.PI/180,lambda=mean+(1.915*Math.sin(anomaly)+0.020*Math.sin(2*anomaly))*Math.PI/180,epsilon=(23.439-0.0000004*n)*Math.PI/180,decl=Math.asin(Math.sin(epsilon)*Math.sin(lambda)),ra=Math.atan2(Math.cos(epsilon)*Math.sin(lambda),Math.cos(lambda)),gmst=(280.46061837+360.98564736629*(jd-2451545))*Math.PI/180,subLon=((ra-gmst)*180/Math.PI+540)%360-180;const features=[],rad=Math.PI/180;for(let lat=-90;lat<90;lat+=5){for(let lon=-180;lon<180;lon+=5){const phi=(lat+2.5)*rad,h=(lon+2.5-subLon)*rad,elevation=Math.asin(Math.sin(phi)*Math.sin(decl)+Math.cos(phi)*Math.cos(decl)*Math.cos(h))*180/Math.PI;if(elevation>=0)continue;features.push({type:'Feature',properties:{opacity:Math.min(.68,Math.max(.08,-elevation/22*.30))},geometry:{type:'Polygon',coordinates:[[[lon,lat],[lon+5,lat],[lon+5,lat+5],[lon,lat+5],[lon,lat]]]}})}}return {type:'FeatureCollection',features}}
 function addNightLayer(){if(map.getSource('night'))return;map.addSource('night',{type:'geojson',data:nightGeoJSON()});map.addLayer({id:'night',type:'fill',source:'night',layout:{visibility:nightToggle.checked?'visible':'none'},paint:{'fill-color':'#071326','fill-opacity':['get','opacity']}})}
 nightToggle.addEventListener('change',()=>{if(map?.getLayer('night'))map.setLayoutProperty('night','visibility',nightToggle.checked?'visible':'none')});
@@ -853,13 +868,15 @@ function visibleHemisphere(coordinates){if(flatProjection)return true;const c=ma
 function renderFlightArcs(){
  if(!map||!flightLayer)return;
  flightLayer.replaceChildren();
- if(!(document.getElementById('showSourceLinks').checked||selectedPlace||selectedSource)||!document.getElementById('showEventMarkers').checked||!document.getElementById('showSourceMarkers').checked)return;
+ if(!(hoveredMapStory||document.getElementById('showSourceLinks').checked||selectedPlace||selectedSource)||!document.getElementById('showEventMarkers').checked||!document.getElementById('showSourceMarkers').checked)return;
  const size=map.getContainer();flightLayer.setAttribute('viewBox','0 0 '+size.clientWidth+' '+size.clientHeight);
  const unique=new Set();
  groups.forEach((group,place)=>{
-  if(selectedPlace&&place!==selectedPlace)return;
+  if(hoveredMapStory&&hoveredMapStory.dataset.place!==place)return;
+  if(!hoveredMapStory&&selectedPlace&&place!==selectedPlace)return;
   group.stories.forEach(story=>{
-   const source=sourceFor(story);if(!source||(selectedSource&&source.name!==selectedSource))return;
+   if(hoveredMapStory&&hoveredMapStory!==story)return;
+   const source=sourceFor(story);if(!source||(!hoveredMapStory&&selectedSource&&source.name!==selectedSource))return;
    const key=source.name+'|'+place;if(unique.has(key))return;unique.add(key);
    const from=source.coordinates,to=[group.loc[2],group.loc[1]];
    if(!visibleHemisphere(from)||!visibleHemisphere(to))return;
@@ -872,7 +889,7 @@ function renderFlightArcs(){
    // A lifted quadratic arc suggests a flight path; its endpoints remain anchored to the map.
    const curve=document.createElementNS('http://www.w3.org/2000/svg','path');
    curve.setAttribute('d','M '+a.x+' '+a.y+' Q '+(mx+nx*lift*upward)+' '+(my+ny*lift*upward-lift*.3)+' '+b.x+' '+b.y);
-   curve.setAttribute('fill','none');curve.setAttribute('stroke','#e59a35');curve.setAttribute('stroke-width','1.7');curve.setAttribute('stroke-opacity','.82');curve.setAttribute('stroke-linecap','round');
+   curve.setAttribute('fill','none');curve.setAttribute('stroke','#e59a35');curve.setAttribute('stroke-width',hoveredMapStory?'3.6':'1.7');curve.setAttribute('stroke-opacity',hoveredMapStory?'1':'.82');curve.setAttribute('stroke-linecap','round');
    flightLayer.append(curve);
   });
  });
@@ -925,9 +942,9 @@ sources.forEach(source=>{
 let selectedPlace=null;
 let selectedSource=null;
 let mapOverlayOpen=false;
-function closeMapOverlay(){window.ifisNewsFeed.clearMapStories();if(activeMapPopup){const popup=activeMapPopup;activeMapPopup=null;popup.remove();}if(!mapOverlayOpen)return;mapOverlayOpen=false;selectedPlace=null;selectedSource=null;info.replaceChildren();updateSourceLinks();info.classList.remove('has-selection');info.textContent='Nachrichten geografisch entdecken. Wähle einen Ort auf der Karte.';connector.style.display='block';}
+function closeMapOverlay(){setHoveredMapStory(null);window.ifisNewsFeed.clearMapStories();if(activeMapPopup){const popup=activeMapPopup;activeMapPopup=null;popup.remove();}if(!mapOverlayOpen)return;mapOverlayOpen=false;selectedPlace=null;selectedSource=null;info.replaceChildren();updateSourceLinks();info.classList.remove('has-selection');info.textContent='Nachrichten geografisch entdecken. Wähle einen Ort auf der Karte.';connector.style.display='block';}
 const connector=document.getElementById('globeConnector'),connectorPath=document.getElementById('globeConnectorPath'),connectorEnd=document.getElementById('globeConnectorEnd');
-function updateConnector(){connector.style.display=(document.getElementById('showSourceLinks').checked||selectedPlace||selectedSource)?'block':'none';renderFlightArcs();return;
+function updateConnector(){connector.style.display=(hoveredMapStory||document.getElementById('showSourceLinks').checked||selectedPlace||selectedSource)?'block':'none';renderFlightArcs();return;
  if(!map||!selectedPlace||!groups.has(selectedPlace) ){connector.style.display='none';return;}
  const g=groups.get(selectedPlace),pt=map.project([g.loc[2],g.loc[1]]);
  const box=info.getBoundingClientRect(),container=panel.getBoundingClientRect();
