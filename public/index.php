@@ -766,6 +766,13 @@ function sourceCountry(name){
  if(/ScienceDaily|NASA|Phys.org|NPR|New York Times|NOAA|IEEE Spectrum/.test(name))return 'USA';
  return null;
 }
+const incomingShare=new URLSearchParams(location.search);
+const sharedSelection=['event','source'].includes(incomingShare.get('collection'))&&incomingShare.get('name')
+ ?{kind:incomingShare.get('collection'),name:incomingShare.get('name')}:null;
+const requestedHours=Number(incomingShare.get('hours'));
+if(sharedSelection&&Number.isFinite(requestedHours)&&requestedHours>=.5&&requestedHours<=48){
+ document.getElementById('mapTimeRange').value=String(Math.round(requestedHours*2)/2);
+}
 const seenStorageKey='ifis-news-seen-v1';
 let seenUrls=new Set();
 try{seenUrls=new Set(JSON.parse(localStorage.getItem(seenStorageKey)||'[]'))}catch(e){}
@@ -1371,13 +1378,35 @@ function updateHeaderUnderline(){
 }
 window.addEventListener('resize',updateHeaderUnderline);
 if(document.fonts?.ready)document.fonts.ready.then(updateHeaderUnderline);
+function restoreSharedCollection(){
+ if(!sharedSelection||!map)return;
+ let marker=markers.find(candidate=>{
+  const button=candidate.getElement();
+  return button._ifisLabel===sharedSelection.name&&button.classList.contains(sharedSelection.kind==='source'?'globe-source':'globe-marker');
+ });
+ if(!marker){
+  const note=document.createElement('p');note.className='shared-collection-notice';
+  note.textContent='Diese Artikelsammlung ist in der aktuellen Nachrichtenansicht nicht mehr verfügbar.';
+  panel.after(note);
+  return;
+ }
+ const button=marker.getElement();
+ const matches=button._ifisTimeStories||mapTimeStories(button._ifisStories||[]);
+ if(!matches.length){
+  document.getElementById('mapTimeRange').value='48';
+  updateMapReadState();
+ }
+ // A restored marker may be on the far hemisphere. Face it before opening.
+ map.jumpTo({center:marker.getLngLat(),zoom:Math.max(1.8,map.getZoom())});
+ requestAnimationFrame(()=>button.click());
+}
 function openNewsMap(scrollToMap=true){panel.classList.add('open');btn.classList.add('active');btn.setAttribute('aria-pressed','true');updateHeaderUnderline();requestAnimationFrame(updateHeaderUnderline);if(scrollToMap)panel.scrollIntoView({behavior:'smooth',block:'start'});if(map){map.resize();return;}if(!window.maplibregl){info.textContent='Die Kartenbibliothek konnte nicht geladen werden.';return;}map=new maplibregl.Map({container:'newsGlobe',style:selectedMapStyle(),center:[10,20],zoom:1.15,attributionControl:true});
 map.getContainer().style.backgroundColor=isDarkMap()?'#111720':'#ffffff';
 map.getCanvas().addEventListener('pointerdown',()=>{rotationHoldUntil=performance.now()+4500});
 map.getCanvas().addEventListener('wheel',()=>{rotationHoldUntil=performance.now()+4500},{passive:true});
 map.on('dragstart',()=>{rotationHoldUntil=performance.now()+4500});map.on('load',()=>{try{map.setProjection({type:flatProjection?'mercator':'globe'});}catch(e){};addNightLayer();addSourceLinks();flightLayer=document.createElementNS('http://www.w3.org/2000/svg','g');connector.append(flightLayer);
 // The flight-line SVG belongs inside MapLibre: above tiles but BELOW marker buttons.
-map.getContainer().append(connector);updateMapReadState();map.on('move',()=>{hideFarSide();updateConnector()});map.on('resize',()=>{updateConnector();renderFlightArcs();});hideFarSide();if(!groups.size)info.textContent='Noch keine eindeutigen Ereignisorte erkannt.';});}
+map.getContainer().append(connector);updateMapReadState();map.on('move',()=>{hideFarSide();updateConnector()});map.on('resize',()=>{updateConnector();renderFlightArcs();});hideFarSide();if(!groups.size)info.textContent='Noch keine eindeutigen Ereignisorte erkannt.';restoreSharedCollection();});}
 btn.addEventListener('click',()=>openNewsMap(true));
 // Direct visits begin with the map; choosing Potential or World explicitly
 // requests an article-only view with ?map=0. Map then opens that same section.
