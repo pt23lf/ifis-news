@@ -1736,7 +1736,7 @@ markerHoverCard.setAttribute('role','status');
 markerHoverCard.hidden=true;
 document.body.append(markerHoverCard);
 let hoveredMarkerButton=null;
-function hideMarkerHover(){hoveredMarkerButton=null;markerHoverCard.hidden=true;renderFlightArcs();}
+function hideMarkerHover(){hoveredMarkerButton=null;markerHoverCard.hidden=true;updateConnector();}
 function positionMarkerHover(button,clientX,clientY){
  const rect=button.getBoundingClientRect();
  const x=Number.isFinite(clientX)?clientX:rect.left+rect.width/2;
@@ -1747,7 +1747,7 @@ function positionMarkerHover(button,clientX,clientY){
 function showMarkerHover(button,event){
  if(button.style.visibility==='hidden')return;
  hoveredMarkerButton=button;
- renderFlightArcs();
+ updateConnector();
  const items=button._ifisTimeStories||mapTimeStories(button._ifisStories||[]);
  const source=button.classList.contains('globe-source');
  const count=new Set(items.map(story=>source?story.dataset.place:story.dataset.source).filter(Boolean)).size;
