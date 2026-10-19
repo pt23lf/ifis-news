@@ -275,6 +275,13 @@ details[open] > summary:not([aria-label="Weitere Optionen"])::after{
 .globe-view .map-legend-shell>.map-projection-header-control .projection-symbol-globe::before{inset:3px}
 .globe-view .map-legend-shell>.map-projection-header-control .projection-symbol-map::before{left:5px}
 .globe-view .map-legend-shell>.map-projection-header-control .projection-symbol-map::after{right:5px}
+
+/* Header: text and target-projection symbol at one visual scale. */
+.globe-view .map-legend-shell>.map-projection-header-control{top:7px!important;right:53px!important}
+.globe-view .map-legend-shell>.map-projection-header-control .map-projection-toggle{height:38px!important;width:38px!important;display:flex!important;align-items:center!important;justify-content:center!important;background:transparent!important;border:0!important;padding:0!important;box-shadow:none!important}
+.globe-view .map-legend-shell>.map-projection-header-control .projection-symbol{width:17px!important;height:17px!important;flex:none!important}
+.globe-view .map-legend-shell .globe-legend-heading{font-size:16px!important;font-weight:600!important;line-height:1.3!important}
+.globe-view .map-legend-shell .globe-legend-heading::after{top:50%!important;transform:translateY(-50%) rotate(45deg)}
 </style><link href="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.css" rel="stylesheet"><style>.globe-view{display:none;position:relative;height:min(72vh,680px);min-height:380px;border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:16px}.globe-view.open{display:block}.globe-view #newsGlobe{width:100%;height:100%}.globe-info{position:absolute;left:12px;bottom:12px;background:var(--bg);padding:12px;border-radius:10px;max-width:320px;box-shadow:0 2px 12px #0002;font-size:13px}.globe-toggle{border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:20px;padding:6px 12px;white-space:nowrap}.globe-toggle.active{background:var(--hover);color:var(--accent)}.geo-link{font-size:12px;color:var(--accent);cursor:pointer;border:0;background:none;padding:3px 0}.trust-tools{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:9px;font-size:12px;color:var(--muted)}.trust{border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text);padding:4px}.ifis-related a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}.globe-marker{background:#0d9488;color:white;border:2px solid white;border-radius:50%;width:29px;height:29px;display:grid;place-items:center;font-size:11px;box-shadow:0 1px 7px #0005;cursor:pointer}.globe-marker .constructive-count{position:absolute;right:-10px;top:-10px;background:#177245;color:white;border:1px solid white;border-radius:10px;min-width:20px;height:19px;padding:0 3px;display:grid;place-items:center;font-size:10px;font-weight:700;line-height:1}.globe-source{background:#e59a35;color:#17212e;border:2px solid white;border-radius:50%;width:25px;height:25px;display:grid;place-items:center;font-size:13px;cursor:pointer;box-shadow:0 1px 7px #0005}.globe-legend{position:absolute;right:12px;top:12px;background:var(--bg);padding:8px 10px;border-radius:9px;font-size:12px;z-index:2}.globe-legend span{margin-left:9px}.globe-view .globe-legend{left:auto;right:12px;top:12px;width:max-content;max-width:min(265px,calc(100% - 24px));padding:12px 14px;display:flex;flex-direction:column;align-items:stretch;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:12px;box-shadow:0 3px 12px #0002;font-size:12px;line-height:1.35}
 .globe-view .globe-legend-line{display:flex;align-items:center;gap:9px;margin:0;white-space:normal}
 .globe-view .globe-legend-line input{margin:0 2px 0 0;flex-shrink:0}
@@ -688,7 +695,7 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
  <span><strong><?= $lastImportCount===null?'–':number_format($lastImportCount,0,',','.') ?></strong> neu beim letzten Import</span>
  <span>Letzter Import: <strong><?=esc($lastImportShown)?></strong><?= $lastImportShown!=='–'?' Uhr':'' ?></span>
  </div>
-<div class="globe-view" id="globeView"><div id="newsGlobe"></div><svg id="globeConnector" class="globe-connector" aria-hidden="true"><path id="globeConnectorPath"></path><circle id="globeConnectorEnd" r="4"></circle></svg><div class="map-legend-shell"><div class="map-projection-header-control"><button id="mapProjectionToggle" type="button" class="map-projection-toggle" title="Flache Karte anzeigen" aria-label="Flache Karte anzeigen" aria-pressed="false"><span class="projection-symbol projection-symbol-globe" aria-hidden="true"></span></button></div><details class="globe-legend" id="mapLegend"><summary class="globe-legend-heading">Karte einstellen</summary>
+<div class="globe-view" id="globeView"><div id="newsGlobe"></div><svg id="globeConnector" class="globe-connector" aria-hidden="true"><path id="globeConnectorPath"></path><circle id="globeConnectorEnd" r="4"></circle></svg><div class="map-legend-shell"><div class="map-projection-header-control"><button id="mapProjectionToggle" type="button" class="map-projection-toggle" title="Flache Karte anzeigen" aria-label="Flache Karte anzeigen" aria-pressed="false"><span class="projection-symbol projection-symbol-map" aria-hidden="true"></span></button></div><details class="globe-legend" id="mapLegend"><summary class="globe-legend-heading">Karte einstellen</summary>
 <div class="map-legend-content">
  <section class="map-legend-section" aria-label="Zeitraum">
   <div class="map-legend-section-title">Zeitraum <output id="mapTimeValue" for="mapTimeRange">24 h</output></div>
@@ -1397,14 +1404,14 @@ function rotateMap(timestamp){
 mapAutoRotate.addEventListener('change',()=>rememberMapPreference('rotation',mapAutoRotate.value));
 window.requestAnimationFrame(rotateMap);
 let flatProjection=incomingMapParams.get('projection')==='flat';
-if(flatProjection){const control=document.getElementById('mapProjectionToggle');control.setAttribute('aria-pressed','true');control.title='Globus anzeigen';control.setAttribute('aria-label','Globus anzeigen');control.querySelector('.projection-symbol').className='projection-symbol projection-symbol-map';}
+if(flatProjection){const control=document.getElementById('mapProjectionToggle');control.setAttribute('aria-pressed','true');control.title='Globus anzeigen';control.setAttribute('aria-label','Globus anzeigen');control.querySelector('.projection-symbol').className='projection-symbol projection-symbol-globe';}
 document.getElementById('mapProjectionToggle').addEventListener('click',event=>{event.preventDefault();event.stopPropagation();
  flatProjection=!flatProjection;
  const control=document.getElementById('mapProjectionToggle');
  control.setAttribute('aria-pressed',String(flatProjection));
  control.title=flatProjection?'Globus anzeigen':'Flache Karte anzeigen';
  control.setAttribute('aria-label',flatProjection?'Globus anzeigen':'Flache Karte anzeigen');
- control.querySelector('.projection-symbol').className='projection-symbol '+(flatProjection?'projection-symbol-map':'projection-symbol-globe');
+ control.querySelector('.projection-symbol').className='projection-symbol '+(flatProjection?'projection-symbol-globe':'projection-symbol-map');
  if(map){try{map.setProjection({type:flatProjection?'mercator':'globe'});}catch(e){console.warn('Kartenprojektion konnte nicht gewechselt werden',e)}updateMapReadState();updateConnector();}
 });
 const sourceImprintAudit=<?=json_encode($sourceImprintAudit,JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_UNESCAPED_UNICODE)?>;
