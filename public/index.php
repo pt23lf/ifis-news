@@ -1660,31 +1660,26 @@ function renderFlightArcs(){
    const a=displayPointForMarker(from,source.name),b=displayPointForMarker(to);
    if(Math.hypot(b.x-a.x,b.y-a.y)<3)return;
    const {points,angle}=flightRoutePoints(from,to);
-   // A flat projection uses a straight, surface-level connection.
-   // On the globe the arc is lifted in screen space, away from the
-   // source-to-target chord; front-facing samples are masked at the limb.
-   // Flat map: straight segment. Globe: an upward parabolic arch with a
-   // moderate screen-space rise; never bend sideways around the planet.
+   // Flat: a straight connection. Globe: lift the screen-space chord
+   // perpendicularly outward to make the arch clearly visible. The altitude
+   // envelope is zero at both markers and maximal at the route midpoint.
    const chordX=b.x-a.x,chordY=b.y-a.y;
-   const distance=Math.hypot(chordX,chordY);
-   const peak=flatProjection?0:Math.min(globeRadius*.36,globeRadius*(.035+.18*Math.min(1,angle/Math.PI)));
-   const sampled=flatProjection?[{t:0,x:a.x,y:a.y,visible:true},{t:1,x:b.x,y:b.y,visible:true}]:points.map(({t,coordinates})=>{
-    const p=map.project(coordinates);
-    let x=p.x,y=p.y;
-    if(!flatProjection){
-     const dx=x-globeCentre.x,dy=y-globeCentre.y;
-     const norm=Math.hypot(dx,dy);
-     // Lift away from the globe silhouette, not merely toward the top of the screen.
-     const altitude=peak*Math.sin(Math.PI*t);
-     if(norm>1){x+=dx/norm*altitude;y+=dy/norm*altitude}
-     else y-=altitude;
-    }
-    // Raised routes remain visible slightly beyond the surface horizon:
-    // the globe hides them only when its curvature actually occludes their altitude.
-    const relativeHeight=flatProjection?0:(peak/globeRadius)*Math.sin(Math.PI*t);
-    const threshold=relativeHeight>0?-Math.sqrt(Math.max(0,1-1/Math.pow(1+relativeHeight,2))):0;
-    return {x,y,visible:flatProjection||(facing(coordinates)>threshold&&pointOnGlobe(x,y))};
-   });
+   const chordLength=Math.hypot(chordX,chordY)||1;
+   let normalX=-chordY/chordLength,normalY=chordX/chordLength;
+   const midX=(a.x+b.x)/2-globeCentre.x,midY=(a.y+b.y)/2-globeCentre.y;
+   if(normalX*midX+normalY*midY<0){normalX=-normalX;normalY=-normalY;}
+   // A stronger curve on long routes; short routes stay compact.
+   const peak=flatProjection?0:Math.min(globeRadius*.34,Math.max(chordLength*.30,globeRadius*.025));
+   const sampled=flatProjection
+    ?[{t:0,x:a.x,y:a.y,visible:true},{t:1,x:b.x,y:b.y,visible:true}]
+    :points.map(({t,coordinates})=>{
+      const lift=peak*Math.sin(Math.PI*t);
+      const relativeHeight=lift/globeRadius;
+      const threshold=relativeHeight>0?-Math.sqrt(Math.max(0,1-1/Math.pow(1+relativeHeight,2))):0;
+      const x=a.x+chordX*t+normalX*lift;
+      const y=a.y+chordY*t+normalY*lift;
+      return {t,x,y,visible:facing(coordinates)>threshold&&pointOnGlobe(x,y)};
+     });
    // Keep endpoints at the visible edges of the marker circles.
    const radiusScale=Math.max(.65,Math.min(1.65,.78+map.getZoom()*.14));
    const sourceRadius=flatProjection?9*radiusScale+2:5.5,eventRadius=flatProjection?10*radiusScale+2:5.5;
