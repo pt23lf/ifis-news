@@ -26,25 +26,25 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
  if(!extension_loaded('pdo_sqlite'))outJson(503,['error'=>'SQLite ist derzeit nicht verfügbar.']);
  $origin=(string)($_SERVER['HTTP_ORIGIN']??'');
  if($origin!==''&&!in_array($origin,['https://news.ifis.net','http://news.ifis.net'],true))outJson(403,['error'=>'Ungültiger Ursprung.']);
- if((int)($_SERVER['CONTENT_LENGTH']??0)>25000)outJson(413,['error'=>'Zu viele Daten.']);
- $raw=file_get_contents('php://input',false,null,0,25001);
+ if((int)($_SERVER['CONTENT_LENGTH']??0)>150000)outJson(413,['error'=>'Zu viele Daten.']);
+ $raw=file_get_contents('php://input',false,null,0,150001);
  $input=json_decode($raw?:'',true);
  if(!is_array($input))outJson(400,['error'=>'Ungültige Anfrage.']);
  $kind=(string)($input['kind']??'');
  $name=trim((string)($input['name']??''));
  $section=(string)($input['view']??'');
  $urls=$input['urls']??null;
- if(!in_array($kind,['source','event'],true) ||
+ if(!in_array($kind,['source','event','saved'],true) ||
     !in_array($section,['world','ifis'],true) ||
     $name===''||mb_strlen($name,'UTF-8')>100||
-    !is_array($urls)||count($urls)<1||count($urls)>40) {
+    !is_array($urls)||count($urls)<1||count($urls)>($kind==='saved'?400:40)) {
   outJson(400,['error'=>'Artikelauswahl ungültig.']);
  }
  $urls=array_values(array_unique(array_filter($urls,static function($url): bool {
   return is_string($url)&&strlen($url)<1800&&filter_var($url,FILTER_VALIDATE_URL)!==false&&
    in_array(strtolower((string)parse_url($url,PHP_URL_SCHEME)),['https','http'],true);
  })));
- if(!$urls||count($urls)>40)outJson(400,['error'=>'Keine gültigen Artikel-Links.']);
+ if(!$urls||count($urls)>($kind==='saved'?400:40))outJson(400,['error'=>'Keine gültigen Artikel-Links.']);
  $dbPath=dirname(__DIR__).'/storage/news.sqlite';
  if(!is_file($dbPath))outJson(503,['error'=>'Nachrichtendatenbank nicht verfügbar.']);
  try {
@@ -265,11 +265,11 @@ details[open] > summary:not([aria-label="Weitere Optionen"])::after{
 </style><link href="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.css" rel="stylesheet"></head><body>
 <header><a href="https://news.ifis.net/">IFIS News</a><a href="<?=h($dynamic)?>">Aktuelle Entwicklung ↗</a></header>
 <main><section>
-<div class="type"><?= $kind==='source'?'Quellenort':'Ereignisort' ?> · Feste Sammlung</div>
+<div class="type"><?= $kind==='saved'?'Gemerktliste':($kind==='source'?'Quellenort':'Ereignisort') ?> · Feste Sammlung</div>
 <h1><?=h($name)?></h1>
 <p class="muted"><?=count($articles)?> Artikel · Gespeichert am <?=h($created?gmdate('d.m.Y \u\m H:i',strtotime($created)).' UTC':'unbekannt')?></p>
 <div class="links"><button id="share" type="button">↗ Diese feste Sammlung teilen</button><a href="<?=h($dynamic)?>">Zur dynamischen Sammlung</a></div>
-<div class="map-key"><span class="key-source">Quellenorte</span><span>Ereignisorte</span><span class="key-line">Verbindungen</span></div>
+<?php if($kind!=='saved'): ?><div class="map-key"><span class="key-source">Quellenorte</span><span>Ereignisorte</span><span class="key-line">Verbindungen</span></div>
 <div class="map-wrap">
 <div id="collectionMap" role="region" aria-label="Karte der in dieser Sammlung dokumentierten Quellen und Ereignisorte"></div>
 <div class="map-selection"><?=h($kind==='source'?'Quellenort: ':'Ereignisort: ')?><?=h($name)?></div>
@@ -285,7 +285,8 @@ details[open] > summary:not([aria-label="Weitere Optionen"])::after{
 </article>
 <?php endforeach; ?>
 </div></details>
-</div>
+</div><?php endif; ?>
+<?php if($kind==='saved'): ?><div class="collection-saved-list"><?php foreach($articles as $item): ?><article class="article"><div class="type"><?=h((string)($item['source']??''))?></div><h2><a href="<?=h((string)($item['url']??''))?>" target="_blank" rel="noopener noreferrer"><?=h((string)($item['title']??''))?> ↗</a></h2><p class="summary"><?=h((string)($item['summary']??''))?></p></article><?php endforeach; ?></div><?php endif; ?>
 <p class="note">Diese Auswahl bleibt unverändert. Die verlinkten Originalartikel liegen bei externen Herausgebern und können später geändert oder entfernt werden.</p>
 </section></main>
 
