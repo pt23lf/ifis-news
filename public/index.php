@@ -1644,7 +1644,7 @@ function renderFlightArcs(){
    if(normalX*midX+normalY*midY<0){normalX=-normalX;normalY=-normalY;}
    // Stylised altitude in screen space: greater than the ground-level
    // great-circle curvature, but bounded to avoid loops across the sphere.
-   const peak=flatProjection?0:Math.min(globeRadius*.48,Math.max(chordLength*.52,globeRadius*.065));
+   const peak=flatProjection?0:Math.min(globeRadius*.24,Math.max(chordLength*.22,26));
    const sampled=flatProjection
     ?[{t:0,x:a.x,y:a.y,visible:true},{t:1,x:b.x,y:b.y,visible:true}]
     :points.map(({t,coordinates})=>{
@@ -1704,16 +1704,17 @@ function renderFlightArcs(){
    const curve=document.createElementNS('http://www.w3.org/2000/svg','path');
    curve.setAttribute('d',d);
    curve.setAttribute('fill','none');curve.setAttribute('stroke','#e59a35');
-   curve.setAttribute('stroke-width',flatProjection?(hoveredMapStory?'3.1':'1.7'):(hoveredMapStory?'2':'1.05'));
-   curve.setAttribute('stroke-opacity',flatProjection?(hoveredMapStory?'.96':'.82'):(hoveredMapStory?'.88':'.54'));
+   const isHoverRoute=!!hoveredMarkerButton;
+   curve.setAttribute('stroke-width',isHoverRoute?'3.2':flatProjection?(hoveredMapStory?'3.1':'1.7'):(hoveredMapStory?'2':'1.6'));
+   curve.setAttribute('stroke-opacity',isHoverRoute?'.9':flatProjection?(hoveredMapStory?'.96':'.82'):(hoveredMapStory?'.88':'.54'));
    curve.setAttribute('stroke-linecap','round');curve.setAttribute('stroke-linejoin','round');
    // A subtle light edge distinguishes the raised path from the cartography,
    // without affecting the flat-map connections.
    if(!flatProjection){
     const halo=curve.cloneNode(false);
     halo.setAttribute('stroke','rgba(255,255,255,.75)');
-    halo.setAttribute('stroke-opacity','.35');
-    halo.setAttribute('stroke-width',hoveredMapStory?'4':'2.1');
+    halo.setAttribute('stroke-opacity',isHoverRoute?'.35':'.25');
+    halo.setAttribute('stroke-width',isHoverRoute?'5.4':hoveredMapStory?'4':'2.1');
     flightLayer.append(halo);
    }
    flightLayer.append(curve);
