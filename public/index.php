@@ -202,7 +202,7 @@ if(is_file($ifisIndexFile)){
 .topbar .brand{font-size:22px!important;letter-spacing:.025em!important;font-weight:400!important}.topbar .brand strong{font-weight:400!important}
 .site-footer{max-width:1100px;margin:32px auto 0;padding:22px 24px 35px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:12px 22px;font-size:12px;color:var(--muted)}.site-footer a:hover{text-decoration:underline}
 /* Compact markers on the flat map: match the globe presentation. */
-.globe-view.is-flat-map .globe-marker,.globe-view.is-flat-map .globe-source{width:calc(25px * var(--marker-scale,1))!important;height:calc(25px * var(--marker-scale,1))!important;font-size:calc(11px * var(--marker-scale,1))!important;min-width:0!important;min-height:0!important;border-radius:50%!important}
+
 
 /* Unified disclosure indicator: right-facing when closed, downward when open. */
 details > summary:not([aria-label="Weitere Optionen"]) {list-style:none;cursor:pointer}
@@ -308,6 +308,7 @@ details[open] > summary:not([aria-label="Weitere Optionen"])::after{
 .globe-view .map-legend-shell:not(:has(.globe-legend[open])) .globe-legend-heading::after{
  right:15px!important;
 }
+.globe-view.is-flat-map .globe-source-batch,.globe-view.is-globe .globe-source-batch{width:calc(19px * var(--marker-scale,1))!important;height:calc(19px * var(--marker-scale,1))!important;font-size:calc(9px * var(--marker-scale,1))!important}
 </style><link href="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.css" rel="stylesheet"><style>.globe-view{display:none;position:relative;height:min(72vh,680px);min-height:380px;border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:16px}.globe-view.open{display:block}.globe-view #newsGlobe{width:100%;height:100%}.globe-info{position:absolute;left:12px;bottom:12px;background:var(--bg);padding:12px;border-radius:10px;max-width:320px;box-shadow:0 2px 12px #0002;font-size:13px}.globe-toggle{border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:20px;padding:6px 12px;white-space:nowrap}.globe-toggle.active{background:var(--hover);color:var(--accent)}.geo-link{font-size:12px;color:var(--accent);cursor:pointer;border:0;background:none;padding:3px 0}.trust-tools{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:9px;font-size:12px;color:var(--muted)}.trust{border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text);padding:4px}.ifis-related a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}.globe-marker{background:#0d9488;color:white;border:2px solid white;border-radius:50%;width:29px;height:29px;display:grid;place-items:center;font-size:11px;box-shadow:0 1px 7px #0005;cursor:pointer}.globe-marker .constructive-count{position:absolute;right:-10px;top:-10px;background:#177245;color:white;border:1px solid white;border-radius:10px;min-width:20px;height:19px;padding:0 3px;display:grid;place-items:center;font-size:10px;font-weight:700;line-height:1}.globe-source{background:#e59a35;color:#17212e;border:2px solid white;border-radius:50%;width:25px;height:25px;display:grid;place-items:center;font-size:13px;cursor:pointer;box-shadow:0 1px 7px #0005}.globe-legend{position:absolute;right:12px;top:12px;background:var(--bg);padding:8px 10px;border-radius:9px;font-size:12px;z-index:2}.globe-legend span{margin-left:9px}.globe-view .globe-legend{left:auto;right:12px;top:12px;width:max-content;max-width:min(265px,calc(100% - 24px));padding:12px 14px;display:flex;flex-direction:column;align-items:stretch;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:12px;box-shadow:0 3px 12px #0002;font-size:12px;line-height:1.35}
 .globe-view .globe-legend-line{display:flex;align-items:center;gap:9px;margin:0;white-space:normal}
 .globe-view .globe-legend-line input{margin:0 2px 0 0;flex-shrink:0}
@@ -1633,15 +1634,15 @@ function renderFlightArcs(){
    // moderate screen-space rise; never bend sideways around the planet.
    const chordX=b.x-a.x,chordY=b.y-a.y;
    const distance=Math.hypot(chordX,chordY);
-   const peak=flatProjection?0:Math.min(globeRadius*.19,Math.max(12,distance*.23));
+   const peak=flatProjection?0:Math.min(globeRadius*.26,globeRadius*(.06+.18*Math.min(1,angle/Math.PI)));
    const sampled=flatProjection
     ?[{t:0,x:a.x,y:a.y,visible:true},{t:1,x:b.x,y:b.y,visible:true}]
     :points.map(({t,coordinates})=>{
-      const rise=peak*4*t*(1-t);
-      const face=facing(coordinates);
-      const height=rise/globeRadius;
-      const allowance=height>0?-Math.sqrt(Math.max(0,1-1/((1+height)*(1+height)))):0;
-      return {t,x:a.x+chordX*t,y:a.y+chordY*t-rise,visible:face>=allowance};
+      const p=map.project(coordinates);
+      const dx=p.x-globeCentre.x,dy=p.y-globeCentre.y,len=Math.hypot(dx,dy)||1;
+      const lift=peak*Math.sin(Math.PI*t),face=facing(coordinates);
+      const allowance=lift>0?-Math.sqrt(Math.max(0,1-1/Math.pow(1+lift/globeRadius,2))):0;
+      return {t,x:p.x+(dx/len)*lift,y:p.y+(dy/len)*lift,visible:face>=allowance};
      });
    // Keep endpoints at the visible edges of the marker circles.
    const radiusScale=Math.max(.65,Math.min(1.65,.78+map.getZoom()*.14));
