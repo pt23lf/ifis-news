@@ -726,6 +726,59 @@ function addCountryBatchMarkers(){
 }
 ['showEventMarkers','showSourceMarkers','showSourceLinks'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{if(map){hideFarSide();updateConnector()}}));
 document.getElementById('mapTimeRange').addEventListener('input',()=>{if(map){if(mapOverlayOpen)closeMapOverlay();updateMapReadState();}else document.getElementById('mapTimeValue').textContent=Number(document.getElementById('mapTimeRange').value).toLocaleString('de-DE')+' h'});
+const mapLegend=document.getElementById('mapLegend');
+const mapBasemap=document.getElementById('mapBasemap');
+const mapBrightness=document.getElementById('mapBrightness');
+const mapAutoRotate=document.getElementById('mapAutoRotate');
+const prefersDark=window.matchMedia('(prefers-color-scheme: dark)');
+const storedMapPreference=key=>{try{return localStorage.getItem('ifis-news-map-'+key)}catch{return null}};
+const rememberMapPreference=(key,value)=>{try{localStorage.setItem('ifis-news-map-'+key,value)}catch{}};
+if(['political','geographic','satellite'].includes(storedMapPreference('type')))mapBasemap.value=storedMapPreference('type');
+if(['auto','light','dark'].includes(storedMapPreference('brightness')))mapBrightness.value=storedMapPreference('brightness');
+if(['0','1.5','4','9'].includes(storedMapPreference('rotation')))mapAutoRotate.value=storedMapPreference('rotation');
+function isDarkMap(){return mapBrightness.value==='dark'||mapBrightness.value==='auto'&&prefersDark.matches}
+function selectedMapStyle(){
+ const dark=isDarkMap();
+ panel.classList.toggle('map-dark',dark);
+ if(mapBasemap.value==='satellite'){
+  return {version:8,name:'Satellite',sources:{imagery:{type:'raster',tiles:['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],tileSize:256,attribution:'Tiles © Esri, Maxar, Earthstar Geographics'}},layers:[{id:'satellite-imagery',type:'raster',source:'imagery',paint:dark?{'raster-brightness-max':0.67,'raster-saturation':-0.3}:{}}]};
+ }
+ if(dark)return 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
+ if(mapBasemap.value==='political')return 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json';
+ return 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
+}
+let styleSwitchSerial=0;
+function applyMapStyle(){
+ const style=selectedMapStyle();
+ if(!map)return;
+ const serial=++styleSwitchSerial;
+ map.once('style.load',()=>{
+  if(serial!==styleSwitchSerial)return;
+  try{
+   map.setProjection({type:flatProjection?'mercator':'globe'});
+   addNightLayer();restoreSourceLineLayer();updateMapReadState();updateConnector();
+  }catch(err){console.warn('Kartenebenen konnten nicht vollständig wiederhergestellt werden',err)}
+ });
+ map.setStyle(style);
+}
+mapBasemap.addEventListener('change',()=>{rememberMapPreference('type',mapBasemap.value);applyMapStyle()});
+mapBrightness.addEventListener('change',()=>{rememberMapPreference('brightness',mapBrightness.value);applyMapStyle()});
+if(prefersDark.addEventListener)prefersDark.addEventListener('change',()=>{if(mapBrightness.value==='auto')applyMapStyle()});
+document.addEventListener('pointerdown',event=>{if(mapLegend.open&&!mapLegend.contains(event.target))mapLegend.open=false});
+document.addEventListener('keydown',event=>{if(event.key==='Escape')mapLegend.open=false});
+let rotationLast=0,rotationHoldUntil=0;
+function rotateMap(timestamp){
+ if(map&&mapAutoRotate.value!=='0'&&!flatProjection&&document.visibilityState==='visible'){
+  if(rotationLast&&timestamp>=rotationHoldUntil&&map.isStyleLoaded()){
+   const delta=Math.min(0.07,(timestamp-rotationLast)/1000);
+   if(delta>0)map.setCenter([(map.getCenter().lng+Number(mapAutoRotate.value)*delta+540)%360-180,map.getCenter().lat]);
+  }
+ }
+ rotationLast=timestamp;
+ window.requestAnimationFrame(rotateMap);
+}
+mapAutoRotate.addEventListener('change',()=>rememberMapPreference('rotation',mapAutoRotate.value));
+window.requestAnimationFrame(rotateMap);
 let flatProjection=false;
 document.getElementById('mapProjectionToggle').addEventListener('click',event=>{event.preventDefault();event.stopPropagation();
  flatProjection=!flatProjection;
@@ -861,7 +914,10 @@ function choose(place){
 // The selected routes remain visible until the same marker is clicked again.
 // Route selection is controlled by its origin marker.
 // Clicking outside the map does not reset the route selection.
-function openNewsMap(scrollToMap=true){panel.classList.add('open');btn.classList.add('active');btn.setAttribute('aria-pressed','true');if(scrollToMap)panel.scrollIntoView({behavior:'smooth',block:'start'});if(map){map.resize();return;}if(!window.maplibregl){info.textContent='Die Kartenbibliothek konnte nicht geladen werden.';return;}map=new maplibregl.Map({container:'newsGlobe',style:'https://demotiles.maplibre.org/style.json',center:[10,20],zoom:1.15,attributionControl:true});map.on('load',()=>{try{map.setProjection({type:flatProjection?'mercator':'globe'});}catch(e){};addNightLayer();addSourceLinks();flightLayer=document.createElementNS('http://www.w3.org/2000/svg','g');connector.append(flightLayer);updateMapReadState();map.on('move',()=>{hideFarSide();updateConnector()});map.on('resize',()=>{updateConnector();renderFlightArcs();});hideFarSide();if(!groups.size)info.textContent='Noch keine eindeutigen Ereignisorte erkannt.';});}
+function openNewsMap(scrollToMap=true){panel.classList.add('open');btn.classList.add('active');btn.setAttribute('aria-pressed','true');if(scrollToMap)panel.scrollIntoView({behavior:'smooth',block:'start'});if(map){map.resize();return;}if(!window.maplibregl){info.textContent='Die Kartenbibliothek konnte nicht geladen werden.';return;}map=new maplibregl.Map({container:'newsGlobe',style:selectedMapStyle(),center:[10,20],zoom:1.15,attributionControl:true});
+map.getCanvas().addEventListener('pointerdown',()=>{rotationHoldUntil=performance.now()+4500});
+map.getCanvas().addEventListener('wheel',()=>{rotationHoldUntil=performance.now()+4500},{passive:true});
+map.on('dragstart',()=>{rotationHoldUntil=performance.now()+4500});map.on('load',()=>{try{map.setProjection({type:flatProjection?'mercator':'globe'});}catch(e){};addNightLayer();addSourceLinks();flightLayer=document.createElementNS('http://www.w3.org/2000/svg','g');connector.append(flightLayer);updateMapReadState();map.on('move',()=>{hideFarSide();updateConnector()});map.on('resize',()=>{updateConnector();renderFlightArcs();});hideFarSide();if(!groups.size)info.textContent='Noch keine eindeutigen Ereignisorte erkannt.';});}
 btn.addEventListener('click',()=>openNewsMap(true));
 // Open the map on first load while keeping its news feed on the Potential view.
 openNewsMap(false);
