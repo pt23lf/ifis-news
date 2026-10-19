@@ -327,7 +327,7 @@ details[open] > summary:not([aria-label="Weitere Optionen"])::after{
  color:var(--muted);font-size:11px;font-weight:500;text-decoration:underline;text-decoration-style:dotted;
  text-underline-offset:3px;padding:4px 2px}
 .globe-view .collection-share-help>summary::-webkit-details-marker{display:none}
-.globe-view .collection-share-explanation{position:absolute;z-index:30;right:0;bottom:calc(100% + 6px);
+.globe-view .collection-share-explanation{position:absolute;z-index:30;right:0;top:calc(100% + 6px);
  width:min(280px,72vw);padding:11px 13px;border:1px solid var(--line);border-radius:10px;
  background:var(--bg);box-shadow:0 6px 24px #0003;color:var(--text);font-size:12px;line-height:1.45}
 .globe-view .collection-share-explanation p{margin:0}
