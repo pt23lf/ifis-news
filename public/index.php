@@ -240,7 +240,7 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
 
 <main id="main"><div class="feedhead"><h1 id="feedTitle"><?= $view==='ifis'?'Potenzial':'Weltlage' ?></h1></div>
 <div class="globe-view" id="globeView"><div id="newsGlobe"></div><svg id="globeConnector" class="globe-connector" aria-hidden="true"><path id="globeConnectorPath"></path><circle id="globeConnectorEnd" r="4"></circle></svg><details class="globe-legend" open><summary class="globe-legend-heading">Kartenlegende <button id="mapProjectionToggle" type="button" class="map-projection-toggle" title="Flache Karte anzeigen" aria-label="Flache Karte anzeigen" aria-pressed="false">▤</button></summary><label class="globe-legend-line">Schwerpunkt <select id="mapFocusMode" aria-label="Kartenschwerpunkt"><option value="event">Ereignisort</option><option value="source">Quellenland</option></select></label><label class="globe-legend-line">Ansicht <select id="mapColorMode" aria-label="Farbmodus der Karte"><option value="age">Veröffentlichungszeit</option><option value="unseen">Noch nicht gesehen</option></select></label><label class="globe-legend-line">Zeitraum <input id="mapTimeRange" type="range" min="0.5" max="48" step="0.5" value="2.5" aria-label="Zeitraum in Stunden"><output id="mapTimeValue" for="mapTimeRange">2,5 h</output></label><label class="globe-legend-line"><input id="nightToggle" type="checkbox"> Tag/Nacht anzeigen</label><label class="globe-legend-line"><input id="showEventMarkers" type="checkbox" checked><span class="legend-arrow">╌</span> Ereignisorte</label><div class="globe-legend-line"><span class="legend-arrow">↗</span> konstruktiv (vorläufig)</div><label class="globe-legend-line"><input id="showSourceMarkers" type="checkbox" checked><span class="legend-dot" style="background:#e59a35"></span> Quellenländer</label><div class="globe-legend-line"><span class="legend-dot" style="background:#718096"></span> Ältere Artikel (bis 48 h)</div><div class="globe-legend-update"><?=esc($lastImportLabel)?></div></details><div class="globe-info" id="globeInfo">Nachrichten geografisch entdecken. Punkte zeigen erkannte Ereignisorte, nicht den Sitz der Redaktion. Die Zuordnung ist vorläufig.</div></div><div class="filter-dock" id="filterDock"><button class="filter-dock-toggle" id="filterDockToggle" type="button" aria-label="Filterleiste ein- oder ausklappen" aria-expanded="false">☷</button><div class="filter-toolbar" aria-label="Nachrichtenfilter"><button type="button" data-open-filter="direction" aria-expanded="false" title="Entwicklungsrichtung">↗ <span>Richtung</span></button><button type="button" data-open-filter="topics" aria-expanded="false" title="Themen">▦ <span>Themen</span></button><button type="button" data-open-filter="quality" aria-expanded="false" title="Tonlage und Quellen">⚑ <span>Qualität</span></button><button type="button" id="statsToggle" title="Nachrichtenbilanz" aria-expanded="false">▥ <span>Bilanz</span></button><button type="button" data-open-filter="saved" title="Gemerkt">☆ <span>Gemerkt</span></button><button type="button" data-open-filter="hidden" title="Ausgeblendet">⊘ <span>Verborgen</span></button><label class="dock-language" title="Sprache auswählen"><select id="language" aria-label="Sprache auswählen" title="Sprache" style="border:1px solid var(--line);border-radius:16px;background:var(--bg);color:var(--text);padding:6px"><option value="de">DE</option><option value="en">EN</option></select></label></div></div><section id="newsStats" class="news-stats" hidden><div class="news-stats-head"><strong>Nachrichtenbilanz</strong><button type="button" id="statsClose" aria-label="Schließen">×</button></div><p id="statsScope"></p><div id="statsContent"></div><p class="stats-disclaimer">Automatische Stichwort-Schätzungen aus Titel und Kurztext. Clickbait-Verdacht ist kein Qualitätsurteil; Tonlage und Entwicklungsrichtung sind unterschiedliche Dimensionen. „Nicht bestimmbar“ wird mitgezählt.</p></section><div class="direction-nav filter-section" data-filter-section="direction"><span class="direction-label">Planetare Entwicklungsrichtung <span title="Vorläufige Zuordnung aus Titel und Kurztext; keine Wirkungsanalyse">ⓘ</span></span><div class="direction-buttons"><button data-direction="all" class="active">Alle</button><button data-direction="constructive">↗ Konstruktiv</button><button data-direction="harmful">↘ Problematisch</button><button data-direction="mixed">↔ Ambivalent</button><button data-direction="unknown">? Offen</button></div></div><div class="chips filter-section" data-filter-section="topics" id="chips" aria-label="Themenfilter"><button class="chip active" data-cat="Alle">Alle</button><?php foreach(['Politik','Gesellschaft','Wirtschaft','Technologie','Umwelt','Gesundheit','Bildung','Wissenschaft','Weitere'] as $c): ?><button class="chip" data-cat="<?=esc($c)?>"><?=esc($c)?></button><?php endforeach; ?></div>
-<details class="refine filter-section" data-filter-section="quality"><summary>Filter & Quellen <span class="muted">· optional</span></summary><div class="source-controls"><button id="sourcesToggle" type="button">⚙ Quellen auswählen</button><div id="sourcePanel" hidden><div id="sourceList"></div><button id="sourcesAll" type="button">Alle</button><button id="sourcesNone" type="button">Keine</button><p class="subtle">Auswahl wird nur in diesem Browser gespeichert. Eigene RSS-Adressen folgen mit einer sicheren serverseitigen Importfunktion.</p></div></div><div class="quality-controls"><label>Tonlage <select id="toneFilter"><option value="all">Alle</option><option value="positive">Hoffnungsvoll</option><option value="balanced">Sachlich / gemischt</option><option value="negative">Belastend</option><option value="unknown">Unbestimmt</option></select></label><label><input type="checkbox" id="filterClickbait" checked> Clickbait-Verdacht ausblenden</label><button id="showFiltered" type="button">Ausgefilterte anzeigen</button></div><p class="subtle">Tonlage beschreibt die Wortwahl, nicht den Wert einer Nachricht. Entwicklungsrichtung und Gestaltbarkeit sind davon zu unterscheiden. Automatische Schlagwort-Einschätzung aus Titel und Kurztext, keine Inhaltsprüfung.</p></details><div id="stories"><?php foreach($items as $i=>$item): ?><article id="news-<?=esc(substr(hash('sha256',$item['url']),0,16))?>" class="story <?= $i===0?'feature':'' ?>" data-url="<?=esc($item['url'])?>" data-cat="<?=esc($item['category'])?>" data-search="<?=esc(mb_strtolower(($item['title']??'').' '.($item['summary']??'').' '.($item['source']??''),'UTF-8'))?>"><?php if(!empty($item["image_url"])): ?><img class="thumb" src="<?=esc($item["image_url"])?>" loading="lazy" decoding="async" referrerpolicy="no-referrer" alt="" onerror="this.style.display='none'"><?php endif; ?><div><div class="cat"><?=esc($item['category'])?></div><h2><a href="<?=esc($item['url'])?>" target="_blank" rel="noopener noreferrer"><?=esc($item['title'])?></a></h2><?php if(!empty($item['summary'])): ?><p class="summary"><?=esc($item['summary'])?></p><?php endif; ?><div class="meta"><?=esc($item['source'])?><?php if($item['agency']): ?> · Agentur: <?=esc($item['agency'])?><?php endif; ?> · <time datetime="<?=esc(str_replace(' ','T',$item['published_at']))?>"><?=esc($item['published_at'])?></time> ↗</div><?php if(!empty($item['other_versions'])): ?><details class="news-duplicates"><summary><?=count($item['other_versions'])?> weitere Veröffentlichung<?=count($item['other_versions'])===1?'':'en'?> anzeigen</summary><?php foreach($item['other_versions'] as $other): ?><a href="<?=esc($other['url'])?>" target="_blank" rel="noopener noreferrer"><?=esc($other['source'])?> ↗</a><?php endforeach; ?></details><?php endif; ?><button class="story-map-link" type="button" title="Auf dem Globus anzeigen" aria-label="Auf dem Globus anzeigen">◎ Karte</button><details class="assessment"><summary>Persönlich einordnen</summary><div class="trust-tools"><label>Eigene Einschätzung <select class="trust" aria-label="Glaubwürdigkeit persönlich einschätzen"><option value="">Ungeprüft</option><option value="plausible">Plausibel</option><option value="questionable">Fraglich</option></select></label><span class="ifis-related"></span></div></details></div><details class="story-menu"><summary aria-label="Weitere Optionen" title="Weitere Optionen">···</summary><div class="story-actions"><button class="save" aria-label="Meldung merken" title="Merken">☆ Merken</button><button class="dismiss" aria-label="Meldung ausblenden" title="Ausblenden">× Ausblenden</button><button class="assess-open" type="button">Persönlich einordnen</button></div></details></article><?php endforeach; ?></div>
+<details class="refine filter-section" data-filter-section="quality"><summary>Filter & Quellen <span class="muted">· optional</span></summary><div class="source-controls"><button id="sourcesToggle" type="button">⚙ Quellen auswählen</button><div id="sourcePanel" hidden><div id="sourceList"></div><button id="sourcesAll" type="button">Alle</button><button id="sourcesNone" type="button">Keine</button><p class="subtle">Auswahl wird nur in diesem Browser gespeichert. Eigene RSS-Adressen folgen mit einer sicheren serverseitigen Importfunktion.</p></div></div><div class="quality-controls"><label>Tonlage <select id="toneFilter"><option value="all">Alle</option><option value="positive">Hoffnungsvoll</option><option value="balanced">Sachlich / gemischt</option><option value="negative">Belastend</option><option value="unknown">Unbestimmt</option></select></label><label><input type="checkbox" id="filterClickbait" checked> Clickbait-Verdacht ausblenden</label><button id="showFiltered" type="button">Ausgefilterte anzeigen</button></div><p class="subtle">Tonlage beschreibt die Wortwahl, nicht den Wert einer Nachricht. Entwicklungsrichtung und Gestaltbarkeit sind davon zu unterscheiden. Automatische Schlagwort-Einschätzung aus Titel und Kurztext, keine Inhaltsprüfung.</p></details><div id="stories"><?php foreach($items as $i=>$item): ?><article id="news-<?=esc(substr(hash('sha256',$item['url']),0,16))?>" class="story <?= $i===0?'feature':'' ?>" data-source="<?=esc($item['source'])?>" data-url="<?=esc($item['url'])?>" data-cat="<?=esc($item['category'])?>" data-search="<?=esc(mb_strtolower(($item['title']??'').' '.($item['summary']??'').' '.($item['source']??''),'UTF-8'))?>"><?php if(!empty($item["image_url"])): ?><img class="thumb" src="<?=esc($item["image_url"])?>" loading="lazy" decoding="async" referrerpolicy="no-referrer" alt="" onerror="this.style.display='none'"><?php endif; ?><div><div class="cat"><?=esc($item['category'])?></div><h2><a href="<?=esc($item['url'])?>" target="_blank" rel="noopener noreferrer"><?=esc($item['title'])?></a></h2><?php if(!empty($item['summary'])): ?><p class="summary"><?=esc($item['summary'])?></p><?php endif; ?><div class="meta"><?=esc($item['source'])?><?php if($item['agency']): ?> · Agentur: <?=esc($item['agency'])?><?php endif; ?> · <time datetime="<?=esc(str_replace(' ','T',$item['published_at']))?>"><?=esc($item['published_at'])?></time> ↗</div><?php if(!empty($item['other_versions'])): ?><details class="news-duplicates"><summary><?=count($item['other_versions'])?> weitere Veröffentlichung<?=count($item['other_versions'])===1?'':'en'?> anzeigen</summary><?php foreach($item['other_versions'] as $other): ?><a href="<?=esc($other['url'])?>" target="_blank" rel="noopener noreferrer"><?=esc($other['source'])?> ↗</a><?php endforeach; ?></details><?php endif; ?><button class="story-map-link" type="button" title="Auf dem Globus anzeigen" aria-label="Auf dem Globus anzeigen">◎ Karte</button><details class="assessment"><summary>Persönlich einordnen</summary><div class="trust-tools"><label>Eigene Einschätzung <select class="trust" aria-label="Glaubwürdigkeit persönlich einschätzen"><option value="">Ungeprüft</option><option value="plausible">Plausibel</option><option value="questionable">Fraglich</option></select></label><span class="ifis-related"></span></div></details></div><details class="story-menu"><summary aria-label="Weitere Optionen" title="Weitere Optionen">···</summary><div class="story-actions"><button class="save" aria-label="Meldung merken" title="Merken">☆ Merken</button><button class="dismiss" aria-label="Meldung ausblenden" title="Ausblenden">× Ausblenden</button><button class="assess-open" type="button">Persönlich einordnen</button></div></details></article><?php endforeach; ?></div>
 <div class="empty <?= $items?'hide':'' ?>" id="empty"><div class="symbol">▤</div><h2>Noch keine Nachrichten importiert.</h2><p>Sobald die ersten Quellen eingebunden sind, erscheinen hier die aktuellen Meldungen – übersichtlich und ohne Ablenkung.</p></div><div class="empty hide" id="noMatches"><h2>Keine passenden Meldungen</h2><p>Versuche einen anderen Suchbegriff oder Filter.</p></div></main>
 
 </div>
@@ -371,6 +371,16 @@ const dictionary={de:{world:'Weltlage',ifis:'Potenzial',all:'Alle',saved:'Gemerk
 function translate(lang){const d=dictionary[lang]||dictionary.de;document.documentElement.lang=lang;language.value=lang;try{localStorage.setItem(prefix+'lang',lang)}catch{}
 document.querySelectorAll('.topnav a')[0].textContent='World';document.querySelectorAll('.topnav a')[1].textContent=lang==='en'?'Potential':'Potenzial';document.getElementById('globeToggle').textContent=lang==='en'?'Map':'Karte';search.placeholder=d.search;document.querySelector('.chips [data-cat="Alle"]').textContent=d.all;document.querySelectorAll('.trust-tools label').forEach(el=>{el.firstChild.textContent=d.rating+' ';const opts=el.querySelector('select').options;opts[0].textContent=d.unverified;opts[1].textContent=d.plausible;opts[2].textContent=d.questionable;});document.querySelector('[data-open-filter="saved"] span').textContent=d.saved;}
 language.addEventListener('change',()=>translate(language.value));translate(localStorage.getItem(prefix+'lang')||'de');
+// Feed and map are separate closures: expose an explicit selection interface.
+window.ifisNewsFeed={
+ selectMapStories(ids){
+  mapSelectedStoryIds=new Set(ids);
+  mode='all';cat='Alle';direction='all';search.value='';
+  toneFilter.value='all';baitFilter.checked=false;showBait=false;
+  refresh();
+ },
+ clearMapStories(){mapSelectedStoryIds=null;refresh();}
+};
 search.addEventListener('input',refresh);refresh();
 })();
 </script>
@@ -447,24 +457,12 @@ const colorMode=document.getElementById('mapColorMode');
 const focusMode=document.getElementById('mapFocusMode');
 focusMode.addEventListener('change',()=>{if(map){hideFarSide();updateConnector();}});
 function filterMapStories(articles){
- mapSelectedStoryIds=new Set(articles.map(story=>story.id));
- mode='all';cat='Alle';direction='all';search.value='';
- if(typeof toneFilter!=='undefined')toneFilter.value='all';
- if(typeof baitFilter!=='undefined')baitFilter.checked=false;
- if(typeof showBait!=='undefined')showBait=false;
- refresh();
+ window.ifisNewsFeed.selectMapStories(articles.map(story=>story.id));
 }
 function openMapStory(story){
  if(!story)return;
+ // Close the popup without clearing the icon's article selection.
  if(activeMapPopup){const popup=activeMapPopup;activeMapPopup=null;popup.remove();}
- // Ensure the selected story is visible even if a saved, source or search filter hid it.
- mapSelectedStoryIds=new Set([story.id]);
- mode='all';cat='Alle';direction='all';search.value='';
- if(typeof toneFilter!=='undefined')toneFilter.value='all';
- if(typeof baitFilter!=='undefined')baitFilter.checked=false;
- if(typeof showBait!=='undefined')showBait=false;
- refresh();
- story.classList.remove('hide');
  markStorySeen(story);
  requestAnimationFrame(()=>{story.scrollIntoView({behavior:'smooth',block:'center'});history.replaceState(null,'','#'+story.id)});
 }
@@ -505,7 +503,7 @@ function showMarkerArticles(coordinates,title,articles,routePoints=[],descriptio
  details.append(list);wrapper.append(details);
  activeMapPopup=new maplibregl.Popup({closeButton:true,closeOnClick:false,anchor:'top',offset:[0,20],maxWidth:'min(360px,85vw)',className:'marker-article-popup'}).setLngLat(coordinates).setDOMContent(wrapper).addTo(map);
  const popupForSelection=activeMapPopup;
- popupForSelection.on('close',()=>{if(activeMapPopup!==popupForSelection)return;activeMapPopup=null;mapOverlayOpen=false;selectedPlace=null;selectedSource=null;mapSelectedStoryIds=null;refresh();updateSourceLinks()});
+ popupForSelection.on('close',()=>{if(activeMapPopup!==popupForSelection)return;activeMapPopup=null;mapOverlayOpen=false;selectedPlace=null;selectedSource=null;window.ifisNewsFeed.clearMapStories();info.replaceChildren();info.textContent='Nachrichten geografisch entdecken. Wähle einen Ort auf der Karte.';info.classList.remove('has-selection');updateSourceLinks()});
  const points=[coordinates,...routePoints].filter(p=>Array.isArray(p)&&p.length===2&&p.every(Number.isFinite));
  if(points.length>1){
   const lngs=points.map(p=>p[0]),lats=points.map(p=>p[1]);
@@ -598,7 +596,7 @@ const sourceLocations={
  'Phys.org':{name:'Phys.org · Isle of Man',coordinates:[-4.4818,54.1523]},
  'IEEE Spectrum':{name:'IEEE Spectrum · New York',coordinates:[-73.9857,40.7484]}
 };
-function sourceFor(story){const name=story.querySelector('.meta')?.textContent||'';return Object.entries(sourceLocations).find(([key])=>name.includes(key))?.[1]||null}
+function sourceFor(story){const name=story.dataset.source||story.querySelector('.meta')?.textContent||'';return Object.entries(sourceLocations).find(([key])=>name.includes(key))?.[1]||null}
 function storiesForSource(source){return stories.filter(story=>sourceFor(story)?.name===source.name)}
 
 function hideFarSide(){if(!map)return;const center=map.getCenter(),rad=Math.PI/180,a=center.lat*rad,b=center.lng*rad;markers.forEach(marker=>{const el=marker.getElement(),p=marker.getLngLat(),lat=p.lat*rad,lon=p.lng*rad;const facing=flatProjection||Math.sin(a)*Math.sin(lat)+Math.cos(a)*Math.cos(lat)*Math.cos(lon-b)>0.025;const source=el.classList.contains('globe-source')||el.classList.contains('globe-source-cluster');const enabled=source?document.getElementById('showSourceMarkers').checked:document.getElementById('showEventMarkers').checked;
@@ -658,7 +656,7 @@ sources.forEach(source=>{const related=storiesForSource(source);const places=new
 let selectedPlace=null;
 let selectedSource=null;
 let mapOverlayOpen=false;
-function closeMapOverlay(){mapSelectedStoryIds=null;refresh();if(activeMapPopup){activeMapPopup.remove();activeMapPopup=null;}if(!mapOverlayOpen)return;mapOverlayOpen=false;selectedPlace=null;selectedSource=null;info.replaceChildren();updateSourceLinks();info.classList.remove('has-selection');info.textContent='Nachrichten geografisch entdecken. Wähle einen Ort auf der Karte.';connector.style.display='block';}
+function closeMapOverlay(){window.ifisNewsFeed.clearMapStories();if(activeMapPopup){const popup=activeMapPopup;activeMapPopup=null;popup.remove();}if(!mapOverlayOpen)return;mapOverlayOpen=false;selectedPlace=null;selectedSource=null;info.replaceChildren();updateSourceLinks();info.classList.remove('has-selection');info.textContent='Nachrichten geografisch entdecken. Wähle einen Ort auf der Karte.';connector.style.display='block';}
 const articlePanelToggle=document.createElement('button');
 articlePanelToggle.type='button';
 articlePanelToggle.className='globe-info-toggle';
@@ -683,32 +681,10 @@ function updateConnector(){connector.style.display='block';renderFlightArcs();re
  connectorEnd.setAttribute('cx',pt.x);connectorEnd.setAttribute('cy',pt.y);
 }
 function choose(place){
- mapOverlayOpen=true;
- const group=groups.get(place);if(!group)return;
- selectedPlace=place;selectedSource=null;filterMapStories(group.stories);updateSourceLinks();info.replaceChildren();info.classList.add('has-selection');
- const heading=document.createElement('strong');
- const reportingSources=new Set(group.stories.map(sourceFor).filter(Boolean).map(source=>source.name));
- heading.textContent=place+' · '+reportingSources.size+' berichtende Quellen · '+group.stories.length+' Meldungen';
- info.append(heading);
- [...group.stories].sort((a,b)=>{
-  const at=Date.parse(a.querySelector('time')?.getAttribute('datetime')||'')||0;
-  const bt=Date.parse(b.querySelector('time')?.getAttribute('datetime')||'')||0;
-  return bt-at;
- }).slice(0,6).forEach(story=>{
-  const a=document.createElement('a');a.href='#'+story.id;
-  a.addEventListener('click',event=>{
-   event.preventDefault();
-   if(story.classList.contains('hide')){mode='all';cat='Alle';direction='all';search.value='';refresh()}
-   markStorySeen(story);story.scrollIntoView({behavior:'smooth',block:'center'});history.replaceState(null,'','#'+story.id);
-  });
-  const title=document.createElement('span');title.textContent=(story.dataset.direction==='constructive'?'↗ ':'')+story.querySelector('h2').textContent;
-  const time=story.querySelector('time'),date=time?Date.parse(time.getAttribute('datetime')||''):NaN;
-  const meta=document.createElement('small');
-  meta.textContent=Number.isFinite(date)?new Intl.DateTimeFormat(document.documentElement.lang||'de',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}).format(date):'Zeit unbekannt';
-  a.className='globe-story-link';a.append(title,meta);info.append(a);
- });
- showMarkerArticles([group.loc[2],group.loc[1]],place,group.stories,[...new Map(group.stories.map(story=>sourceFor(story)).filter(Boolean).map(src=>[src.name,src.coordinates])).values()]);
- requestAnimationFrame(updateConnector);
+ const group=groups.get(place);if(!group||!map)return;
+ selectedPlace=place;selectedSource=null;updateSourceLinks();
+ const reportingSources=new Set(group.stories.map(story=>story.dataset.source).filter(Boolean));
+ showMarkerArticles([group.loc[2],group.loc[1]],place,group.stories,[...new Map(group.stories.map(story=>sourceFor(story)).filter(Boolean).map(src=>[src.name,src.coordinates])).values()],reportingSources.size+' Quellen');
 }
 // The selected routes remain visible until the same marker is clicked again.
 // Route selection is controlled by its origin marker.
