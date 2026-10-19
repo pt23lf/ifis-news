@@ -1017,7 +1017,16 @@ async function shareNewsCollection(selection,articles,mode,feedback,button){
    body:JSON.stringify({
     kind:selection.kind,name:selection.name,
     view:new URLSearchParams(location.search).get('view')==='world'?'world':'ifis',
-    urls:articles.slice(0,40).map(story=>story.dataset.url).filter(Boolean)
+    urls:articles.slice(0,40).map(story=>story.dataset.url).filter(Boolean),
+    geo:articles.slice(0,40).map(story=>{
+     const source=sourceFor(story);
+     const event=groups.get(story.dataset.place)?.loc;
+     return {
+      url:story.dataset.url,
+      source:source?{name:source.name,coordinates:source.coordinates}:null,
+      event:event?{name:event[0],coordinates:[event[2],event[1]]}:null
+     };
+    })
    })
   });
   const result=await response.json();
