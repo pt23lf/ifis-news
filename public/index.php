@@ -599,6 +599,7 @@ const sourceLocations={
  'IEEE Spectrum':{name:'IEEE Spectrum · New York',coordinates:[-73.9857,40.7484]}
 };
 function sourceFor(story){const name=story.querySelector('.meta')?.textContent||'';return Object.entries(sourceLocations).find(([key])=>name.includes(key))?.[1]||null}
+function storiesForSource(source){return stories.filter(story=>sourceFor(story)?.name===source.name)}
 
 function hideFarSide(){if(!map)return;const center=map.getCenter(),rad=Math.PI/180,a=center.lat*rad,b=center.lng*rad;markers.forEach(marker=>{const el=marker.getElement(),p=marker.getLngLat(),lat=p.lat*rad,lon=p.lng*rad;const facing=flatProjection||Math.sin(a)*Math.sin(lat)+Math.cos(a)*Math.cos(lat)*Math.cos(lon-b)>0.025;const source=el.classList.contains('globe-source')||el.classList.contains('globe-source-cluster');const enabled=source?document.getElementById('showSourceMarkers').checked:document.getElementById('showEventMarkers').checked;
  const hours=Number(document.getElementById('mapTimeRange').value)||2.5;
@@ -641,6 +642,7 @@ function updateSourceLinks(){
  renderFlightArcs();
 }
 function addSourceLinks(){const features=[],sources=new Map();groups.forEach(g=>g.stories.forEach(story=>{const source=sourceFor(story);if(!source)return;const destination=[g.loc[2],g.loc[1]];if(Math.abs(destination[0]-source.coordinates[0])+Math.abs(destination[1]-source.coordinates[1])<0.1)return;sources.set(source.name,source);features.push({type:'Feature',geometry:{type:'LineString',coordinates:[source.coordinates,destination]},properties:{source:source.name,event:g.loc[0]}})}));
+stories.forEach(story=>{const source=sourceFor(story);if(source)sources.set(source.name,source);});
 map.addSource('news-source-links',{type:'geojson',data:{type:'FeatureCollection',features}});
 groups.forEach((group,place)=>{
  const reportingSources=new Set(group.stories.map(story=>story.querySelector('.meta')?.textContent?.split(' · ')[0]?.trim()).filter(Boolean));
@@ -652,7 +654,7 @@ groups.forEach((group,place)=>{
  markers.push(new maplibregl.Marker({element:dot,anchor:'center'}).setLngLat([group.loc[2],group.loc[1]]).addTo(map));
 });
 map.addLayer({id:'news-source-links',type:'line',source:'news-source-links',layout:{visibility:'none'},paint:{'line-color':'#e59a35','line-width':2,'line-opacity':0.85,'line-dasharray':[2,2]}});
-sources.forEach(source=>{const related=stories.filter(story=>sourceFor(story)?.name===source.name);const places=new Set(related.map(story=>story.dataset.place).filter(place=>place&&groups.has(place)));const dot=document.createElement('button');dot.type='button';dot.className='globe-source';dot.textContent=String(places.size);dot.title=source.name+' · '+places.size+' Ereignisorte · '+related.length+' Artikel · Redaktionsstandort';dot.addEventListener('click',()=>{selectedPlace=null;selectedSource=source.name;updateSourceLinks();const related=stories.filter(story=>sourceFor(story)?.name===source.name);const points=related.map(story=>groups.get(story.dataset.place)?.loc).filter(Boolean).map(loc=>[loc[2],loc[1]]);showMarkerArticles(source.coordinates,source.name,related,points,places.size+' Ereignisorte')});markers.push(new maplibregl.Marker({element:dot,anchor:'center'}).setLngLat(source.coordinates).addTo(map))});}
+sources.forEach(source=>{const related=storiesForSource(source);const places=new Set(related.map(story=>story.dataset.place).filter(place=>place&&groups.has(place)));const dot=document.createElement('button');dot.type='button';dot.className='globe-source';dot.textContent=String(places.size);dot.title=source.name+' · '+places.size+' Ereignisorte · '+related.length+' Artikel · Redaktionsstandort';dot.addEventListener('click',()=>{selectedPlace=null;selectedSource=source.name;updateSourceLinks();const related=storiesForSource(source);const points=related.map(story=>groups.get(story.dataset.place)?.loc).filter(Boolean).map(loc=>[loc[2],loc[1]]);showMarkerArticles(source.coordinates,source.name,related,points,places.size+' Ereignisorte')});markers.push(new maplibregl.Marker({element:dot,anchor:'center'}).setLngLat(source.coordinates).addTo(map))});}
 let selectedPlace=null;
 let selectedSource=null;
 let mapOverlayOpen=false;
