@@ -1385,11 +1385,43 @@ function addNightLayer(){if(map.getSource('night'))return;map.addSource('night',
 nightToggle.addEventListener('change',()=>{if(map?.getLayer('night'))map.setLayoutProperty('night','visibility',nightToggle.checked?'visible':'none')});
 let flightLayer=null;
 function visibleHemisphere(coordinates){if(flatProjection)return true;const c=map.getCenter(),r=Math.PI/180;return Math.sin(c.lat*r)*Math.sin(coordinates[1]*r)+Math.cos(c.lat*r)*Math.cos(coordinates[1]*r)*Math.cos((coordinates[0]-c.lng)*r)>0.025}
+// Great-circle interpolation keeps flight routes attached to the rotating globe.
+// The altitude is drawn as a radial screen-space displacement; SVG itself has no
+// geographic altitude, so the globe's horizon is used to occlude the far side.
+function flightRoutePoints(from,to){
+ const rad=Math.PI/180;
+ const vector=coords=>{const lat=coords[1]*rad,lon=coords[0]*rad;return [Math.cos(lat)*Math.cos(lon),Math.cos(lat)*Math.sin(lon),Math.sin(lat)]};
+ const a=vector(from),b=vector(to);
+ const dot=Math.max(-1,Math.min(1,a[0]*b[0]+a[1]*b[1]+a[2]*b[2]));
+ const angle=Math.acos(dot),sinAngle=Math.sin(angle);
+ const count=Math.max(16,Math.min(88,Math.ceil(angle/rad/2)));
+ const points=[];
+ for(let i=0;i<=count;i++){
+  const t=i/count;
+  let v;
+  if(angle<1e-7)v=a;
+  else if(Math.abs(sinAngle)<1e-6){
+   // Antipodal locations have no unique shortest route; choose a stable plane.
+   const axis=Math.abs(a[2])<.9?[-a[1],a[0],0]:[0,-a[2],a[1]];
+   const norm=Math.hypot(...axis)||1;
+   v=a.map((n,j)=>Math.cos(Math.PI*t)*n+Math.sin(Math.PI*t)*axis[j]/norm);
+  }else{
+   const wa=Math.sin((1-t)*angle)/sinAngle,wb=Math.sin(t*angle)/sinAngle;
+   v=a.map((n,j)=>wa*n+wb*b[j]);
+  }
+  points.push({t,coordinates:[Math.atan2(v[1],v[0])/rad,Math.atan2(v[2],Math.hypot(v[0],v[1]))/rad]});
+ }
+ return {points,angle};
+}
 function renderFlightArcs(){
  if(!map||!flightLayer)return;
  flightLayer.replaceChildren();
  if(!(hoveredMapStory||document.getElementById('showSourceLinks').checked||selectedPlace||selectedSource)||!document.getElementById('showEventMarkers').checked||!document.getElementById('showSourceMarkers').checked)return;
- const size=map.getContainer();flightLayer.setAttribute('viewBox','0 0 '+size.clientWidth+' '+size.clientHeight);
+ const size=map.getContainer(),width=size.clientWidth,height=size.clientHeight;
+ flightLayer.setAttribute('viewBox','0 0 '+width+' '+height);
+ const globeCentre=map.project(map.getCenter()),globeRadius=Math.min(width,height)*.48;
+ const center=map.getCenter(),rad=Math.PI/180;
+ const facing=coordinates=>Math.sin(center.lat*rad)*Math.sin(coordinates[1]*rad)+Math.cos(center.lat*rad)*Math.cos(coordinates[1]*rad)*Math.cos((coordinates[0]-center.lng)*rad);
  const unique=new Set();
  groups.forEach((group,place)=>{
   if(hoveredMapStory&&hoveredMapStory.dataset.place!==place)return;
@@ -1399,28 +1431,47 @@ function renderFlightArcs(){
    const source=sourceFor(story);if(!source||(!hoveredMapStory&&selectedSource&&source.name!==selectedSource))return;
    const key=source.name+'|'+place;if(unique.has(key))return;unique.add(key);
    const from=source.coordinates,to=[group.loc[2],group.loc[1]];
-   if(!visibleHemisphere(from)||!visibleHemisphere(to))return;
-   const a=displayPointForMarker(from,source.name),b=displayPointForMarker(to),dx=b.x-a.x,dy=b.y-a.y,distance=Math.hypot(dx,dy);
-   if(distance<3)return;
-   const lift=Math.min(110,Math.max(10,distance*.16));
-   const mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
-   const nx=-dy/distance,ny=dx/distance;
-   const upward=ny>0?-1:1;
-   // Crop both ends against each marker's outer border, not its centre:
-   // no line should cross a marker's count, even on the hovered route.
-   const control={x:mx+nx*lift*upward,y:my+ny*lift*upward-lift*.3};
+   const a=displayPointForMarker(from,source.name),b=displayPointForMarker(to);
+   if(Math.hypot(b.x-a.x,b.y-a.y)<3)return;
+   const {points,angle}=flightRoutePoints(from,to);
+   // The arc grows with geographic distance, but is capped to avoid visual clutter.
+   const peak=flatProjection?0:Math.min(globeRadius*.36,globeRadius*(.035+.18*Math.min(1,angle/Math.PI)));
+   const sampled=points.map(({t,coordinates})=>{
+    const p=map.project(coordinates);
+    let x=p.x,y=p.y;
+    if(!flatProjection){
+     const dx=x-globeCentre.x,dy=y-globeCentre.y;
+     const norm=Math.hypot(dx,dy);
+     // Lift away from the globe silhouette, not merely toward the top of the screen.
+     const altitude=peak*Math.sin(Math.PI*t);
+     if(norm>1){x+=dx/norm*altitude;y+=dy/norm*altitude}
+     else y-=altitude;
+    }
+    return {x,y,visible:flatProjection||facing(coordinates)>0.015};
+   });
+   // Keep endpoints at the visible edges of the marker circles.
    const radiusScale=Math.max(.65,Math.min(1.65,.78+map.getZoom()*.14));
    const sourceRadius=flatProjection?14*radiusScale+2:5.5,eventRadius=flatProjection?16*radiusScale+2:5.5;
-   const startLength=Math.hypot(control.x-a.x,control.y-a.y)||1;
-   const endLength=Math.hypot(control.x-b.x,control.y-b.y)||1;
-   if(distance<=sourceRadius+eventRadius+2)return;
-   const startX=a.x+(control.x-a.x)/startLength*sourceRadius;
-   const startY=a.y+(control.y-a.y)/startLength*sourceRadius;
-   const endX=b.x+(control.x-b.x)/endLength*eventRadius;
-   const endY=b.y+(control.y-b.y)/endLength*eventRadius;
+   const first=sampled[0],last=sampled[sampled.length-1];
+   const fNext=sampled[1],lPrev=sampled[sampled.length-2];
+   const fd=Math.hypot(fNext.x-first.x,fNext.y-first.y)||1;
+   const ld=Math.hypot(last.x-lPrev.x,last.y-lPrev.y)||1;
+   first.x=a.x+(fNext.x-a.x)/Math.max(1,Math.hypot(fNext.x-a.x,fNext.y-a.y))*Math.min(sourceRadius,fd*.85);
+   first.y=a.y+(fNext.y-a.y)/Math.max(1,Math.hypot(fNext.x-a.x,fNext.y-a.y))*Math.min(sourceRadius,fd*.85);
+   last.x=b.x+(lPrev.x-b.x)/Math.max(1,Math.hypot(lPrev.x-b.x,lPrev.y-b.y))*Math.min(eventRadius,ld*.85);
+   last.y=b.y+(lPrev.y-b.y)/Math.max(1,Math.hypot(lPrev.x-b.x,lPrev.y-b.y))*Math.min(eventRadius,ld*.85);
+   let d='',drawing=false;
+   sampled.forEach(p=>{
+    if(!p.visible||!Number.isFinite(p.x)||!Number.isFinite(p.y)){drawing=false;return}
+    d+=(drawing?' L ':' M ')+p.x.toFixed(1)+' '+p.y.toFixed(1);drawing=true;
+   });
+   if(!d.trim())return;
    const curve=document.createElementNS('http://www.w3.org/2000/svg','path');
-   curve.setAttribute('d','M '+startX+' '+startY+' Q '+control.x+' '+control.y+' '+endX+' '+endY);
-   curve.setAttribute('fill','none');curve.setAttribute('stroke','#e59a35');curve.setAttribute('stroke-width',flatProjection?(hoveredMapStory?'3.1':'1.7'):(hoveredMapStory?'1.8':'0.9'));curve.setAttribute('stroke-opacity',flatProjection?(hoveredMapStory?'.96':'.82'):(hoveredMapStory?'.82':'.48'));curve.setAttribute('stroke-linecap','round');
+   curve.setAttribute('d',d);
+   curve.setAttribute('fill','none');curve.setAttribute('stroke','#e59a35');
+   curve.setAttribute('stroke-width',flatProjection?(hoveredMapStory?'3.1':'1.7'):(hoveredMapStory?'2':'1.05'));
+   curve.setAttribute('stroke-opacity',flatProjection?(hoveredMapStory?'.96':'.82'):(hoveredMapStory?'.88':'.54'));
+   curve.setAttribute('stroke-linecap','round');curve.setAttribute('stroke-linejoin','round');
    flightLayer.append(curve);
   });
  });
