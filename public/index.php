@@ -350,6 +350,12 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
 .info-pages-panel a:hover,.info-pages-panel a:focus-visible{background:var(--hover);color:var(--accent)}
 @media(max-width:720px){.info-pages-panel{right:calc(14px + 58px + 12px);bottom:calc(14px + env(safe-area-inset-bottom,0px))}}
 .story{scroll-margin-top:115px}
+
+/* The selected background concerns the space around the globe, not the map tiles. */
+.globe-view.map-light #newsGlobe,.globe-view.map-light .maplibregl-canvas-container{background:#fff!important}
+.globe-view.map-dark #newsGlobe,.globe-view.map-dark .maplibregl-canvas-container{background:#111720!important}
+.feedhead #feedTitle.feed-title-saved{font-size:27px!important;line-height:1.2!important;letter-spacing:0!important}
+
 /* The icon popup and the filtered feed below the map replace the redundant bottom-left map list. */
 .globe-view #globeInfo{display:none!important}
 </style></head><body>
@@ -452,7 +458,9 @@ function renderNewsStats(){if(statsPanel.hidden)return;const available=stories.f
 function refresh(){let count=0;for(const el of stories){const url=el.dataset.url;const show=mapSelectedStoryIds?mapSelectedStoryIds.has(el.id):(mode==='saved'?saved.includes(url):mode==='hidden'?hidden.includes(url):!hidden.includes(url))&&(cat==='Alle'||el.dataset.cat===cat)&&(direction==='all'||el.dataset.direction===direction)&&enabledSources.includes(el.dataset.source)&&el.dataset.search.includes(search.value.trim().toLocaleLowerCase())&&(toneFilter.value==='all'||el.dataset.tone===toneFilter.value)&&(showBait?el.dataset.bait==='yes':(!baitFilter.checked||el.dataset.bait!=='yes'));el.classList.toggle('hide',!show);el.querySelector('.save').textContent=saved.includes(url)?'★':'☆';el.querySelector('.save').classList.toggle('saved',saved.includes(url));el.querySelector('.dismiss').textContent=mode==='hidden'?'↶':'×';el.querySelector('.dismiss').title=mode==='hidden'?'Wieder anzeigen':'Ausblenden';if(show)count++}
 empty.classList.toggle('hide',stories.length>0||mode!=='all'||cat!=='Alle'||!!search.value);
 noMatches.classList.toggle('hide',count>0||(!stories.length&&mode==='all'&&cat==='Alle'&&!search.value));
-title.textContent=mode==='saved'?'Gemerkt':mode==='hidden'?'Ausgeblendet':cat==='Alle'?base:cat;
+title.textContent=mode==='saved'?'☆':mode==='hidden'?'Ausgeblendet':cat==='Alle'?base:cat;
+title.classList.toggle('feed-title-saved',mode==='saved');
+title.setAttribute('aria-label',mode==='saved'?'Gemerkt':title.textContent);
 document.querySelectorAll('[data-cat]').forEach(b=>b.classList.toggle('active',mode==='all'&&b.dataset.cat===cat));
 renderNewsStats();document.querySelector('[data-open-filter="saved"]').classList.toggle('active',mode==='saved');document.querySelector('[data-open-filter="hidden"]').classList.toggle('active',mode==='hidden');
 }
@@ -754,17 +762,18 @@ function isDarkMap(){return mapBrightness.value==='dark'||mapBrightness.value===
 function selectedMapStyle(){
  const dark=isDarkMap();
  panel.classList.toggle('map-dark',dark);
+ panel.classList.toggle('map-light',!dark);
  if(mapBasemap.value==='satellite'){
   return {version:8,name:'Satellite',sources:{imagery:{type:'raster',tiles:['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],tileSize:256,attribution:'Tiles © Esri, Maxar, Earthstar Geographics'}},layers:[{id:'satellite-imagery',type:'raster',source:'imagery',paint:dark?{'raster-brightness-max':0.67,'raster-saturation':-0.3}:{}}]};
  }
- if(dark)return 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
- if(mapBasemap.value==='political')return 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json';
- return 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
+ if(mapBasemap.value==='political')return 'https://demotiles.maplibre.org/style.json';
+ return {version:8,name:'Geografisch · Relief',sources:{topography:{type:'raster',tiles:['https://a.tile.opentopomap.org/{z}/{x}/{y}.png','https://b.tile.opentopomap.org/{z}/{x}/{y}.png','https://c.tile.opentopomap.org/{z}/{x}/{y}.png'],tileSize:256,maxzoom:17,attribution:'© OpenStreetMap-Mitwirkende · SRTM · OpenTopoMap (CC BY-SA)'}},layers:[{id:'geographic-terrain',type:'raster',source:'topography',paint:dark?{'raster-brightness-max':0.76,'raster-saturation':-0.25}:{}}]};
 }
 let styleSwitchSerial=0;
 function applyMapStyle(){
  const style=selectedMapStyle();
  if(!map)return;
+ map.getContainer().style.backgroundColor=isDarkMap()?'#111720':'#ffffff';
  const serial=++styleSwitchSerial;
  map.once('style.load',()=>{
   if(serial!==styleSwitchSerial)return;
@@ -785,7 +794,7 @@ function rotateMap(timestamp){
  if(map&&mapAutoRotate.value!=='0'&&!flatProjection&&document.visibilityState==='visible'){
   if(rotationLast&&timestamp>=rotationHoldUntil&&map.isStyleLoaded()){
    const delta=Math.min(0.07,(timestamp-rotationLast)/1000);
-   if(delta>0)map.setCenter([(map.getCenter().lng+Number(mapAutoRotate.value)*delta+540)%360-180,map.getCenter().lat]);
+   if(delta>0)map.setCenter([(map.getCenter().lng-Number(mapAutoRotate.value)*delta+540)%360-180,map.getCenter().lat]);
   }
  }
  rotationLast=timestamp;
@@ -929,6 +938,7 @@ function choose(place){
 // Route selection is controlled by its origin marker.
 // Clicking outside the map does not reset the route selection.
 function openNewsMap(scrollToMap=true){panel.classList.add('open');btn.classList.add('active');btn.setAttribute('aria-pressed','true');if(scrollToMap)panel.scrollIntoView({behavior:'smooth',block:'start'});if(map){map.resize();return;}if(!window.maplibregl){info.textContent='Die Kartenbibliothek konnte nicht geladen werden.';return;}map=new maplibregl.Map({container:'newsGlobe',style:selectedMapStyle(),center:[10,20],zoom:1.15,attributionControl:true});
+map.getContainer().style.backgroundColor=isDarkMap()?'#111720':'#ffffff';
 map.getCanvas().addEventListener('pointerdown',()=>{rotationHoldUntil=performance.now()+4500});
 map.getCanvas().addEventListener('wheel',()=>{rotationHoldUntil=performance.now()+4500},{passive:true});
 map.on('dragstart',()=>{rotationHoldUntil=performance.now()+4500});map.on('load',()=>{try{map.setProjection({type:flatProjection?'mercator':'globe'});}catch(e){};addNightLayer();addSourceLinks();flightLayer=document.createElementNS('http://www.w3.org/2000/svg','g');connector.append(flightLayer);updateMapReadState();map.on('move',()=>{hideFarSide();updateConnector()});map.on('resize',()=>{updateConnector();renderFlightArcs();});hideFarSide();if(!groups.size)info.textContent='Noch keine eindeutigen Ereignisorte erkannt.';});}
