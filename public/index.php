@@ -371,7 +371,7 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
 /* The icon popup and the filtered feed below the map replace the redundant bottom-left map list. */
 .globe-view #globeInfo{display:none!important}
 </style></head><body>
-<header class="topbar"><div class="topbar-inner"><a class="brand" href="?view=world"><strong>IFIS</strong></a><nav class="topnav" aria-label="Bereiche"><a href="?view=ifis" class="<?= $view==='ifis'?'active':'' ?>" data-subtitle-de="Nachrichten mit Veränderungspotenzial" data-subtitle-en="News with potential for change">Potenzial</a><button class="globe-toggle" id="globeToggle" type="button" aria-pressed="false" data-subtitle-de="Nachrichten geografisch entdecken" data-subtitle-en="Explore news geographically">Karte</button><a href="?view=world" class="<?= $view==='world'?'active':'' ?>" data-subtitle-de="Nachrichten aus aller Welt" data-subtitle-en="News from around the world">Weltlage</a></nav><button type="button" id="gridToggle" class="grid-toggle" title="Spaltenzahl ändern" aria-label="Spaltenzahl ändern"><svg class="grid-toggle-symbol" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="2.5" y="13.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="13.5" width="8" height="8" rx="1.3"/></svg><span id="gridCount">1</span></button><div class="top-actions"><button type="button" id="mobileSearchToggle" class="mobile-search-toggle" aria-label="Suche öffnen" aria-expanded="false" title="Nachrichten suchen"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg></button><input class="search" id="search" type="search" placeholder="Nachrichten durchsuchen …" aria-label="Nachrichten durchsuchen"></div></div></header>
+<header class="topbar"><div class="topbar-inner"><a class="brand" href="?view=world"><strong>IFIS</strong></a><nav class="topnav" aria-label="Bereiche"><a href="?view=ifis&amp;map=0" class="<?= $view==='ifis'?'active':'' ?>" data-subtitle-de="Nachrichten mit Veränderungspotenzial" data-subtitle-en="News with potential for change">Potenzial</a><button class="globe-toggle" id="globeToggle" type="button" aria-pressed="false" data-subtitle-de="Nachrichten geografisch entdecken" data-subtitle-en="Explore news geographically">Karte</button><a href="?view=world&amp;map=0" class="<?= $view==='world'?'active':'' ?>" data-subtitle-de="Nachrichten aus aller Welt" data-subtitle-en="News from around the world">Weltlage</a></nav><button type="button" id="gridToggle" class="grid-toggle" title="Spaltenzahl ändern" aria-label="Spaltenzahl ändern"><svg class="grid-toggle-symbol" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="2.5" y="13.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="13.5" width="8" height="8" rx="1.3"/></svg><span id="gridCount">1</span></button><div class="top-actions"><button type="button" id="mobileSearchToggle" class="mobile-search-toggle" aria-label="Suche öffnen" aria-expanded="false" title="Nachrichten suchen"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg></button><input class="search" id="search" type="search" placeholder="Nachrichten durchsuchen …" aria-label="Nachrichten durchsuchen"></div></div></header>
 <div class="layout">
 
 <main id="main"><div class="feedhead"><h1 id="feedTitle"><?= $view==='ifis'?'Potenzial':'Weltlage' ?></h1></div>
@@ -552,7 +552,7 @@ for(const {ref} of matches){
 const language=document.getElementById('language');
 const dictionary={de:{world:'Weltlage',ifis:'Potenzial',all:'Alle',saved:'Gemerkt',hidden:'Ausgeblendet',search:'Nachrichten durchsuchen …',globe:'🌍 Globus',rating:'Eigene Einschätzung',unverified:'Ungeprüft',plausible:'Plausibel',questionable:'Fraglich'},en:{world:'World news',ifis:'Potential',all:'All',saved:'Saved',hidden:'Hidden',search:'Search news …',globe:'🌍 Globe',rating:'My assessment',unverified:'Not checked',plausible:'Plausible',questionable:'Questionable'}};
 function translate(lang){const d=dictionary[lang]||dictionary.de;document.documentElement.lang=lang;language.value=lang;try{localStorage.setItem(prefix+'lang',lang)}catch{}
-document.querySelector('.topnav a[href="?view=ifis"]').textContent=lang==='en'?'Potential':'Potenzial';document.querySelector('.topnav a[href="?view=world"]').textContent=lang==='en'?'World':'Weltlage';document.getElementById('globeToggle').textContent=lang==='en'?'Map':'Karte';search.placeholder=d.search;document.querySelector('.chips [data-cat="Alle"]').textContent=d.all;document.querySelectorAll('.trust-tools label').forEach(el=>{el.firstChild.textContent=d.rating+' ';const opts=el.querySelector('select').options;opts[0].textContent=d.unverified;opts[1].textContent=d.plausible;opts[2].textContent=d.questionable;});document.querySelector('[data-open-filter="saved"] span').textContent=d.saved;}
+document.querySelector('.topnav a[href^="?view=ifis"]').textContent=lang==='en'?'Potential':'Potenzial';document.querySelector('.topnav a[href^="?view=world"]').textContent=lang==='en'?'World':'Weltlage';document.getElementById('globeToggle').textContent=lang==='en'?'Map':'Karte';search.placeholder=d.search;document.querySelector('.chips [data-cat="Alle"]').textContent=d.all;document.querySelectorAll('.trust-tools label').forEach(el=>{el.firstChild.textContent=d.rating+' ';const opts=el.querySelector('select').options;opts[0].textContent=d.unverified;opts[1].textContent=d.plausible;opts[2].textContent=d.questionable;});document.querySelector('[data-open-filter="saved"] span').textContent=d.saved;}
 language.addEventListener('change',()=>translate(language.value));translate(localStorage.getItem(prefix+'lang')||'de');
 // Feed and map are separate closures: expose an explicit selection interface.
 window.ifisNewsFeed={
@@ -899,9 +899,20 @@ function renderFlightArcs(){
    const mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
    const nx=-dy/distance,ny=dx/distance;
    const upward=ny>0?-1:1;
-   // A lifted quadratic arc suggests a flight path; its endpoints remain anchored to the map.
+   // Crop both ends against each marker's outer border, not its centre:
+   // no line should cross a marker's count, even on the hovered route.
+   const control={x:mx+nx*lift*upward,y:my+ny*lift*upward-lift*.3};
+   const radiusScale=Math.max(.65,Math.min(1.65,.78+map.getZoom()*.14));
+   const sourceRadius=14*radiusScale+2,eventRadius=16*radiusScale+2;
+   const startLength=Math.hypot(control.x-a.x,control.y-a.y)||1;
+   const endLength=Math.hypot(control.x-b.x,control.y-b.y)||1;
+   if(distance<=sourceRadius+eventRadius+2)return;
+   const startX=a.x+(control.x-a.x)/startLength*sourceRadius;
+   const startY=a.y+(control.y-a.y)/startLength*sourceRadius;
+   const endX=b.x+(control.x-b.x)/endLength*eventRadius;
+   const endY=b.y+(control.y-b.y)/endLength*eventRadius;
    const curve=document.createElementNS('http://www.w3.org/2000/svg','path');
-   curve.setAttribute('d','M '+a.x+' '+a.y+' Q '+(mx+nx*lift*upward)+' '+(my+ny*lift*upward-lift*.3)+' '+b.x+' '+b.y);
+   curve.setAttribute('d','M '+startX+' '+startY+' Q '+control.x+' '+control.y+' '+endX+' '+endY);
    curve.setAttribute('fill','none');curve.setAttribute('stroke','#e59a35');curve.setAttribute('stroke-width',hoveredMapStory?'3.6':'1.7');curve.setAttribute('stroke-opacity',hoveredMapStory?'1':'.82');curve.setAttribute('stroke-linecap','round');
    flightLayer.append(curve);
   });
@@ -986,7 +997,8 @@ map.on('dragstart',()=>{rotationHoldUntil=performance.now()+4500});map.on('load'
 // The flight-line SVG belongs inside MapLibre: above tiles but BELOW marker buttons.
 map.getContainer().append(connector);updateMapReadState();map.on('move',()=>{hideFarSide();updateConnector()});map.on('resize',()=>{updateConnector();renderFlightArcs();});hideFarSide();if(!groups.size)info.textContent='Noch keine eindeutigen Ereignisorte erkannt.';});}
 btn.addEventListener('click',()=>openNewsMap(true));
-// Open the map on first load while keeping its news feed on the Potential view.
-openNewsMap(false);
+// Direct visits begin with the map; choosing Potential or World explicitly
+// requests an article-only view with ?map=0. Map then opens that same section.
+if(new URLSearchParams(location.search).get('map')!=='0')openNewsMap(false);
 })();
 </script></body></html>
