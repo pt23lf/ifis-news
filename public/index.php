@@ -234,6 +234,78 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
 .globe-view .marker-article-list{max-height:min(34vh,250px);overflow-y:auto;overscroll-behavior:contain}
 .globe-view .marker-article-list .globe-story-link{display:block;padding:8px 3px;border-top:1px solid var(--line)}
 .globe-view .marker-article-popup .maplibregl-popup-close-button{font-size:21px;color:var(--text);padding:2px 7px}
+
+/* Compact, grouped map controls. Overrides historical legend rules. */
+.globe-view details.globe-legend{
+ display:block;position:absolute;right:12px;top:12px;left:auto;
+ width:min(292px,calc(100% - 24px));max-width:calc(100% - 24px);
+ margin:0;padding:0;border:1px solid var(--line);border-radius:12px;
+ background:var(--bg);color:var(--text);box-shadow:0 4px 20px #0003;
+ font-size:13px;line-height:1.4;z-index:8;overflow:hidden
+}
+.globe-view details.globe-legend:not([open]){width:auto;max-width:calc(100% - 24px);padding:0}
+.globe-view .globe-legend-heading{
+ display:flex;align-items:center;justify-content:space-between;gap:16px;
+ list-style:none;white-space:nowrap;margin:0!important;
+ cursor:pointer;padding:10px 13px;font-weight:650;font-size:13px;
+}
+.globe-view .globe-legend-heading::-webkit-details-marker{display:none}
+.globe-view .globe-legend-heading::before{content:none!important}
+.globe-view .globe-legend-heading::after{content:'⌄';font-size:18px;font-weight:400;line-height:1;opacity:.75}
+.globe-view details.globe-legend[open] .globe-legend-heading::after{transform:rotate(180deg)}
+.globe-view details.globe-legend[open] .globe-legend-heading{border-bottom:1px solid var(--line)}
+.globe-view .map-legend-content{padding:0 13px 10px}
+.globe-view .map-legend-section{padding:11px 0}
+.globe-view .map-legend-section + .map-legend-section{border-top:1px solid var(--line)}
+.globe-view .map-legend-section-title{
+ display:flex;align-items:center;justify-content:space-between;
+ font-size:11px;font-weight:750;letter-spacing:.035em;color:var(--muted);
+ text-transform:uppercase;margin-bottom:8px
+}
+.globe-view .map-legend-section-title output{
+ color:var(--text);font-weight:700;font-size:13px;letter-spacing:0;text-transform:none
+}
+.globe-view #mapTimeRange{
+ display:block;width:100%;min-width:0;max-width:none;
+ margin:5px 0 0;accent-color:#e59a35
+}
+.globe-view .map-range-labels{
+ display:flex;justify-content:space-between;color:var(--muted);font-size:10px;margin-top:2px
+}
+.globe-view .map-legend-check{
+ display:flex;align-items:center;gap:9px;min-height:34px;cursor:pointer;
+ margin:0;white-space:normal
+}
+.globe-view .map-legend-check input{margin:0;width:17px;height:17px;accent-color:var(--accent);flex-shrink:0}
+.globe-view .map-legend-swatch{width:14px;height:14px;flex:none;display:inline-block}
+.globe-view .map-legend-event{background:#0d9488;border-radius:50%}
+.globe-view .map-legend-source{background:#e59a35;border-radius:50%}
+.globe-view .map-legend-connection{height:0;border-top:2px dashed #e59a35}
+.globe-view .map-legend-night{background:linear-gradient(90deg,#f1c65b 50%,#293b60 50%);border-radius:50%}
+.globe-view .map-legend-select,.globe-view .map-legend-projection{
+ display:flex;align-items:center;justify-content:space-between;gap:9px;
+ min-height:36px;margin:0
+}
+.globe-view .map-legend-select select{
+ min-width:0;max-width:66%;width:auto;
+ color:var(--text);background:var(--bg);border:1px solid var(--line);
+ border-radius:7px;padding:5px 8px;font:inherit;font-size:12px
+}
+.globe-view .map-legend-projection button{
+ min-width:36px;width:36px;height:33px;padding:4px;
+ border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--text)
+}
+.globe-view .globe-legend-update{
+ font-size:10px;line-height:1.45;padding:10px 0 0;
+ margin:0;border-top:1px solid var(--line);color:var(--muted)
+}
+@media(max-width:600px){
+ .globe-view details.globe-legend{right:8px;top:8px;width:min(270px,calc(100% - 16px));max-width:calc(100% - 16px)}
+ .globe-view details.globe-legend:not([open]){width:auto;max-width:calc(100% - 16px)}
+ .globe-view .globe-legend-heading{padding:9px 12px;font-size:12px}
+ .globe-view .map-legend-content{padding:0 12px 10px}
+}
+
 /* The icon popup and the filtered feed below the map replace the redundant bottom-left map list. */
 .globe-view #globeInfo{display:none!important}
 </style></head><body>
@@ -241,7 +313,28 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
 <div class="layout">
 
 <main id="main"><div class="feedhead"><h1 id="feedTitle"><?= $view==='ifis'?'Potenzial':'Weltlage' ?></h1></div>
-<div class="globe-view" id="globeView"><div id="newsGlobe"></div><svg id="globeConnector" class="globe-connector" aria-hidden="true"><path id="globeConnectorPath"></path><circle id="globeConnectorEnd" r="4"></circle></svg><details class="globe-legend"><summary class="globe-legend-heading">Kartenlegende <button id="mapProjectionToggle" type="button" class="map-projection-toggle" title="Flache Karte anzeigen" aria-label="Flache Karte anzeigen" aria-pressed="false">▤</button></summary><label class="globe-legend-line">Schwerpunkt <select id="mapFocusMode" aria-label="Kartenschwerpunkt"><option value="event">Ereignisort</option><option value="source">Quellenland</option></select></label><label class="globe-legend-line">Ansicht <select id="mapColorMode" aria-label="Farbmodus der Karte"><option value="age">Veröffentlichungszeit</option><option value="unseen">Noch nicht gesehen</option></select></label><label class="globe-legend-line">Zeitraum <input id="mapTimeRange" type="range" min="0.5" max="48" step="0.5" value="24" aria-label="Zeitraum in Stunden"><output id="mapTimeValue" for="mapTimeRange">24 h</output></label><label class="globe-legend-line"><input id="nightToggle" type="checkbox"> Tag/Nacht anzeigen</label><label class="globe-legend-line"><input id="showEventMarkers" type="checkbox" checked><span class="legend-arrow">╌</span> Ereignisorte</label><div class="globe-legend-line"><span class="legend-arrow">↗</span> konstruktiv (vorläufig)</div><label class="globe-legend-line"><input id="showSourceMarkers" type="checkbox" checked><span class="legend-dot" style="background:#e59a35"></span> Quellenorte</label><label class="globe-legend-line"><input id="showSourceLinks" type="checkbox" checked><span class="legend-arrow">↗</span> Verbindungslinien</label><div class="globe-legend-line"><span class="legend-dot" style="background:#718096"></span> Ältere Artikel (bis 48 h)</div><div class="globe-legend-update"><?=esc($lastImportLabel)?></div></details><div class="globe-info" id="globeInfo">Nachrichten geografisch entdecken. Punkte zeigen erkannte Ereignisorte, nicht den Sitz der Redaktion. Die Zuordnung ist vorläufig.</div></div><div class="filter-dock" id="filterDock"><button class="filter-dock-toggle" id="filterDockToggle" type="button" aria-label="Filterleiste ein- oder ausklappen" aria-expanded="false">☷</button><div class="filter-toolbar" aria-label="Nachrichtenfilter"><button type="button" data-open-filter="direction" aria-expanded="false" title="Entwicklungsrichtung">↗ <span>Richtung</span></button><button type="button" data-open-filter="topics" aria-expanded="false" title="Themen">▦ <span>Themen</span></button><button type="button" data-open-filter="quality" aria-expanded="false" title="Tonlage und Quellen">⚑ <span>Qualität</span></button><button type="button" id="statsToggle" title="Nachrichtenbilanz" aria-expanded="false">▥ <span>Bilanz</span></button><button type="button" data-open-filter="saved" title="Gemerkt">☆ <span>Gemerkt</span></button><button type="button" data-open-filter="hidden" title="Ausgeblendet">⊘ <span>Verborgen</span></button><label class="dock-language" title="Sprache auswählen"><select id="language" aria-label="Sprache auswählen" title="Sprache" style="border:1px solid var(--line);border-radius:16px;background:var(--bg);color:var(--text);padding:6px"><option value="de">DE</option><option value="en">EN</option></select></label></div></div><section id="newsStats" class="news-stats" hidden><div class="news-stats-head"><strong>Nachrichtenbilanz</strong><button type="button" id="statsClose" aria-label="Schließen">×</button></div><p id="statsScope"></p><div id="statsContent"></div><p class="stats-disclaimer">Automatische Stichwort-Schätzungen aus Titel und Kurztext. Clickbait-Verdacht ist kein Qualitätsurteil; Tonlage und Entwicklungsrichtung sind unterschiedliche Dimensionen. „Nicht bestimmbar“ wird mitgezählt.</p></section><div class="direction-nav filter-section" data-filter-section="direction"><span class="direction-label">Planetare Entwicklungsrichtung <span title="Vorläufige Zuordnung aus Titel und Kurztext; keine Wirkungsanalyse">ⓘ</span></span><div class="direction-buttons"><button data-direction="all" class="active">Alle</button><button data-direction="constructive">↗ Konstruktiv</button><button data-direction="harmful">↘ Problematisch</button><button data-direction="mixed">↔ Ambivalent</button><button data-direction="unknown">? Offen</button></div></div><div class="chips filter-section" data-filter-section="topics" id="chips" aria-label="Themenfilter"><button class="chip active" data-cat="Alle">Alle</button><?php foreach(['Politik','Gesellschaft','Wirtschaft','Technologie','Umwelt','Gesundheit','Bildung','Wissenschaft','Weitere'] as $c): ?><button class="chip" data-cat="<?=esc($c)?>"><?=esc($c)?></button><?php endforeach; ?></div>
+<div class="globe-view" id="globeView"><div id="newsGlobe"></div><svg id="globeConnector" class="globe-connector" aria-hidden="true"><path id="globeConnectorPath"></path><circle id="globeConnectorEnd" r="4"></circle></svg><details class="globe-legend" id="mapLegend"><summary class="globe-legend-heading">Karte einstellen</summary>
+<div class="map-legend-content">
+ <section class="map-legend-section" aria-label="Zeitraum">
+  <div class="map-legend-section-title">Zeitraum <output id="mapTimeValue" for="mapTimeRange">24 h</output></div>
+  <input id="mapTimeRange" type="range" min="0.5" max="48" step="0.5" value="24" aria-label="Nachrichten der letzten Stunden">
+  <div class="map-range-labels"><span>30 Min.</span><span>48 Std.</span></div>
+ </section>
+ <section class="map-legend-section" aria-label="Kartenelemente">
+  <div class="map-legend-section-title">Anzeigen</div>
+  <label class="map-legend-check"><input id="showEventMarkers" type="checkbox" checked><span class="map-legend-swatch map-legend-event" aria-hidden="true"></span><span>Ereignisorte</span></label>
+  <label class="map-legend-check"><input id="showSourceMarkers" type="checkbox" checked><span class="map-legend-swatch map-legend-source" aria-hidden="true"></span><span>Quellenorte</span></label>
+  <label class="map-legend-check"><input id="showSourceLinks" type="checkbox" checked><span class="map-legend-swatch map-legend-connection" aria-hidden="true"></span><span>Verbindungslinien</span></label>
+  <label class="map-legend-check"><input id="nightToggle" type="checkbox"><span class="map-legend-swatch map-legend-night" aria-hidden="true"></span><span>Tag/Nacht</span></label>
+ </section>
+ <section class="map-legend-section" aria-label="Darstellung">
+  <div class="map-legend-section-title">Darstellung</div>
+  <label class="map-legend-select">Hervorheben <select id="mapFocusMode" aria-label="Kartenobjekte hervorheben"><option value="event">Ereignisorte</option><option value="source">Quellenorte</option></select></label>
+  <label class="map-legend-select">Farbmodus <select id="mapColorMode" aria-label="Farbmodus der Karte"><option value="age">Veröffentlichungszeit</option><option value="unseen">Noch nicht gesehen</option></select></label>
+  <div class="map-legend-projection"><span>Kartenform</span><button id="mapProjectionToggle" type="button" class="map-projection-toggle" title="Flache Karte anzeigen" aria-label="Flache Karte anzeigen" aria-pressed="false">▤</button></div>
+ </section>
+ <div class="globe-legend-update"><?=esc($lastImportLabel)?></div>
+</div></details><div class="globe-info" id="globeInfo">Nachrichten geografisch entdecken. Punkte zeigen erkannte Ereignisorte, nicht den Sitz der Redaktion. Die Zuordnung ist vorläufig.</div></div><div class="filter-dock" id="filterDock"><button class="filter-dock-toggle" id="filterDockToggle" type="button" aria-label="Filterleiste ein- oder ausklappen" aria-expanded="false">☷</button><div class="filter-toolbar" aria-label="Nachrichtenfilter"><button type="button" data-open-filter="direction" aria-expanded="false" title="Entwicklungsrichtung">↗ <span>Richtung</span></button><button type="button" data-open-filter="topics" aria-expanded="false" title="Themen">▦ <span>Themen</span></button><button type="button" data-open-filter="quality" aria-expanded="false" title="Tonlage und Quellen">⚑ <span>Qualität</span></button><button type="button" id="statsToggle" title="Nachrichtenbilanz" aria-expanded="false">▥ <span>Bilanz</span></button><button type="button" data-open-filter="saved" title="Gemerkt">☆ <span>Gemerkt</span></button><button type="button" data-open-filter="hidden" title="Ausgeblendet">⊘ <span>Verborgen</span></button><label class="dock-language" title="Sprache auswählen"><select id="language" aria-label="Sprache auswählen" title="Sprache" style="border:1px solid var(--line);border-radius:16px;background:var(--bg);color:var(--text);padding:6px"><option value="de">DE</option><option value="en">EN</option></select></label></div></div><section id="newsStats" class="news-stats" hidden><div class="news-stats-head"><strong>Nachrichtenbilanz</strong><button type="button" id="statsClose" aria-label="Schließen">×</button></div><p id="statsScope"></p><div id="statsContent"></div><p class="stats-disclaimer">Automatische Stichwort-Schätzungen aus Titel und Kurztext. Clickbait-Verdacht ist kein Qualitätsurteil; Tonlage und Entwicklungsrichtung sind unterschiedliche Dimensionen. „Nicht bestimmbar“ wird mitgezählt.</p></section><div class="direction-nav filter-section" data-filter-section="direction"><span class="direction-label">Planetare Entwicklungsrichtung <span title="Vorläufige Zuordnung aus Titel und Kurztext; keine Wirkungsanalyse">ⓘ</span></span><div class="direction-buttons"><button data-direction="all" class="active">Alle</button><button data-direction="constructive">↗ Konstruktiv</button><button data-direction="harmful">↘ Problematisch</button><button data-direction="mixed">↔ Ambivalent</button><button data-direction="unknown">? Offen</button></div></div><div class="chips filter-section" data-filter-section="topics" id="chips" aria-label="Themenfilter"><button class="chip active" data-cat="Alle">Alle</button><?php foreach(['Politik','Gesellschaft','Wirtschaft','Technologie','Umwelt','Gesundheit','Bildung','Wissenschaft','Weitere'] as $c): ?><button class="chip" data-cat="<?=esc($c)?>"><?=esc($c)?></button><?php endforeach; ?></div>
 <details class="refine filter-section" data-filter-section="quality"><summary>Filter & Quellen <span class="muted">· optional</span></summary><div class="source-controls"><button id="sourcesToggle" type="button">⚙ Quellen auswählen</button><div id="sourcePanel" hidden><div id="sourceList"></div><button id="sourcesAll" type="button">Alle</button><button id="sourcesNone" type="button">Keine</button><p class="subtle">Auswahl wird nur in diesem Browser gespeichert. Eigene RSS-Adressen folgen mit einer sicheren serverseitigen Importfunktion.</p></div></div><div class="quality-controls"><label>Tonlage <select id="toneFilter"><option value="all">Alle</option><option value="positive">Hoffnungsvoll</option><option value="balanced">Sachlich / gemischt</option><option value="negative">Belastend</option><option value="unknown">Unbestimmt</option></select></label><label><input type="checkbox" id="filterClickbait" checked> Clickbait-Verdacht ausblenden</label><button id="showFiltered" type="button">Ausgefilterte anzeigen</button></div><p class="subtle">Tonlage beschreibt die Wortwahl, nicht den Wert einer Nachricht. Entwicklungsrichtung und Gestaltbarkeit sind davon zu unterscheiden. Automatische Schlagwort-Einschätzung aus Titel und Kurztext, keine Inhaltsprüfung.</p></details><div id="stories"><?php foreach($items as $i=>$item): ?><article id="news-<?=esc(substr(hash('sha256',$item['url']),0,16))?>" class="story <?= $i===0?'feature':'' ?>" data-source="<?=esc($item['source'])?>" data-url="<?=esc($item['url'])?>" data-cat="<?=esc($item['category'])?>" data-search="<?=esc(mb_strtolower(($item['title']??'').' '.($item['summary']??'').' '.($item['source']??''),'UTF-8'))?>"><?php if(!empty($item["image_url"])): ?><img class="thumb" src="<?=esc($item["image_url"])?>" loading="lazy" decoding="async" referrerpolicy="no-referrer" alt="" onerror="this.style.display='none'"><?php endif; ?><div><div class="cat"><?=esc($item['category'])?></div><h2><a href="<?=esc($item['url'])?>" target="_blank" rel="noopener noreferrer"><?=esc($item['title'])?></a></h2><?php if(!empty($item['summary'])): ?><p class="summary"><?=esc($item['summary'])?></p><?php endif; ?><div class="meta"><?=esc($item['source'])?><?php if($item['agency']): ?> · Agentur: <?=esc($item['agency'])?><?php endif; ?> · <time datetime="<?=esc(str_replace(' ','T',$item['published_at']))?>"><?=esc($item['published_at'])?></time> ↗</div><?php if(!empty($item['other_versions'])): ?><details class="news-duplicates"><summary><?=count($item['other_versions'])?> weitere Veröffentlichung<?=count($item['other_versions'])===1?'':'en'?> anzeigen</summary><?php foreach($item['other_versions'] as $other): ?><a href="<?=esc($other['url'])?>" target="_blank" rel="noopener noreferrer"><?=esc($other['source'])?> ↗</a><?php endforeach; ?></details><?php endif; ?><button class="story-map-link" type="button" title="Auf dem Globus anzeigen" aria-label="Auf dem Globus anzeigen">◎ Karte</button><details class="assessment"><summary>Persönlich einordnen</summary><div class="trust-tools"><label>Eigene Einschätzung <select class="trust" aria-label="Glaubwürdigkeit persönlich einschätzen"><option value="">Ungeprüft</option><option value="plausible">Plausibel</option><option value="questionable">Fraglich</option></select></label><span class="ifis-related"></span></div></details></div><details class="story-menu"><summary aria-label="Weitere Optionen" title="Weitere Optionen">···</summary><div class="story-actions"><button class="save" aria-label="Meldung merken" title="Merken">☆ Merken</button><button class="dismiss" aria-label="Meldung ausblenden" title="Ausblenden">× Ausblenden</button><button class="assess-open" type="button">Persönlich einordnen</button></div></details></article><?php endforeach; ?></div>
 <div class="empty <?= $items?'hide':'' ?>" id="empty"><div class="symbol">▤</div><h2>Noch keine Nachrichten importiert.</h2><p>Sobald die ersten Quellen eingebunden sind, erscheinen hier die aktuellen Meldungen – übersichtlich und ohne Ablenkung.</p></div><div class="empty hide" id="noMatches"><h2>Keine passenden Meldungen</h2><p>Versuche einen anderen Suchbegriff oder Filter.</p></div></main>
 
