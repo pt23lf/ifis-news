@@ -68,7 +68,14 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     'event'=>validGeoPoint($point['event']??null)
    ];
   }
+  $appearanceInput=is_array($input['appearance']??null)?$input['appearance']:[];
+  $appearance=[
+   'basemap'=>in_array($appearanceInput['basemap']??null,['geographic','political','satellite'],true)?$appearanceInput['basemap']:'geographic',
+   'brightness'=>in_array($appearanceInput['brightness']??null,['auto','light','dark'],true)?$appearanceInput['brightness']:'auto',
+   'projection'=>in_array($appearanceInput['projection']??null,['flat','globe'],true)?$appearanceInput['projection']:'globe'
+  ];
   $snapshot=[
+   'appearance'=>$appearance,
    'version'=>2,'kind'=>$kind,'name'=>$name,'view'=>$section,
    'created_at'=>gmdate('c'),'articles'=>$articles,'geo'=>$geoByUrl
   ];
@@ -120,6 +127,10 @@ $kind=(string)($data['kind']??'event');
 $section=(string)($data['view']??'ifis');
 $created=(string)($data['created_at']??'');
 $articles=$data['articles'];
+$appearance=is_array($data['appearance']??null)?$data['appearance']:[];
+$sharedBasemap=in_array($appearance['basemap']??null,['geographic','political','satellite'],true)?$appearance['basemap']:'geographic';
+$sharedBrightness=in_array($appearance['brightness']??null,['auto','light','dark'],true)?$appearance['brightness']:'auto';
+$sharedProjection=in_array($appearance['projection']??null,['flat','globe'],true)?$appearance['projection']:'globe';
 $geoByUrl=is_array($data['geo']??null)?$data['geo']:[];
 // Historical snapshots are immutable too. Use the frozen Oct-2026 geography
 // vocabulary for a best-effort map without consulting current RSS imports.
@@ -174,7 +185,7 @@ $title=$name.' · Feste Artikelsammlung · IFIS News';
 $description=count($articles).' dauerhaft zusammengestellte Artikel zum '.($kind==='source'?'Quellenort ':'Ereignisort ').$name.'. Stand: '.($created?date('d.m.Y H:i',strtotime($created)).' UTC':'gespeichert').'.';
 $canonical='https://news.ifis.net/collection.php?id='.$id;
 $image='https://news.ifis.net/share-image.php?'.http_build_query(['collection'=>$kind,'name'=>$name]);
-$dynamic='https://news.ifis.net/?'.http_build_query(['view'=>$section,'map'=>1,'collection'=>$kind,'name'=>$name]);
+$dynamic='https://news.ifis.net/?'.http_build_query(['view'=>$section,'map'=>1,'collection'=>$kind,'name'=>$name,'basemap'=>$sharedBasemap,'brightness'=>$sharedBrightness,'projection'=>$sharedProjection]);
 header('Content-Type: text/html; charset=utf-8');
 header('Cache-Control: public, max-age=3600');
 ?><!doctype html>
@@ -268,6 +279,9 @@ h2{font-size:17px;line-height:1.45;margin:0 0 9px}
  const nodes=<?=json_encode($mapNodes,JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_UNESCAPED_UNICODE|JSON_INVALID_UTF8_SUBSTITUTE)?>;
  const lines=<?=json_encode($mapLines,JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_UNESCAPED_UNICODE|JSON_INVALID_UTF8_SUBSTITUTE)?>;
  const selection=<?=json_encode(['kind'=>$kind,'name'=>$name],JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_UNESCAPED_UNICODE)?>;
+ const appearance=<?=json_encode(['basemap'=>$sharedBasemap,'brightness'=>$sharedBrightness,'projection'=>$sharedProjection],JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT)?>;
+ const dark=appearance.brightness==='dark'||(appearance.brightness==='auto'&&window.matchMedia('(prefers-color-scheme: dark)').matches);
+ const mapStyle=appearance.basemap==='satellite'?{version:8,sources:{imagery:{type:'raster',tiles:['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],tileSize:256,attribution:'Tiles © Esri, Maxar, Earthstar Geographics'}},layers:[{id:'satellite-imagery',type:'raster',source:'imagery'}]}:appearance.basemap==='political'?'https://demotiles.maplibre.org/style.json':{version:8,sources:{topography:{type:'raster',tiles:['https://a.tile.opentopomap.org/{z}/{x}/{y}.png','https://b.tile.opentopomap.org/{z}/{x}/{y}.png','https://c.tile.opentopomap.org/{z}/{x}/{y}.png'],tileSize:256,attribution:'© OpenStreetMap-Mitwirkende · OpenTopoMap'}},layers:[{id:'terrain',type:'raster',source:'topography'}]};
  const card=document.getElementById('collectionArticles');
  const heading=card.querySelector('summary');
  const amount=<?=count($articles)?>;
@@ -276,19 +290,15 @@ h2{font-size:17px;line-height:1.45;margin:0 0 9px}
   document.getElementById('collectionMap').textContent='Karte konnte nicht geladen werden.';
   return;
  }
+ document.getElementById('collectionMap').style.backgroundColor=dark?'#111720':'#ffffff';
  const map=new maplibregl.Map({
   container:'collectionMap',
-  style:{version:8,sources:{topography:{type:'raster',tiles:[
-   'https://a.tile.opentopomap.org/{z}/{x}/{y}.png',
-   'https://b.tile.opentopomap.org/{z}/{x}/{y}.png',
-   'https://c.tile.opentopomap.org/{z}/{x}/{y}.png'
-  ],tileSize:256,attribution:'© OpenStreetMap-Mitwirkende · OpenTopoMap'}},
-  layers:[{id:'terrain',type:'raster',source:'topography'}]},
+  style:mapStyle,
   center:[12,25],zoom:1.3,attributionControl:true
  });
  map.addControl(new maplibregl.NavigationControl({showCompass:true}),'top-right');
  map.on('load',()=>{
-  try{map.setProjection({type:'globe'})}catch(e){}
+  try{map.setProjection({type:appearance.projection==='flat'?'mercator':'globe'})}catch(e){}
   const features=lines.map(line=>({type:'Feature',geometry:{type:'LineString',coordinates:[line.from,line.to]}}));
   map.addSource('archived-connections',{type:'geojson',data:{type:'FeatureCollection',features}});
   map.addLayer({id:'archived-connections',type:'line',source:'archived-connections',
