@@ -319,6 +319,19 @@ details[open] > summary:not([aria-label="Weitere Optionen"])::after{
   border-radius:50%!important;transform-origin:center center!important;
 }
 .globe-view.is-flat-map .globe-marker .constructive-count{display:none!important}
+
+/* Contextual explanation for fixed vs. dynamic location collections. */
+.globe-view .marker-collection-share{position:relative}
+.globe-view .collection-share-help{position:relative;align-self:flex-end;margin:0}
+.globe-view .collection-share-help>summary{display:inline-block;cursor:pointer;list-style:none;
+ color:var(--muted);font-size:11px;font-weight:500;text-decoration:underline;text-decoration-style:dotted;
+ text-underline-offset:3px;padding:4px 2px}
+.globe-view .collection-share-help>summary::-webkit-details-marker{display:none}
+.globe-view .collection-share-explanation{position:absolute;z-index:30;right:0;bottom:calc(100% + 6px);
+ width:min(280px,72vw);padding:11px 13px;border:1px solid var(--line);border-radius:10px;
+ background:var(--bg);box-shadow:0 6px 24px #0003;color:var(--text);font-size:12px;line-height:1.45}
+.globe-view .collection-share-explanation p{margin:0}
+.globe-view .collection-share-explanation p+p{margin-top:9px}
 </style><link href="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.css" rel="stylesheet"><style>.globe-view{display:none;position:relative;height:min(72vh,680px);min-height:380px;border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:16px}.globe-view.open{display:block}.globe-view #newsGlobe{width:100%;height:100%}.globe-info{position:absolute;left:12px;bottom:12px;background:var(--bg);padding:12px;border-radius:10px;max-width:320px;box-shadow:0 2px 12px #0002;font-size:13px}.globe-toggle{border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:20px;padding:6px 12px;white-space:nowrap}.globe-toggle.active{background:var(--hover);color:var(--accent)}.geo-link{font-size:12px;color:var(--accent);cursor:pointer;border:0;background:none;padding:3px 0}.trust-tools{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:9px;font-size:12px;color:var(--muted)}.trust{border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text);padding:4px}.ifis-related a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}.globe-marker{background:#0d9488;color:white;border:2px solid white;border-radius:50%;width:29px;height:29px;display:grid;place-items:center;font-size:11px;box-shadow:0 1px 7px #0005;cursor:pointer}.globe-marker .constructive-count{position:absolute;right:-10px;top:-10px;background:#177245;color:white;border:1px solid white;border-radius:10px;min-width:20px;height:19px;padding:0 3px;display:grid;place-items:center;font-size:10px;font-weight:700;line-height:1}.globe-source{background:#e59a35;color:#17212e;border:2px solid white;border-radius:50%;width:25px;height:25px;display:grid;place-items:center;font-size:13px;cursor:pointer;box-shadow:0 1px 7px #0005}.globe-legend{position:absolute;right:12px;top:12px;background:var(--bg);padding:8px 10px;border-radius:9px;font-size:12px;z-index:2}.globe-legend span{margin-left:9px}.globe-view .globe-legend{left:auto;right:12px;top:12px;width:max-content;max-width:min(265px,calc(100% - 24px));padding:12px 14px;display:flex;flex-direction:column;align-items:stretch;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:12px;box-shadow:0 3px 12px #0002;font-size:12px;line-height:1.35}
 .globe-view .globe-legend-line{display:flex;align-items:center;gap:9px;margin:0;white-space:normal}
 .globe-view .globe-legend-line input{margin:0 2px 0 0;flex-shrink:0}
@@ -1146,6 +1159,12 @@ document.addEventListener('pointerdown',event=>{
  if(target.closest('.marker-article-popup,.globe-marker,.globe-source,#mapLegend,#stories'))return;
  activeMapPopup.remove();
 });
+document.addEventListener('keydown',event=>{
+ if(event.key!=='Escape'||!activeMapPopup)return;
+ const openHelp=activeMapPopup.getElement()?.querySelector('.collection-share-help[open]');
+ if(openHelp){openHelp.open=false;return;}
+ activeMapPopup.remove();
+});
 function sharedMapAppearance(){return {basemap:mapBasemap.value,brightness:mapBrightness.value,projection:flatProjection?'flat':'globe'};}
 function collectionShareUrl(selection){
  const url=new URL(location.href);
@@ -1236,16 +1255,25 @@ function showMarkerArticles(coordinates,title,articles,routePoints=[],descriptio
  if(shareSelection){
   const controls=document.createElement('div');controls.className='marker-collection-share';
   const fixed=document.createElement('button');fixed.type='button';fixed.className='collection-share-button';
-  fixed.textContent='↗ Fest teilen';
+  fixed.textContent='Fest teilen';
   fixed.title='Diese Artikelauswahl unveränderlich speichern und teilen';
   const dynamic=document.createElement('button');dynamic.type='button';dynamic.className='collection-share-button';
-  dynamic.textContent='↻ Dynamisch teilen';
+  dynamic.textContent='Dynamisch teilen';
   dynamic.title='Die Artikel ändern sich entsprechend der aktuellen Nachrichtenlage';
   const feedback=document.createElement('small');feedback.setAttribute('role','status');
   const actions=document.createElement('div');actions.className='marker-collection-share-actions';
   fixed.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();shareNewsCollection(shareSelection,articles,'fixed',feedback,fixed)});
   dynamic.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();shareNewsCollection(shareSelection,articles,'dynamic',feedback,dynamic)});
-  actions.append(fixed,dynamic);controls.append(actions,feedback);wrapper.append(controls);
+  actions.append(fixed,dynamic);
+  const help=document.createElement('details');help.className='collection-share-help';
+  const helpTrigger=document.createElement('summary');
+  helpTrigger.textContent='Was bedeutet das?';
+  helpTrigger.setAttribute('aria-label','Unterschied zwischen festem und dynamischem Teilen erklären');
+  const helpText=document.createElement('div');helpText.className='collection-share-explanation';
+  helpText.innerHTML='<p><strong>Fest:</strong> Speichert die aktuelle Artikelauswahl als unveränderliche Sammlung (max. 40 Artikel).</p><p><strong>Dynamisch:</strong> Teilt den gewählten Ort; die angezeigten Artikel können sich später ändern.</p>';
+  help.append(helpTrigger,helpText);
+  help.addEventListener('keydown',event=>{if(event.key==='Escape'){help.open=false;helpTrigger.focus();event.stopPropagation()}});
+  controls.append(actions,help,feedback);wrapper.append(controls);
  }
  wrapper.append(details);
  // The whole unit (popup + selected location) is centered together.
@@ -1263,7 +1291,7 @@ function showMarkerArticles(coordinates,title,articles,routePoints=[],descriptio
  wrapper.style.overflowY='auto';
  wrapper.style.overscrollBehavior='contain';
  const popupOptions={
-  closeButton:true,closeOnClick:false,
+  closeButton:false,closeOnClick:false,
   anchor:'bottom',offset:gap,
   maxWidth:compact?'min(340px,calc(100vw - 28px))':'min(360px,85vw)',
   className:'marker-article-popup'
