@@ -986,7 +986,9 @@ function collectionShareUrl(selection){
 }
 async function shareNewsLink(link,title,feedback){
  if(navigator.share){
-  try{await navigator.share({title,text:'Artikelsammlung auf IFIS News',url:link});return}
+  // Do not send a separate text payload: some share targets concatenate it to
+  // the URL, producing an invalid collection ID after ?id=.
+  try{await navigator.share({title,url:link});return}
   catch(error){if(error?.name==='AbortError')return}
  }
  try{
