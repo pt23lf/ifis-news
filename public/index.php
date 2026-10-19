@@ -403,6 +403,29 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
 .globe-view.is-globe .globe-marker:focus-visible,.globe-view.is-globe .globe-source:focus-visible{
  box-shadow:0 0 0 3px #ffffffa8,0 0 0 5px #2468d5a8!important
 }
+
+/* Readable editorial hierarchy inside marker article overlays. */
+.globe-view .marker-article-list .globe-story-link{
+ display:flex;flex-direction:column;align-items:flex-start;gap:0;
+ padding:14px 3px 15px;border-top:1px solid var(--line);text-decoration:none
+}
+.globe-view .marker-article-list .globe-story-category{
+ display:inline-block;margin-bottom:6px;font-size:10px;line-height:1.35;
+ color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.04em
+}
+.globe-view .marker-article-list .globe-story-title{
+ display:block;font-size:14px;line-height:1.48;font-weight:570;overflow-wrap:anywhere
+}
+.globe-view .marker-article-list .globe-story-meta{
+ display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;
+ margin-top:10px;font-size:11px;line-height:1.4;color:var(--muted)
+}
+.globe-view .marker-article-list .globe-story-source{font-weight:650;color:var(--text)}
+.globe-view .marker-article-list .globe-story-places{
+ display:flex;flex-wrap:wrap;gap:5px 12px;margin-top:7px;
+ font-size:11px;line-height:1.45;color:var(--muted)
+}
+.globe-view .marker-article-list .globe-story-places span{white-space:normal}
 /* The icon popup and the filtered feed below the map replace the redundant bottom-left map list. */
 .globe-view #globeInfo{display:none!important}
 </style></head><body>
@@ -685,11 +708,55 @@ function openMapStory(story){
  markStorySeen(story);
  requestAnimationFrame(()=>{story.scrollIntoView({behavior:'smooth',block:'center'});history.replaceState(null,'','#'+story.id)});
 }
+// The flags indicate country, never a supposed geographic origin of the news itself.
+// Unknown or politically ambiguous locations deliberately get a neutral location marker.
+const countryFlags={
+ 'Deutschland':'🇩🇪','Ukraine':'🇺🇦','Russland':'🇷🇺','USA':'🇺🇸','China':'🇨🇳','Indien':'🇮🇳',
+ 'Israel':'🇮🇱','Iran':'🇮🇷','Großbritannien':'🇬🇧','Frankreich':'🇫🇷','Brasilien':'🇧🇷',
+ 'Kenia':'🇰🇪','Südafrika':'🇿🇦','Japan':'🇯🇵','Australien':'🇦🇺','Kanada':'🇨🇦',
+ 'Mexiko':'🇲🇽','Türkei':'🇹🇷','Südkorea':'🇰🇷','Taiwan':'🇹🇼','Ägypten':'🇪🇬',
+ 'Sudan':'🇸🇩','Nigeria':'🇳🇬',
+ 'Berlin':'🇩🇪','Hamburg':'🇩🇪','München':'🇩🇪','Lübeck':'🇩🇪','Frankfurt':'🇩🇪','Köln':'🇩🇪',
+ 'London':'🇬🇧','Paris':'🇫🇷','New York':'🇺🇸','Washington':'🇺🇸','Los Angeles':'🇺🇸','Chicago':'🇺🇸',
+ 'Kyjiw':'🇺🇦','Moskau':'🇷🇺','Peking':'🇨🇳','Shanghai':'🇨🇳','Tokio':'🇯🇵','Neu-Delhi':'🇮🇳','Mumbai':'🇮🇳',
+ 'Teheran':'🇮🇷','Jerusalem':'','Tel Aviv':'🇮🇱','Gaza-Stadt':'','Istanbul':'🇹🇷','Ankara':'🇹🇷',
+ 'Brüssel':'🇧🇪','Seoul':'🇰🇷','Taipeh':'🇹🇼','Kairo':'🇪🇬','Sydney':'🇦🇺','Toronto':'🇨🇦',
+ 'Mexiko-Stadt':'🇲🇽','São Paulo':'🇧🇷','Rio de Janeiro':'🇧🇷','Nairobi':'🇰🇪'
+};
+function newsPlaceFlag(place){return countryFlags[place]||'📍'}
+function newsSourceFlag(source){
+ const name=source?.name||'';
+ if(/Lübeck|Bonn|Hamburg/.test(name))return '🇩🇪';
+ if(/London/.test(name))return '🇬🇧';
+ if(/Doha/.test(name))return '🇶🇦';
+ if(/Issy|Lyon/.test(name))return '🇫🇷';
+ if(/Isle of Man/.test(name))return '🇮🇲';
+ if(/Washington|New York|Silver Spring|Rockville/.test(name))return '🇺🇸';
+ return '📍';
+}
 function appendMapArticle(info,story){
  const a=document.createElement('a');a.className='globe-story-link';a.href='#'+story.id;
- const title=document.createElement('span');title.textContent=story.querySelector('h2')?.textContent||'Artikel öffnen';
- const meta=document.createElement('small');meta.textContent=story.querySelector('.meta')?.textContent?.trim()||'';
- a.append(title,meta);
+ const title=document.createElement('span');title.className='globe-story-title';
+ title.textContent=story.querySelector('h2')?.textContent||'Artikel öffnen';
+ const category=document.createElement('span');category.className='globe-story-category';
+ category.textContent=story.querySelector('.cat')?.textContent?.trim()||'Weitere';
+ const meta=document.createElement('small');meta.className='globe-story-meta';
+ const sourceName=story.dataset.source||'Quelle unbekannt';
+ const source=sourceFor(story);
+ const place=story.dataset.place||'Nicht eindeutig erkannt';
+ const sourceLine=document.createElement('span');sourceLine.className='globe-story-source';
+ sourceLine.textContent=sourceName;
+ const age=story.querySelector('time')?.textContent?.trim()||'';
+ const places=document.createElement('span');places.className='globe-story-places';
+ // Keep both endpoints explicit: a publisher's registered location is not where the event happened.
+ const sourcePlace=document.createElement('span');
+ sourcePlace.textContent=newsSourceFlag(source)+' Quelle: '+(source?.name?.split(' · ').pop()||'unbekannt');
+ const eventPlace=document.createElement('span');
+ eventPlace.textContent=newsPlaceFlag(place)+' Ereignis: '+place;
+ places.append(sourcePlace,eventPlace);
+ meta.append(sourceLine);
+ if(age){const date=document.createElement('span');date.textContent=age;meta.append(date)}
+ a.append(category,title,meta,places);
  a.addEventListener('pointerenter',event=>{if(event.pointerType!=='touch')setHoveredMapStory(story)});
  a.addEventListener('pointerleave',()=>{if(hoveredMapStory===story)setHoveredMapStory(null)});
  a.addEventListener('focus',()=>setHoveredMapStory(story));
