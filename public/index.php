@@ -1513,19 +1513,6 @@ function renderFlightArcs(){
  const limb=map.project([horizonLon,horizonLat*180/Math.PI]);
  const projectedRadius=Math.hypot(limb.x-globeCentre.x,limb.y-globeCentre.y);
  const globeRadius=Number.isFinite(projectedRadius)&&projectedRadius>8?projectedRadius:Math.min(width,height)*.48;
- // SVG is painted above the map canvas. Explicitly mask routes to the earth
- // disk so elevated arcs never float over space beyond the actual horizon.
- let clip=flightLayer.querySelector('clipPath');
- if(!clip){
-  clip=document.createElementNS('http://www.w3.org/2000/svg','clipPath');
-  clip.id='news-flight-horizon-clip';
-  const circle=document.createElementNS('http://www.w3.org/2000/svg','circle');
-  clip.append(circle);flightLayer.append(clip);
- }
- const boundary=clip.firstElementChild;
- boundary.setAttribute('cx',globeCentre.x);boundary.setAttribute('cy',globeCentre.y);
- boundary.setAttribute('r',Math.max(0,globeRadius-2));
-
  const center=map.getCenter(),rad=Math.PI/180;
  const facing=coordinates=>Math.sin(center.lat*rad)*Math.sin(coordinates[1]*rad)+Math.cos(center.lat*rad)*Math.cos(coordinates[1]*rad)*Math.cos((coordinates[0]-center.lng)*rad);
  const unique=new Set();
@@ -1557,7 +1544,11 @@ function renderFlightArcs(){
      if(norm>1){x+=dx/norm*altitude;y+=dy/norm*altitude}
      else y-=altitude;
     }
-    return {x,y,visible:flatProjection||facing(coordinates)>0.015};
+    // Raised routes remain visible slightly beyond the surface horizon:
+    // the globe hides them only when its curvature actually occludes their altitude.
+    const relativeHeight=flatProjection?0:(peak/globeRadius)*Math.sin(Math.PI*t);
+    const threshold=relativeHeight>0?-Math.sqrt(Math.max(0,1-1/Math.pow(1+relativeHeight,2))):0;
+    return {x,y,visible:flatProjection||facing(coordinates)>threshold};
    });
    // Keep endpoints at the visible edges of the marker circles.
    const radiusScale=Math.max(.65,Math.min(1.65,.78+map.getZoom()*.14));
@@ -1582,7 +1573,6 @@ function renderFlightArcs(){
    curve.setAttribute('stroke-width',flatProjection?(hoveredMapStory?'3.1':'1.7'):(hoveredMapStory?'2':'1.05'));
    curve.setAttribute('stroke-opacity',flatProjection?(hoveredMapStory?'.96':'.82'):(hoveredMapStory?'.88':'.54'));
    curve.setAttribute('stroke-linecap','round');curve.setAttribute('stroke-linejoin','round');
-   if(!flatProjection)curve.setAttribute('clip-path','url(#news-flight-horizon-clip)');
    flightLayer.append(curve);
   });
  });
