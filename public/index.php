@@ -11,6 +11,16 @@ if (is_file($dbPath) && extension_loaded('pdo_sqlite')) {
   $query = $db->prepare('SELECT title,url,source,published_at,summary,image_url FROM articles WHERE section=:section ORDER BY published_at DESC LIMIT 400');
   $query->execute(['section'=>$view]);
   $items = $query->fetchAll(PDO::FETCH_ASSOC);
+  // Keep IFIS articles selectable even if the general 400-item news window moves on.
+  if($view==='ifis'){
+   $ifisQuery=$db->prepare("SELECT title,url,source,published_at,summary,image_url FROM articles WHERE section='ifis' AND source=:source ORDER BY published_at DESC LIMIT 250");
+   $ifisQuery->execute(['source'=>'IFIS · Artikel']);
+   $extra=$ifisQuery->fetchAll(PDO::FETCH_ASSOC);
+   $byUrl=[];
+   foreach(array_merge($items,$extra) as $article)$byUrl[$article['url']]=$article;
+   $items=array_values($byUrl);
+   usort($items,static fn($a,$b)=>strcmp((string)$b['published_at'],(string)$a['published_at']));
+  }
   $cols=$db->query('PRAGMA table_info(articles)')->fetchAll(PDO::FETCH_ASSOC);
   $recent=$db->prepare("SELECT source,published_at,COUNT(*) AS count FROM articles WHERE section=:section AND published_at >= :since AND published_at <= :until GROUP BY source, strftime('%Y-%m-%d %H:',published_at), CAST(CAST(strftime('%M',published_at) AS INTEGER)/30 AS INTEGER) ORDER BY published_at DESC");
   $recent->execute(['section'=>$view,'since'=>gmdate('Y-m-d H:i:s',time()-172800),'until'=>gmdate('Y-m-d H:i:s')]);
@@ -373,7 +383,7 @@ const harmful=['deforestation','pollution','habitat loss','mass extinction','war
 const hasTerms=(s,terms)=>terms.some(term=>s.includes(term));
 stories.forEach(el=>{const s=el.dataset.search.toLowerCase(),yes=hasTerms(s,constructive),no=hasTerms(s,harmful);el.dataset.direction=yes&&no?'mixed':yes?'constructive':no?'harmful':'unknown';});
 document.querySelectorAll('[data-direction]').forEach(button=>button.addEventListener('click',()=>{direction=button.dataset.direction;document.querySelectorAll('[data-direction]').forEach(b=>b.classList.toggle('active',b===button));refresh()}));
-const sourceKey=prefix+'sources-'+(location.search.includes('ifis')?'ifis':'world');
+const sourceKey=prefix+'sources-'+(location.search.includes('view=world')?'world':'ifis');
 const sourceNames=[...new Set(stories.map(el=>el.dataset.source).filter(Boolean))].sort();
 if(!location.search.includes('view=world')&&!sourceNames.includes('IFIS · Artikel'))sourceNames.push('IFIS · Artikel');
 sourceNames.sort();
