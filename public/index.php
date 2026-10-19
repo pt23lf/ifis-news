@@ -515,14 +515,11 @@ function showMarkerArticles(coordinates,title,articles,routePoints=[],descriptio
  if(articles.length)articles.slice(0,40).forEach(story=>appendMapArticle(list,story));
  else{const empty=document.createElement('p');empty.textContent='Keine zugeordneten Artikel in der aktuell geladenen Liste. Bitte Zeitraum oder Nachrichtenansicht erweitern.';list.append(empty);}
  details.append(list);wrapper.append(details);
- activeMapPopup=new maplibregl.Popup({closeButton:true,closeOnClick:false,anchor:'top',offset:[0,20],maxWidth:'min(360px,85vw)',className:'marker-article-popup'}).setLngLat(coordinates).setDOMContent(wrapper).addTo(map);
+ activeMapPopup=new maplibregl.Popup({closeButton:true,closeOnClick:false,offset:18,maxWidth:'min(360px,85vw)',className:'marker-article-popup'}).setLngLat(coordinates).setDOMContent(wrapper).addTo(map);
  const popupForSelection=activeMapPopup;
  popupForSelection.on('close',()=>{if(activeMapPopup!==popupForSelection)return;activeMapPopup=null;mapOverlayOpen=false;selectedPlace=null;selectedSource=null;window.ifisNewsFeed.clearMapStories();info.replaceChildren();info.textContent='Nachrichten geografisch entdecken. Wähle einen Ort auf der Karte.';info.classList.remove('has-selection');updateSourceLinks()});
- const points=[coordinates,...routePoints].filter(p=>Array.isArray(p)&&p.length===2&&p.every(Number.isFinite));
- if(points.length>1){
-  const lngs=points.map(p=>p[0]),lats=points.map(p=>p[1]);
-  map.fitBounds([[Math.min(...lngs),Math.min(...lats)],[Math.max(...lngs),Math.max(...lats)]],{padding:{top:100,bottom:Math.min(290,Math.round(map.getContainer().clientHeight*.43)),left:45,right:45},maxZoom:4.5,duration:800});
- }else map.easeTo({center:coordinates,zoom:Math.max(map.getZoom(),2.5),duration:650});
+ // Keep the clicked marker and its popup in view. Fitting to every reported place
+ // moved the popup offscreen whenever a source covered distant events.
  requestAnimationFrame(()=>{hideFarSide();renderFlightArcs()});
 }
 let batchMarkers=[];
