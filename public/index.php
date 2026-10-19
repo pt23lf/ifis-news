@@ -194,6 +194,8 @@ if(is_file($ifisIndexFile)){
 }
 .topbar .brand{font-size:22px!important;letter-spacing:.025em!important;font-weight:400!important}.topbar .brand strong{font-weight:400!important}
 .site-footer{max-width:1100px;margin:32px auto 0;padding:22px 24px 35px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:12px 22px;font-size:12px;color:var(--muted)}.site-footer a:hover{text-decoration:underline}
+/* Compact markers on the flat map: match the globe presentation. */
+.globe-view.is-flat-map .globe-marker,.globe-view.is-flat-map .globe-source{width:calc(25px * var(--marker-scale,1))!important;height:calc(25px * var(--marker-scale,1))!important;font-size:calc(11px * var(--marker-scale,1))!important;min-width:0!important;min-height:0!important;border-radius:50%!important}
 </style><link href="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.css" rel="stylesheet"><style>.globe-view{display:none;position:relative;height:min(72vh,680px);min-height:380px;border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:16px}.globe-view.open{display:block}.globe-view #newsGlobe{width:100%;height:100%}.globe-info{position:absolute;left:12px;bottom:12px;background:var(--bg);padding:12px;border-radius:10px;max-width:320px;box-shadow:0 2px 12px #0002;font-size:13px}.globe-toggle{border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:20px;padding:6px 12px;white-space:nowrap}.globe-toggle.active{background:var(--hover);color:var(--accent)}.geo-link{font-size:12px;color:var(--accent);cursor:pointer;border:0;background:none;padding:3px 0}.trust-tools{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:9px;font-size:12px;color:var(--muted)}.trust{border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text);padding:4px}.ifis-related a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}.globe-marker{background:#0d9488;color:white;border:2px solid white;border-radius:50%;width:29px;height:29px;display:grid;place-items:center;font-size:11px;box-shadow:0 1px 7px #0005;cursor:pointer}.globe-marker .constructive-count{position:absolute;right:-10px;top:-10px;background:#177245;color:white;border:1px solid white;border-radius:10px;min-width:20px;height:19px;padding:0 3px;display:grid;place-items:center;font-size:10px;font-weight:700;line-height:1}.globe-source{background:#e59a35;color:#17212e;border:2px solid white;border-radius:50%;width:25px;height:25px;display:grid;place-items:center;font-size:13px;cursor:pointer;box-shadow:0 1px 7px #0005}.globe-legend{position:absolute;right:12px;top:12px;background:var(--bg);padding:8px 10px;border-radius:9px;font-size:12px;z-index:2}.globe-legend span{margin-left:9px}.globe-view .globe-legend{left:auto;right:12px;top:12px;width:max-content;max-width:min(265px,calc(100% - 24px));padding:12px 14px;display:flex;flex-direction:column;align-items:stretch;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:12px;box-shadow:0 3px 12px #0002;font-size:12px;line-height:1.35}
 .globe-view .globe-legend-line{display:flex;align-items:center;gap:9px;margin:0;white-space:normal}
 .globe-view .globe-legend-line input{margin:0 2px 0 0;flex-shrink:0}
@@ -975,9 +977,11 @@ document.addEventListener('pointerdown',event=>{
  if(target.closest('.marker-article-popup,.globe-marker,.globe-source,#mapLegend,#stories'))return;
  activeMapPopup.remove();
 });
+function sharedMapAppearance(){return {basemap:mapBasemap.value,brightness:mapBrightness.value,projection:flatProjection?'flat':'globe'};}
 function collectionShareUrl(selection){
  const url=new URL(location.href);
  url.searchParams.set('map','1');
+ Object.entries(sharedMapAppearance()).forEach(([key,value])=>url.searchParams.set(key,value));
  url.searchParams.set('collection',selection.kind);
  url.searchParams.set('name',selection.name);
  url.searchParams.set('hours',document.getElementById('mapTimeRange').value);
@@ -1017,6 +1021,7 @@ async function shareNewsCollection(selection,articles,mode,feedback,button){
    body:JSON.stringify({
     kind:selection.kind,name:selection.name,
     view:new URLSearchParams(location.search).get('view')==='world'?'world':'ifis',
+    appearance:sharedMapAppearance(),
     urls:articles.slice(0,40).map(story=>story.dataset.url).filter(Boolean),
     geo:articles.slice(0,40).map(story=>{
      const source=sourceFor(story);
@@ -1214,8 +1219,13 @@ const mapAutoRotate=document.getElementById('mapAutoRotate');
 const prefersDark=window.matchMedia('(prefers-color-scheme: dark)');
 const storedMapPreference=key=>{try{return localStorage.getItem('ifis-news-map-'+key)}catch{return null}};
 const rememberMapPreference=(key,value)=>{try{localStorage.setItem('ifis-news-map-'+key,value)}catch{}};
-if(['political','geographic','satellite'].includes(storedMapPreference('type')))mapBasemap.value=storedMapPreference('type');
-if(['auto','light','dark'].includes(storedMapPreference('brightness')))mapBrightness.value=storedMapPreference('brightness');
+const incomingMapParams=new URLSearchParams(location.search);
+const initialBasemap=incomingMapParams.get('basemap');
+if(['political','geographic','satellite'].includes(initialBasemap))mapBasemap.value=initialBasemap;
+else if(['political','geographic','satellite'].includes(storedMapPreference('type')))mapBasemap.value=storedMapPreference('type');
+const initialBrightness=incomingMapParams.get('brightness');
+if(['auto','light','dark'].includes(initialBrightness))mapBrightness.value=initialBrightness;
+else if(['auto','light','dark'].includes(storedMapPreference('brightness')))mapBrightness.value=storedMapPreference('brightness');
 if(['0','1.5','4','9'].includes(storedMapPreference('rotation')))mapAutoRotate.value=storedMapPreference('rotation');
 function isDarkMap(){return mapBrightness.value==='dark'||mapBrightness.value==='auto'&&prefersDark.matches}
 function selectedMapStyle(){
@@ -1261,7 +1271,8 @@ function rotateMap(timestamp){
 }
 mapAutoRotate.addEventListener('change',()=>rememberMapPreference('rotation',mapAutoRotate.value));
 window.requestAnimationFrame(rotateMap);
-let flatProjection=false;
+let flatProjection=incomingMapParams.get('projection')==='flat';
+if(flatProjection){const control=document.getElementById('mapProjectionToggle');control.setAttribute('aria-pressed','true');control.title='Globus anzeigen';control.setAttribute('aria-label','Globus anzeigen';control.firstChild.textContent='◉ ';}
 document.getElementById('mapProjectionToggle').addEventListener('click',event=>{event.preventDefault();event.stopPropagation();
  flatProjection=!flatProjection;
  const control=document.getElementById('mapProjectionToggle');
@@ -1333,10 +1344,10 @@ function spreadNearbyMarkers(){
    &&el.style.visibility!=='hidden';
  });
  const zoomScale=Math.max(.65,Math.min(1.65,.78+map.getZoom()*.14));
- const iconRadius=18*zoomScale;
+ const iconRadius=14*zoomScale;
  const origins=visible.map(marker=>({marker,point:map.project(marker.getLngLat())}));
  const clusters=[];
- const captureRadius=Math.max(22,iconRadius*2+6);
+ const captureRadius=Math.max(19,iconRadius*2+3);
  for(const item of origins){
   const found=clusters.find(cluster=>Math.hypot(item.point.x-cluster.center.x,item.point.y-cluster.center.y)<captureRadius);
   if(!found){clusters.push({members:[item],center:{...item.point}});continue;}
@@ -1349,7 +1360,7 @@ function spreadNearbyMarkers(){
  for(const cluster of clusters){
   const items=cluster.members;
   const count=items.length;
-  const ringRadius=count>1?Math.max(iconRadius*2.1,(iconRadius*2+8)*count/(2*Math.PI)):0;
+  const ringRadius=count>1?Math.max(iconRadius*1.65,(iconRadius*1.8+5)*count/(2*Math.PI)):0;
   items.forEach(({marker,point},i)=>{
    let x=point.x,y=point.y;
    if(count>1){
@@ -1451,7 +1462,7 @@ function renderFlightArcs(){
    });
    // Keep endpoints at the visible edges of the marker circles.
    const radiusScale=Math.max(.65,Math.min(1.65,.78+map.getZoom()*.14));
-   const sourceRadius=flatProjection?14*radiusScale+2:5.5,eventRadius=flatProjection?16*radiusScale+2:5.5;
+   const sourceRadius=flatProjection?9*radiusScale+2:5.5,eventRadius=flatProjection?10*radiusScale+2:5.5;
    const first=sampled[0],last=sampled[sampled.length-1];
    const fNext=sampled[1],lPrev=sampled[sampled.length-2];
    const fd=Math.hypot(fNext.x-first.x,fNext.y-first.y)||1;
