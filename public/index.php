@@ -445,6 +445,29 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
  .topbar-inner .grid-toggle{padding:2px!important}
  .topbar-inner .mobile-search-toggle{width:25px!important}
 }
+
+/* Two clear, accessible geographic markers immediately after each card's map link. */
+.story-location-flags{display:inline-flex;vertical-align:middle;align-items:center;gap:5px;
+ margin-left:7px;font-size:15px;line-height:1.15;white-space:nowrap}
+.story-location-flag{display:inline-flex;min-width:18px;align-items:center;justify-content:center;
+ cursor:help;font-family:system-ui,-apple-system,sans-serif}
+@media(max-width:720px){
+ .story-location-flags{gap:3px;margin-left:5px;font-size:14px}
+ /* Keep the selected point free and constrain popups to the map/visible viewport. */
+ .globe-view .maplibregl-popup.marker-article-popup{
+  max-width:calc(100vw - 24px)!important;z-index:18!important
+ }
+ .globe-view .marker-article-popup .maplibregl-popup-content{
+  max-height:min(57dvh,390px)!important;overflow:hidden!important;
+  padding:9px 10px!important
+ }
+ .globe-view .marker-article-overlay{width:min(300px,calc(100vw - 52px))!important;
+  max-height:calc(min(57dvh,390px) - 20px);display:flex;flex-direction:column}
+ .globe-view .marker-article-overlay details{min-height:0;display:flex;flex-direction:column}
+ .globe-view .marker-article-list{max-height:min(43dvh,270px)!important;overflow-y:auto!important;
+  overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+ .globe-view .marker-article-overlay summary{font-size:13px;padding-right:28px}
+}
 /* The icon popup and the filtered feed below the map replace the redundant bottom-left map list. */
 .globe-view #globeInfo{display:none!important}
 </style></head><body>
@@ -842,7 +865,30 @@ function showMarkerArticles(coordinates,title,articles,routePoints=[],descriptio
  if(articles.length)articles.slice(0,40).forEach(story=>appendMapArticle(list,story));
  else{const empty=document.createElement('p');empty.textContent='Keine zugeordneten Artikel in der aktuell geladenen Liste. Bitte Zeitraum oder Nachrichtenansicht erweitern.';list.append(empty);}
  details.append(list);wrapper.append(details);
- activeMapPopup=new maplibregl.Popup({closeButton:true,closeOnClick:false,offset:18,maxWidth:'min(360px,85vw)',className:'marker-article-popup'}).setLngLat(coordinates).setDOMContent(wrapper).addTo(map);
+ // Prefer above/below the selected marker on narrow touchscreens, leaving the
+ // actual point uncovered. The popup body scrolls internally if space is scarce.
+ const mobilePopup=window.matchMedia('(max-width:720px)').matches;
+ const projected=map.project(coordinates);
+ const verticalAnchor=projected.y>map.getContainer().clientHeight*.53?'bottom':'top';
+ const popupOptions={closeButton:true,closeOnClick:false,offset:mobilePopup?22:18,
+  maxWidth:mobilePopup?'min(340px,calc(100vw - 28px))':'min(360px,85vw)',
+  className:'marker-article-popup'};
+ if(mobilePopup)popupOptions.anchor=verticalAnchor;
+ activeMapPopup=new maplibregl.Popup(popupOptions).setLngLat(coordinates).setDOMContent(wrapper).addTo(map);
+ // After layout, pan only as much as needed to bring the whole popup into the
+ // visible map. Both popup and marker move together, preserving their gap.
+ if(mobilePopup)requestAnimationFrame(()=>requestAnimationFrame(()=>{
+  if(!activeMapPopup||activeMapPopup.getElement()?.querySelector('.marker-article-overlay')!==wrapper)return;
+  const popupRect=activeMapPopup.getElement()?.getBoundingClientRect();
+  const mapRect=map.getContainer().getBoundingClientRect();
+  if(!popupRect)return;
+  const margin=12;
+  const dx=popupRect.left<mapRect.left+margin?mapRect.left+margin-popupRect.left:
+    popupRect.right>mapRect.right-margin?mapRect.right-margin-popupRect.right:0;
+  const dy=popupRect.top<mapRect.top+margin?mapRect.top+margin-popupRect.top:
+    popupRect.bottom>mapRect.bottom-margin?mapRect.bottom-margin-popupRect.bottom:0;
+  if(dx||dy)map.panBy([-dx,-dy],{duration:200,essential:true});
+ }));
  const popupForSelection=activeMapPopup;
  popupForSelection.on('close',()=>{if(activeMapPopup!==popupForSelection)return;setHoveredMapStory(null);activeMapPopup=null;mapOverlayOpen=false;selectedPlace=null;selectedSource=null;window.ifisNewsFeed.clearMapStories();info.replaceChildren();info.textContent='Nachrichten geografisch entdecken. Wähle einen Ort auf der Karte.';info.classList.remove('has-selection');updateSourceLinks()});
  // Keep the clicked marker and its popup in view. Fitting to every reported place
@@ -992,6 +1038,24 @@ const sourceLocations={
 };
 function sourceFor(story){const name=story.dataset.source||story.querySelector('.meta')?.textContent||'';return Object.entries(sourceLocations).find(([key])=>name.includes(key))?.[1]||null}
 function storiesForSource(source){return stories.filter(story=>sourceFor(story)?.name===source.name)}
+// A small source/event flag pair directly after "Karte" on every news card.
+stories.forEach(story=>{
+ const button=story.querySelector('.story-map-link');
+ if(!button||story.querySelector('.story-location-flags'))return;
+ const source=sourceFor(story);
+ const place=story.dataset.place||'Nicht eindeutig erkannt';
+ const pair=document.createElement('span');pair.className='story-location-flags';
+ const publisher=document.createElement('span');publisher.className='story-location-flag';
+ publisher.textContent=newsSourceFlag(source);
+ publisher.title='Quellenstandort: '+(source?.name||'nicht bekannt');
+ publisher.setAttribute('aria-label',publisher.title);
+ const event=document.createElement('span');event.className='story-location-flag';
+ event.textContent=newsPlaceFlag(place);
+ event.title='Ereignisort: '+place;
+ event.setAttribute('aria-label',event.title);
+ pair.append(publisher,event);
+ button.after(pair);
+});
 
 // Lay out different event/source markers around their projected shared location.
 // Offsets are screen pixels, so the underlying geographic coordinates stay exact.
