@@ -387,6 +387,22 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
 .map-marker-hover-type{font-size:10px;letter-spacing:.05em;text-transform:uppercase;font-weight:700;color:var(--accent,#2468d5)}
 .map-marker-hover small{font-size:11px;color:var(--muted,#697587);max-width:240px}
 @media(prefers-color-scheme:dark){.map-marker-hover{--bg:#15191f;--text:#e9edf3;--muted:#a0acba;--line:#313945;--accent:#8ab4ff}}
+
+/* Globe dots stay at their geographic positions; numbered icons remain on the flat map. */
+.globe-view.is-globe .globe-marker,.globe-view.is-globe .globe-source{
+ width:10px!important;height:10px!important;min-width:10px!important;min-height:10px!important;
+ padding:0!important;border:1.5px solid #fff!important;border-radius:50%!important;
+ font-size:0!important;line-height:0!important;box-shadow:0 0 0 1px #0003!important;
+ overflow:visible!important;cursor:pointer
+}
+.globe-view.is-globe .globe-marker::after,.globe-view.is-globe .globe-source::after{
+ content:'';position:absolute;width:24px;height:24px;left:50%;top:50%;
+ transform:translate(-50%,-50%);border-radius:50%;background:transparent
+}
+.globe-view.is-globe .globe-marker:hover,.globe-view.is-globe .globe-source:hover,
+.globe-view.is-globe .globe-marker:focus-visible,.globe-view.is-globe .globe-source:focus-visible{
+ box-shadow:0 0 0 3px #ffffffa8,0 0 0 5px #2468d5a8!important
+}
 /* The icon popup and the filtered feed below the map replace the redundant bottom-left map list. */
 .globe-view #globeInfo{display:none!important}
 </style></head><body>
@@ -701,7 +717,7 @@ function updateMapReadState(){
   const source=el.classList.contains('globe-source');
   const events=new Set(matching.map(story=>story.dataset.place).filter(Boolean));
   const unread=matching.filter(story=>!seenUrls.has(story.dataset.url)).length;
-  el.textContent=String(source?events.size:matching.length);
+  el.textContent=flatProjection?String(source?events.size:matching.length):'';
   const description=(el._ifisLabel||'')+' · '+matching.length+' Artikel · '+(source?events.size+' Ereignisorte':new Set(matching.map(story=>story.dataset.source).filter(Boolean)).size+' Quellen')+' · '+hours.toLocaleString('de-DE')+' h'+(colorMode.value==='unseen'?' · '+unread+' ungesehen':'');
   el.setAttribute('aria-label',description);
   if(hoveredMarkerButton===el)showMarkerHover(el);
@@ -866,7 +882,7 @@ document.getElementById('mapProjectionToggle').addEventListener('click',event=>{
  control.title=flatProjection?'Globus anzeigen':'Flache Karte anzeigen';
  control.setAttribute('aria-label',flatProjection?'Globus anzeigen':'Flache Karte anzeigen');
  control.firstChild.textContent=flatProjection?'◉ ':'▤ ';
- if(map){try{map.setProjection({type:flatProjection?'mercator':'globe'});}catch(e){console.warn('Kartenprojektion konnte nicht gewechselt werden',e)}hideFarSide();updateConnector();}
+ if(map){try{map.setProjection({type:flatProjection?'mercator':'globe'});}catch(e){console.warn('Kartenprojektion konnte nicht gewechselt werden',e)}updateMapReadState();updateConnector();}
 });
 const sourceImprintAudit=<?=json_encode($sourceImprintAudit,JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_UNESCAPED_UNICODE)?>;
 const sourceLocations={
@@ -895,6 +911,17 @@ function storiesForSource(source){return stories.filter(story=>sourceFor(story)?
 // Offsets are screen pixels, so the underlying geographic coordinates stay exact.
 function spreadNearbyMarkers(){
  if(!map)return;
+ if(!flatProjection){
+  // Zero pixel offsets in globe mode: every dot stays on its geographic coordinate.
+  markers.forEach(marker=>{
+   const el=marker.getElement();
+   if(!el.classList.contains('globe-marker')&&!el.classList.contains('globe-source'))return;
+   marker._ifisScreenOffset=[0,0];
+   const previous=marker.getOffset();
+   if(previous.x!==0||previous.y!==0)marker.setOffset([0,0]);
+  });
+  return;
+ }
  const visible=markers.filter(marker=>{
   const el=marker.getElement();
   return (el.classList.contains('globe-marker')||el.classList.contains('globe-source'))
@@ -944,7 +971,9 @@ function displayPointForMarker(coordinates,sourceName=null){
  const point=map.project(coordinates),offset=marker?marker._ifisScreenOffset||[0,0]:[0,0];
  return {x:point.x+offset[0],y:point.y+offset[1]};
 }
-function hideFarSide(){if(!map)return;const center=map.getCenter(),rad=Math.PI/180,a=center.lat*rad,b=center.lng*rad;markers.forEach(marker=>{const el=marker.getElement(),p=marker.getLngLat(),lat=p.lat*rad,lon=p.lng*rad;const facing=flatProjection||Math.sin(a)*Math.sin(lat)+Math.cos(a)*Math.cos(lat)*Math.cos(lon-b)>0.025;const source=el.classList.contains('globe-source')||el.classList.contains('globe-source-cluster');const enabled=source?document.getElementById('showSourceMarkers').checked:document.getElementById('showEventMarkers').checked;
+function hideFarSide(){if(!map)return;
+ panel.classList.toggle('is-globe',!flatProjection);
+ panel.classList.toggle('is-flat-map',flatProjection);const center=map.getCenter(),rad=Math.PI/180,a=center.lat*rad,b=center.lng*rad;markers.forEach(marker=>{const el=marker.getElement(),p=marker.getLngLat(),lat=p.lat*rad,lon=p.lng*rad;const facing=flatProjection||Math.sin(a)*Math.sin(lat)+Math.cos(a)*Math.cos(lat)*Math.cos(lon-b)>0.025;const source=el.classList.contains('globe-source')||el.classList.contains('globe-source-cluster');const enabled=source?document.getElementById('showSourceMarkers').checked:document.getElementById('showEventMarkers').checked;
  const ageVisible=!el._ifisStories||(el._ifisTimeStories||mapTimeStories(el._ifisStories)).length>0;const screen=map.project(p);const bounds=map.getContainer().getBoundingClientRect();const inside=screen.x>=18&&screen.y>=18&&screen.x<=bounds.width-18&&screen.y<=bounds.height-18;el.style.visibility=facing&&enabled&&inside&&ageVisible?'visible':'hidden';el.style.opacity=source?(focusMode.value==='source'?'1':'.72'):(focusMode.value==='event'?'1':'.55');const zoomScale=Math.max(.65,Math.min(1.65,.78+map.getZoom()*.14));el.style.setProperty('--marker-scale',String(zoomScale));el.style.zIndex=source?(focusMode.value==='source'?'5':'2'):(focusMode.value==='event'?'5':'2')});spreadNearbyMarkers();updateSourceLinks();connector.style.display=(hoveredMapStory||document.getElementById('showSourceLinks').checked||selectedPlace||selectedSource)?'block':'none';}
 function nightGeoJSON(){const now=new Date(),jd=now.getTime()/86400000+2440587.5,n=jd-2451545,mean=(280.46+0.9856474*n)*Math.PI/180,anomaly=(357.528+0.9856003*n)*Math.PI/180,lambda=mean+(1.915*Math.sin(anomaly)+0.020*Math.sin(2*anomaly))*Math.PI/180,epsilon=(23.439-0.0000004*n)*Math.PI/180,decl=Math.asin(Math.sin(epsilon)*Math.sin(lambda)),ra=Math.atan2(Math.cos(epsilon)*Math.sin(lambda),Math.cos(lambda)),gmst=(280.46061837+360.98564736629*(jd-2451545))*Math.PI/180,subLon=((ra-gmst)*180/Math.PI+540)%360-180;const features=[],rad=Math.PI/180;for(let lat=-90;lat<90;lat+=5){for(let lon=-180;lon<180;lon+=5){const phi=(lat+2.5)*rad,h=(lon+2.5-subLon)*rad,elevation=Math.asin(Math.sin(phi)*Math.sin(decl)+Math.cos(phi)*Math.cos(decl)*Math.cos(h))*180/Math.PI;if(elevation>=0)continue;features.push({type:'Feature',properties:{opacity:Math.min(.68,Math.max(.08,-elevation/22*.30))},geometry:{type:'Polygon',coordinates:[[[lon,lat],[lon+5,lat],[lon+5,lat+5],[lon,lat+5],[lon,lat]]]}})}}return {type:'FeatureCollection',features}}
 function addNightLayer(){if(map.getSource('night'))return;map.addSource('night',{type:'geojson',data:nightGeoJSON()});map.addLayer({id:'night',type:'fill',source:'night',layout:{visibility:nightToggle.checked?'visible':'none'},paint:{'fill-color':'#071326','fill-opacity':['get','opacity']}})}
@@ -976,7 +1005,7 @@ function renderFlightArcs(){
    // no line should cross a marker's count, even on the hovered route.
    const control={x:mx+nx*lift*upward,y:my+ny*lift*upward-lift*.3};
    const radiusScale=Math.max(.65,Math.min(1.65,.78+map.getZoom()*.14));
-   const sourceRadius=14*radiusScale+2,eventRadius=16*radiusScale+2;
+   const sourceRadius=flatProjection?14*radiusScale+2:5.5,eventRadius=flatProjection?16*radiusScale+2:5.5;
    const startLength=Math.hypot(control.x-a.x,control.y-a.y)||1;
    const endLength=Math.hypot(control.x-b.x,control.y-b.y)||1;
    if(distance<=sourceRadius+eventRadius+2)return;
