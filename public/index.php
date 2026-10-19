@@ -267,6 +267,14 @@ details[open] > summary:not([aria-label="Weitere Optionen"])::after{
 .projection-symbol-globe{width:26px!important;height:26px!important;border:2px solid currentColor!important;border-radius:50%!important;position:relative}
 .projection-symbol-globe::before{content:"";position:absolute;inset:3px;background:currentColor;border-radius:50%}
 .projection-symbol-map{width:25px!important;height:23px!important;border:2px solid currentColor!important;border-radius:4px!important}
+
+/* Unframed, understated projection symbols in the map header. */
+.globe-view .map-legend-shell>.map-projection-header-control{top:10px}
+.globe-view .map-legend-shell>.map-projection-header-control .map-projection-toggle{width:34px;height:34px;border:0!important;box-shadow:none!important;background:transparent!important;border-radius:0!important}
+.globe-view .map-legend-shell>.map-projection-header-control .projection-symbol{width:19px!important;height:19px!important}
+.globe-view .map-legend-shell>.map-projection-header-control .projection-symbol-globe::before{inset:3px}
+.globe-view .map-legend-shell>.map-projection-header-control .projection-symbol-map::before{left:5px}
+.globe-view .map-legend-shell>.map-projection-header-control .projection-symbol-map::after{right:5px}
 </style><link href="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.css" rel="stylesheet"><style>.globe-view{display:none;position:relative;height:min(72vh,680px);min-height:380px;border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:16px}.globe-view.open{display:block}.globe-view #newsGlobe{width:100%;height:100%}.globe-info{position:absolute;left:12px;bottom:12px;background:var(--bg);padding:12px;border-radius:10px;max-width:320px;box-shadow:0 2px 12px #0002;font-size:13px}.globe-toggle{border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:20px;padding:6px 12px;white-space:nowrap}.globe-toggle.active{background:var(--hover);color:var(--accent)}.geo-link{font-size:12px;color:var(--accent);cursor:pointer;border:0;background:none;padding:3px 0}.trust-tools{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:9px;font-size:12px;color:var(--muted)}.trust{border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text);padding:4px}.ifis-related a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}.globe-marker{background:#0d9488;color:white;border:2px solid white;border-radius:50%;width:29px;height:29px;display:grid;place-items:center;font-size:11px;box-shadow:0 1px 7px #0005;cursor:pointer}.globe-marker .constructive-count{position:absolute;right:-10px;top:-10px;background:#177245;color:white;border:1px solid white;border-radius:10px;min-width:20px;height:19px;padding:0 3px;display:grid;place-items:center;font-size:10px;font-weight:700;line-height:1}.globe-source{background:#e59a35;color:#17212e;border:2px solid white;border-radius:50%;width:25px;height:25px;display:grid;place-items:center;font-size:13px;cursor:pointer;box-shadow:0 1px 7px #0005}.globe-legend{position:absolute;right:12px;top:12px;background:var(--bg);padding:8px 10px;border-radius:9px;font-size:12px;z-index:2}.globe-legend span{margin-left:9px}.globe-view .globe-legend{left:auto;right:12px;top:12px;width:max-content;max-width:min(265px,calc(100% - 24px));padding:12px 14px;display:flex;flex-direction:column;align-items:stretch;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:12px;box-shadow:0 3px 12px #0002;font-size:12px;line-height:1.35}
 .globe-view .globe-legend-line{display:flex;align-items:center;gap:9px;margin:0;white-space:normal}
 .globe-view .globe-legend-line input{margin:0 2px 0 0;flex-shrink:0}
@@ -1588,7 +1596,7 @@ function renderFlightArcs(){
    // A flat projection uses a straight, surface-level connection.
    // On the globe the arc is lifted in screen space, away from the
    // source-to-target chord; front-facing samples are masked at the limb.
-   const peak=flatProjection?0:Math.min(globeRadius*.30,globeRadius*(.055+.20*Math.min(1,angle/Math.PI)));
+   const peak=flatProjection?0:Math.min(globeRadius*.48,globeRadius*(.10+.32*Math.min(1,angle/Math.PI)));
    const chordX=b.x-a.x,chordY=b.y-a.y,chordLength=Math.hypot(chordX,chordY)||1;
    let normalX=-chordY/chordLength,normalY=chordX/chordLength;
    const midpointX=(a.x+b.x)/2-globeCentre.x,midpointY=(a.y+b.y)/2-globeCentre.y;
@@ -1598,9 +1606,15 @@ function renderFlightArcs(){
     :points.map(({t,coordinates})=>{
       const p=map.project(coordinates);
       const lift=peak*Math.sin(Math.PI*t);
-      // Lift perpendicular to the chord to form a recognizable ballistic bow.
-      return {t,x:p.x+normalX*lift,y:p.y+normalY*lift,
-       visible:facing(coordinates)>=-0.004};
+      // A high arch projects outward from the surface. Near the horizon,
+      // raised samples may remain visible until the silhouette clips them.
+      const dx=p.x-globeCentre.x,dy=p.y-globeCentre.y;
+      const length=Math.hypot(dx,dy)||1;
+      const face=facing(coordinates);
+      const allowance=lift>0?-Math.sqrt(Math.max(0,1-1/Math.pow(1+lift/globeRadius,2))):0;
+      return {t,x:p.x+normalX*lift*.70+(dx/length)*lift*.55,
+       y:p.y+normalY*lift*.70+(dy/length)*lift*.55,
+       visible:face>=allowance};
      });
    // Keep endpoints at the visible edges of the marker circles.
    const radiusScale=Math.max(.65,Math.min(1.65,.78+map.getZoom()*.14));
