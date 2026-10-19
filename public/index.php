@@ -773,10 +773,10 @@ function selectedMapStyle(){
  panel.classList.toggle('map-dark',dark);
  panel.classList.toggle('map-light',!dark);
  if(mapBasemap.value==='satellite'){
-  return {version:8,name:'Satellite',sources:{imagery:{type:'raster',tiles:['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],tileSize:256,attribution:'Tiles © Esri, Maxar, Earthstar Geographics'}},layers:[{id:'satellite-imagery',type:'raster',source:'imagery',paint:dark?{'raster-brightness-max':0.67,'raster-saturation':-0.3}:{}}]};
+  return {version:8,name:'Satellite',sources:{imagery:{type:'raster',tiles:['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],tileSize:256,attribution:'Tiles © Esri, Maxar, Earthstar Geographics'}},layers:[{id:'satellite-imagery',type:'raster',source:'imagery',paint:{}}]};
  }
  if(mapBasemap.value==='political')return 'https://demotiles.maplibre.org/style.json';
- return {version:8,name:'Geografisch · Relief',sources:{topography:{type:'raster',tiles:['https://a.tile.opentopomap.org/{z}/{x}/{y}.png','https://b.tile.opentopomap.org/{z}/{x}/{y}.png','https://c.tile.opentopomap.org/{z}/{x}/{y}.png'],tileSize:256,maxzoom:17,attribution:'© OpenStreetMap-Mitwirkende · SRTM · OpenTopoMap (CC BY-SA)'}},layers:[{id:'geographic-terrain',type:'raster',source:'topography',paint:dark?{'raster-brightness-max':0.76,'raster-saturation':-0.25}:{}}]};
+ return {version:8,name:'Geografisch · Relief',sources:{topography:{type:'raster',tiles:['https://a.tile.opentopomap.org/{z}/{x}/{y}.png','https://b.tile.opentopomap.org/{z}/{x}/{y}.png','https://c.tile.opentopomap.org/{z}/{x}/{y}.png'],tileSize:256,maxzoom:17,attribution:'© OpenStreetMap-Mitwirkende · SRTM · OpenTopoMap (CC BY-SA)'}},layers:[{id:'geographic-terrain',type:'raster',source:'topography',paint:{}}]};
 }
 let styleSwitchSerial=0;
 function applyMapStyle(){
