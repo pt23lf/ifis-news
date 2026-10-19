@@ -474,10 +474,24 @@ function markStorySeen(story){
  updateMapReadState();
 }
 function storyAge(story){const raw=story.querySelector('time')?.getAttribute('datetime')||'';const parsed=Date.parse(raw.endsWith('Z')?raw:raw.replace(' ','T')+'Z');return Number.isFinite(parsed)?(Date.now()-parsed)/3600000:Infinity}
+function mapTimeStories(items){const hours=Number(document.getElementById('mapTimeRange').value)||2.5;return items.filter(story=>{const age=storyAge(story);return age>=0&&age<=hours;});}
 function updateMapReadState(){
  const hours=Number(document.getElementById('mapTimeRange').value)||2.5;
  document.getElementById('mapTimeValue').textContent=hours.toLocaleString('de-DE')+' h';
  if(!map)return;
+ markers.forEach(marker=>{
+  const el=marker.getElement();
+  if(!el._ifisStories)return;
+  const matching=mapTimeStories(el._ifisStories);
+  el._ifisTimeStories=matching;
+  const source=el.classList.contains('globe-source');
+  const events=new Set(matching.map(story=>story.dataset.place).filter(Boolean));
+  const unread=matching.filter(story=>!seenUrls.has(story.dataset.url)).length;
+  el.textContent=String(source?events.size:matching.length);
+  el.title=(el._ifisLabel||'')+' · '+matching.length+' Artikel · '+(source?events.size+' Ereignisorte':new Set(matching.map(story=>story.dataset.source).filter(Boolean)).size+' Quellen')+' · '+hours.toLocaleString('de-DE')+' h'+(colorMode.value==='unseen'?' · '+unread+' ungesehen':'');
+  el.setAttribute('aria-label',el.title);
+  el.style.backgroundColor=colorMode.value==='unseen'&&!unread?'#718096':'';
+ });
  hideFarSide();
 }
 colorMode.addEventListener('change',updateMapReadState);
@@ -600,9 +614,7 @@ function sourceFor(story){const name=story.dataset.source||story.querySelector('
 function storiesForSource(source){return stories.filter(story=>sourceFor(story)?.name===source.name)}
 
 function hideFarSide(){if(!map)return;const center=map.getCenter(),rad=Math.PI/180,a=center.lat*rad,b=center.lng*rad;markers.forEach(marker=>{const el=marker.getElement(),p=marker.getLngLat(),lat=p.lat*rad,lon=p.lng*rad;const facing=flatProjection||Math.sin(a)*Math.sin(lat)+Math.cos(a)*Math.cos(lat)*Math.cos(lon-b)>0.025;const source=el.classList.contains('globe-source')||el.classList.contains('globe-source-cluster');const enabled=source?document.getElementById('showSourceMarkers').checked:document.getElementById('showEventMarkers').checked;
- const hours=Number(document.getElementById('mapTimeRange').value)||2.5;
- const eventGroup=[...groups.values()].find(g=>g.loc[1]===p.lat&&g.loc[2]===p.lng);
- const ageVisible=source?true:!eventGroup||eventGroup.stories.some(story=>storyAge(story)>=0&&storyAge(story)<=hours);const screen=map.project(p);const bounds=map.getContainer().getBoundingClientRect();const inside=screen.x>=18&&screen.y>=18&&screen.x<=bounds.width-18&&screen.y<=bounds.height-18;el.style.visibility=facing&&enabled&&inside&&ageVisible?'visible':'hidden';el.style.opacity=source?(focusMode.value==='source'?'1':'.72'):(focusMode.value==='event'?'1':'.55');const zoomScale=Math.max(.65,Math.min(1.65,.78+map.getZoom()*.14));el.style.setProperty('--marker-scale',String(zoomScale));el.style.zIndex=source?(focusMode.value==='source'?'5':'2'):(focusMode.value==='event'?'5':'2')});updateSourceLinks();connector.style.display=selectedPlace||selectedSource?'block':'none';}
+ const ageVisible=!el._ifisStories||(el._ifisTimeStories||mapTimeStories(el._ifisStories)).length>0;const screen=map.project(p);const bounds=map.getContainer().getBoundingClientRect();const inside=screen.x>=18&&screen.y>=18&&screen.x<=bounds.width-18&&screen.y<=bounds.height-18;el.style.visibility=facing&&enabled&&inside&&ageVisible?'visible':'hidden';el.style.opacity=source?(focusMode.value==='source'?'1':'.72'):(focusMode.value==='event'?'1':'.55');const zoomScale=Math.max(.65,Math.min(1.65,.78+map.getZoom()*.14));el.style.setProperty('--marker-scale',String(zoomScale));el.style.zIndex=source?(focusMode.value==='source'?'5':'2'):(focusMode.value==='event'?'5':'2')});updateSourceLinks();connector.style.display=selectedPlace||selectedSource?'block':'none';}
 function nightGeoJSON(){const now=new Date(),jd=now.getTime()/86400000+2440587.5,n=jd-2451545,mean=(280.46+0.9856474*n)*Math.PI/180,anomaly=(357.528+0.9856003*n)*Math.PI/180,lambda=mean+(1.915*Math.sin(anomaly)+0.020*Math.sin(2*anomaly))*Math.PI/180,epsilon=(23.439-0.0000004*n)*Math.PI/180,decl=Math.asin(Math.sin(epsilon)*Math.sin(lambda)),ra=Math.atan2(Math.cos(epsilon)*Math.sin(lambda),Math.cos(lambda)),gmst=(280.46061837+360.98564736629*(jd-2451545))*Math.PI/180,subLon=((ra-gmst)*180/Math.PI+540)%360-180;const features=[],rad=Math.PI/180;for(let lat=-90;lat<90;lat+=5){for(let lon=-180;lon<180;lon+=5){const phi=(lat+2.5)*rad,h=(lon+2.5-subLon)*rad,elevation=Math.asin(Math.sin(phi)*Math.sin(decl)+Math.cos(phi)*Math.cos(decl)*Math.cos(h))*180/Math.PI;if(elevation>=0)continue;features.push({type:'Feature',properties:{opacity:Math.min(.68,Math.max(.08,-elevation/22*.30))},geometry:{type:'Polygon',coordinates:[[[lon,lat],[lon+5,lat],[lon+5,lat+5],[lon,lat+5],[lon,lat]]]}})}}return {type:'FeatureCollection',features}}
 function addNightLayer(){map.addSource('night',{type:'geojson',data:nightGeoJSON()});map.addLayer({id:'night',type:'fill',source:'night',layout:{visibility:nightToggle.checked?'visible':'none'},paint:{'fill-color':'#071326','fill-opacity':['get','opacity']}});nightToggle.addEventListener('change',()=>map.setLayoutProperty('night','visibility',nightToggle.checked?'visible':'none'))}
 let flightLayer=null;
@@ -645,10 +657,17 @@ map.addSource('news-source-links',{type:'geojson',data:{type:'FeatureCollection'
 groups.forEach((group,place)=>{
  const reportingSources=new Set(group.stories.map(story=>story.querySelector('.meta')?.textContent?.split(' · ')[0]?.trim()).filter(Boolean));
  const dot=document.createElement('button');dot.type='button';dot.className='globe-marker';
+ dot._ifisStories=group.stories;dot._ifisLabel=place;
  dot.textContent=String(group.stories.length);
  dot.title=place+' · '+reportingSources.size+' berichtende Quellen · '+group.stories.length+' Meldungen';
  dot.setAttribute('aria-label',dot.title);
- dot.addEventListener('click',()=>{selectedPlace=place;selectedSource=null;updateSourceLinks();showMarkerArticles([group.loc[2],group.loc[1]],place,group.stories,[...new Map(group.stories.map(story=>sourceFor(story)).filter(Boolean).map(src=>[src.name,src.coordinates])).values()],reportingSources.size+' Quellen');});
+ dot.addEventListener('click',()=>{
+  const selected=dot._ifisTimeStories||mapTimeStories(group.stories);if(!selected.length)return;
+  const selectedSources=new Set(selected.map(story=>story.dataset.source).filter(Boolean));
+  selectedPlace=place;selectedSource=null;updateSourceLinks();
+  const routePoints=[...new Map(selected.map(story=>sourceFor(story)).filter(Boolean).map(src=>[src.name,src.coordinates])).values()];
+  showMarkerArticles([group.loc[2],group.loc[1]],place,selected,routePoints,selectedSources.size+' Quellen');
+ });
  markers.push(new maplibregl.Marker({element:dot,anchor:'center'}).setLngLat([group.loc[2],group.loc[1]]).addTo(map));
 });
 map.addLayer({id:'news-source-links',type:'line',source:'news-source-links',layout:{visibility:'none'},paint:{'line-color':'#e59a35','line-width':2,'line-opacity':0.85,'line-dasharray':[2,2]}});
