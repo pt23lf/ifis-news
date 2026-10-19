@@ -16,10 +16,12 @@ $ogImage='https://news.ifis.net/share-image.php'.($shareCollectionType!==''?'?'.
 
 $items = [];
 $sourceBatches=[];
+$articleTotal=null;
 $dbPath = dirname(__DIR__) . '/storage/news.sqlite';
 if (is_file($dbPath) && extension_loaded('pdo_sqlite')) {
  try {
   $db = new PDO('sqlite:' . $dbPath);
+  $articleTotal=(int)$db->query('SELECT COUNT(*) FROM articles')->fetchColumn();
   $query = $db->prepare('SELECT title,url,source,published_at,summary,image_url FROM articles WHERE section=:section ORDER BY published_at DESC LIMIT 400');
   $query->execute(['section'=>$view]);
   $items = $query->fetchAll(PDO::FETCH_ASSOC);
@@ -46,6 +48,11 @@ if(is_file($lastImportFile)){
  $lastImportTime=strtotime(trim((string)file_get_contents($lastImportFile)));
  if($lastImportTime!==false)$lastImportLabel='Letzter Import: '.date('d.m.Y H:i',$lastImportTime).' Uhr (Serverzeit)';
 }
+$lastImportStatsFile=dirname(__DIR__).'/storage/news-last-import-stats.json';
+$lastImportStats=is_file($lastImportStatsFile)?json_decode((string)@file_get_contents($lastImportStatsFile),true):null;
+$lastImportCount=is_array($lastImportStats)&&isset($lastImportStats['new'])?max(0,(int)$lastImportStats['new']):null;
+$lastImportStamp=is_array($lastImportStats)?strtotime((string)($lastImportStats['at']??'')):false;
+$lastImportShown=$lastImportStamp!==false&&$lastImportStamp>0?date('d.m.Y H:i',$lastImportStamp):($lastImportTime??false?date('d.m.Y H:i',$lastImportTime):'–');
 function esc(?string $value): string { return htmlspecialchars($value ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); }
 function category(array $item): string {
  $s = mb_strtolower(($item['title'] ?? '').' '.($item['summary'] ?? ''),'UTF-8');
@@ -213,6 +220,11 @@ details[open] > summary:not([aria-label="Weitere Optionen"])::after{
  transform:translateY(-75%) rotate(45deg)!important;
 }
 
+
+.news-import-strip{display:flex;gap:8px 20px;align-items:center;flex-wrap:wrap;justify-content:flex-start;
+ color:var(--muted);font-size:12px;line-height:1.5;padding:5px 0 9px;margin:0 0 5px;border-bottom:1px solid var(--line)}
+.news-import-strip strong{font-weight:650;color:var(--text);font-variant-numeric:tabular-nums}
+@media(max-width:720px){.news-import-strip{font-size:11px;gap:3px 12px;padding:3px 0 8px;margin:0 0 3px}}
 </style><link href="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.css" rel="stylesheet"><style>.globe-view{display:none;position:relative;height:min(72vh,680px);min-height:380px;border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:16px}.globe-view.open{display:block}.globe-view #newsGlobe{width:100%;height:100%}.globe-info{position:absolute;left:12px;bottom:12px;background:var(--bg);padding:12px;border-radius:10px;max-width:320px;box-shadow:0 2px 12px #0002;font-size:13px}.globe-toggle{border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:20px;padding:6px 12px;white-space:nowrap}.globe-toggle.active{background:var(--hover);color:var(--accent)}.geo-link{font-size:12px;color:var(--accent);cursor:pointer;border:0;background:none;padding:3px 0}.trust-tools{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:9px;font-size:12px;color:var(--muted)}.trust{border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text);padding:4px}.ifis-related a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}.globe-marker{background:#0d9488;color:white;border:2px solid white;border-radius:50%;width:29px;height:29px;display:grid;place-items:center;font-size:11px;box-shadow:0 1px 7px #0005;cursor:pointer}.globe-marker .constructive-count{position:absolute;right:-10px;top:-10px;background:#177245;color:white;border:1px solid white;border-radius:10px;min-width:20px;height:19px;padding:0 3px;display:grid;place-items:center;font-size:10px;font-weight:700;line-height:1}.globe-source{background:#e59a35;color:#17212e;border:2px solid white;border-radius:50%;width:25px;height:25px;display:grid;place-items:center;font-size:13px;cursor:pointer;box-shadow:0 1px 7px #0005}.globe-legend{position:absolute;right:12px;top:12px;background:var(--bg);padding:8px 10px;border-radius:9px;font-size:12px;z-index:2}.globe-legend span{margin-left:9px}.globe-view .globe-legend{left:auto;right:12px;top:12px;width:max-content;max-width:min(265px,calc(100% - 24px));padding:12px 14px;display:flex;flex-direction:column;align-items:stretch;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:12px;box-shadow:0 3px 12px #0002;font-size:12px;line-height:1.35}
 .globe-view .globe-legend-line{display:flex;align-items:center;gap:9px;margin:0;white-space:normal}
 .globe-view .globe-legend-line input{margin:0 2px 0 0;flex-shrink:0}
@@ -613,7 +625,11 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
 <header class="topbar"><div class="topbar-inner"><a class="brand" href="?view=world"><strong>IFIS</strong></a><nav class="topnav" aria-label="Bereiche"><a href="?view=ifis&amp;map=0" class="<?= $view==='ifis'?'active':'' ?>" data-subtitle-de="Nachrichten mit Veränderungspotenzial" data-subtitle-en="News with potential for change">Potenzial</a><button class="globe-toggle" id="globeToggle" type="button" aria-pressed="false" data-subtitle-de="Nachrichten geografisch entdecken" data-subtitle-en="Explore news geographically">Karte</button><a href="?view=world&amp;map=0" class="<?= $view==='world'?'active':'' ?>" data-subtitle-de="Nachrichten aus aller Welt" data-subtitle-en="News from around the world">Weltlage</a></nav><button type="button" id="gridToggle" class="grid-toggle" title="Spaltenzahl ändern" aria-label="Spaltenzahl ändern"><svg class="grid-toggle-symbol" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="2.5" y="13.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="13.5" width="8" height="8" rx="1.3"/></svg><span id="gridCount">1</span></button><div class="top-actions"><button type="button" id="mobileSearchToggle" class="mobile-search-toggle" aria-label="Suche öffnen" aria-expanded="false" title="Nachrichten suchen"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg></button><input class="search" id="search" type="search" placeholder="Nachrichten durchsuchen …" aria-label="Nachrichten durchsuchen"></div></div></header>
 <div class="layout">
 
-<main id="main"><div class="feedhead"><h1 id="feedTitle"><?= $view==='ifis'?'Potenzial':'Weltlage' ?></h1></div>
+<main id="main"><div class="news-import-strip" role="status" aria-label="Nachrichtenbestand und Aktualisierung">
+ <span><strong><?= $articleTotal===null?'–':number_format($articleTotal,0,',','.') ?></strong> Artikel gesamt</span>
+ <span><strong><?= $lastImportCount===null?'–':number_format($lastImportCount,0,',','.') ?></strong> neu beim letzten Import</span>
+ <span>Letzter Import: <strong><?=esc($lastImportShown)?></strong><?= $lastImportShown!=='–'?' Uhr':'' ?></span>
+ </div><div class="feedhead"><h1 id="feedTitle"><?= $view==='ifis'?'Potenzial':'Weltlage' ?></h1></div>
 <div class="globe-view" id="globeView"><div id="newsGlobe"></div><svg id="globeConnector" class="globe-connector" aria-hidden="true"><path id="globeConnectorPath"></path><circle id="globeConnectorEnd" r="4"></circle></svg><details class="globe-legend" id="mapLegend"><summary class="globe-legend-heading">Karte einstellen</summary>
 <div class="map-legend-content">
  <section class="map-legend-section" aria-label="Zeitraum">
