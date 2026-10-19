@@ -1020,6 +1020,11 @@ async function shareNewsCollection(selection,articles,mode,feedback,button){
   });
   const result=await response.json();
   if(!response.ok||!result.url)throw Error(result.error||'Speichern nicht möglich');
+  // A successful POST is not enough: verify the permanent URL actually resolves
+  // before offering it for sharing (e.g. after server deployment/path problems).
+  const check=await fetch(result.url,{method:'GET',cache:'no-store',redirect:'follow'});
+  if(!check.ok||!check.url.includes('collection.php?id='))
+   throw Error('Der gespeicherte Link lässt sich nicht öffnen ('+check.status+').');
   feedback.textContent='Feste Sammlung gespeichert ('+result.count+' Artikel)';
   await shareNewsLink(result.url,title+' · fest',feedback);
  }catch(error){
