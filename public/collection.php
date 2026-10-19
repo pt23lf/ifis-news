@@ -245,6 +245,23 @@ h2{font-size:17px;line-height:1.45;margin:0 0 9px}
  .map-selection{top:8px;left:8px}
 }
 
+
+/* Unified disclosure indicator: right-facing when closed, downward when open. */
+details > summary:not([aria-label="Weitere Optionen"]) {list-style:none;cursor:pointer}
+details > summary:not([aria-label="Weitere Optionen"])::-webkit-details-marker{display:none}
+details > summary:not([aria-label="Weitere Optionen"])::before,
+details > summary:not([aria-label="Weitere Optionen"])::after{content:none!important}
+details > summary:not([aria-label="Weitere Optionen"]){position:relative;padding-right:21px}
+details > summary:not([aria-label="Weitere Optionen"])::after{
+ content:""!important;display:block!important;position:absolute;right:6px;top:50%;
+ width:7px;height:7px;border-right:1.7px solid currentColor;border-bottom:1.7px solid currentColor;
+ transform:translateY(-65%) rotate(-45deg)!important;opacity:.75;
+ transition:transform .15s ease;
+}
+details[open] > summary:not([aria-label="Weitere Optionen"])::after{
+ transform:translateY(-75%) rotate(45deg)!important;
+}
+
 </style><link href="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.css" rel="stylesheet"></head><body>
 <header><a href="https://news.ifis.net/">IFIS News</a><a href="<?=h($dynamic)?>">Aktuelle Entwicklung ↗</a></header>
 <main><section>
