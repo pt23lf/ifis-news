@@ -668,6 +668,15 @@ function updateMapReadState(){
 colorMode.addEventListener('change',updateMapReadState);
 stories.forEach(story=>story.querySelectorAll('h2 a').forEach(link=>link.addEventListener('click',()=>markStorySeen(story))));
 let activeMapPopup=null;
+// Clicking beside an article popup dismisses it. Keep marker changes and links
+// into the filtered article feed usable without premature selection resets.
+document.addEventListener('pointerdown',event=>{
+ if(!activeMapPopup)return;
+ const target=event.target;
+ if(!(target instanceof Element))return;
+ if(target.closest('.marker-article-popup,.globe-marker,.globe-source,#mapLegend,#stories'))return;
+ activeMapPopup.remove();
+});
 function showMarkerArticles(coordinates,title,articles,routePoints=[],description=''){
  articles=[...articles].sort((a,b)=>(Date.parse(b.querySelector('time')?.getAttribute('datetime')||'')||0)-(Date.parse(a.querySelector('time')?.getAttribute('datetime')||'')||0));
  if(activeMapPopup){const previous=activeMapPopup;activeMapPopup=null;previous.remove();}
