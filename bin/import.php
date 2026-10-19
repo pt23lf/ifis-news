@@ -47,7 +47,7 @@ $stmt = $db->prepare("INSERT INTO articles(url,title,source,section,published_at
 foreach ($feeds as $feed) {
  $url = $feed['url'] ?? '';
  if (!filter_var($url, FILTER_VALIDATE_URL) || parse_url($url, PHP_URL_SCHEME) !== 'https') continue;
- $context = stream_context_create(['http'=>['timeout'=>12,'user_agent'=>'IFIS-News/0.1 (+https://news.ifis.net)','follow_location'=>0]]);
+ $context = stream_context_create(['http'=>['timeout'=>12,'user_agent'=>'IFIS-News/0.1 (+https://news.ifis.net)','follow_location'=>1,'max_redirects'=>3]]);
  $body = @file_get_contents($url, false, $context);
  if (!$body) { fwrite(STDERR, "Feed unavailable: $url\n"); continue; }
  $old = libxml_use_internal_errors(true);
@@ -56,8 +56,10 @@ foreach ($feeds as $feed) {
  if (!$xml) continue;
  $entries = isset($xml->channel->item) ? $xml->channel->item : (isset($xml->item) ? $xml->item : $xml->entry);
  $count = 0;
+ $imported = 0;
+ $feedLimit = $feed['name'] === 'IFIS · Artikel' ? 250 : 30;
  foreach ($entries as $entry) {
-  if (++$count > 30) break;
+  if (++$count > $feedLimit) break;
   $link = (string)$entry->link;
   if (!$link && isset($entry->link)) $link = (string)$entry->link['href'];
   if (!$link && isset($entry->link)) { foreach ($entry->link as $atomLink) { if ((string)$atomLink['rel'] === 'alternate' || !(string)$atomLink['rel']) { $link = (string)$atomLink['href']; break; } } }
@@ -93,10 +95,12 @@ foreach ($feeds as $feed) {
   }
   if ($image && (!filter_var($image, FILTER_VALIDATE_URL) || parse_url($image, PHP_URL_SCHEME) !== 'https')) $image = '';
   $stmt->execute([$link,substr($title,0,400),$feed['name'],$feed['section'],gmdate('Y-m-d H:i:s',$timestamp ?: time()),substr($summary,0,450),$image,gmdate('Y-m-d H:i:s')]);
+  $imported++;
   $articleId->execute([$link]);
   $row=$articleId->fetch(PDO::FETCH_ASSOC);
   if ($row) $queue->execute([':id'=>(int)$row['id'], ':hash'=>hash('sha256', $row['title']."\\n".$row['summary'])]);
  }
+ if ($feed['name'] === 'IFIS · Artikel') echo "IFIS RSS: $imported Artikel verarbeitet\\n";
 }
 file_put_contents(dirname(__DIR__).'/storage/news-last-import.txt',gmdate('c'),LOCK_EX);
 echo "Import complete\\n";
