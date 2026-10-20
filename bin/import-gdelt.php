@@ -60,13 +60,16 @@ $db->exec('PRAGMA busy_timeout=15000');
 $db->exec('CREATE TABLE IF NOT EXISTS gdelt_observations(id TEXT PRIMARY KEY, time TEXT NOT NULL, place TEXT NOT NULL, lat REAL NOT NULL, lon REAL NOT NULL, source_domain TEXT NOT NULL, source_url TEXT NOT NULL, mentions INTEGER NOT NULL, sources INTEGER NOT NULL, articles INTEGER NOT NULL)');
 $db->exec('CREATE INDEX IF NOT EXISTS idx_gdelt_time ON gdelt_observations(time)');
 $put=$db->prepare('INSERT OR REPLACE INTO gdelt_observations(id,time,place,lat,lon,source_domain,source_url,mentions,sources,articles) VALUES(?,?,?,?,?,?,?,?,?,?)');
-$count=0;$db->beginTransaction();
+$count=0;$rowsRead=0;$db->beginTransaction();
 try{
  while(($line=fgets($stream))!==false){
+  $rowsRead++;
   $row=explode("\t",rtrim($line,"\r\n"));
-  if(count($row)<60)continue;
-  $id=$row[0];$date=$row[58];$url=$row[59];
-  $lat=$row[55];$lon=$row[56];$place=trim($row[51]);
+  if(count($row)<61)continue;
+  // Official GDELT 2.0 event schema: ActionGeo_FullName=53, Lat=57, Long=58,
+  // DATEADDED=60, SOURCEURL=61 (1-based field numbers).
+  $id=$row[0];$date=$row[59];$url=$row[60];
+  $lat=$row[56];$lon=$row[57];$place=trim($row[52]);
   if(!ctype_digit($id)||!preg_match('/^\d{14}$/',$date)||!is_numeric($lat)||!is_numeric($lon)||abs((float)$lat)>90||abs((float)$lon)>180||strlen($place)>160)continue;
   if(!filter_var($url,FILTER_VALIDATE_URL)||parse_url($url,PHP_URL_SCHEME)!=='https')continue;
   $domain=strtolower((string)parse_url($url,PHP_URL_HOST));
@@ -75,6 +78,7 @@ try{
   $put->execute([$id,$when,$place,(float)$lat,(float)$lon,$domain,$url,max(0,(int)$row[31]),max(0,(int)$row[32]),max(0,(int)$row[33])]);$count++;
   if($count>=8000)break;
  }
+ if($count===0)throw new RuntimeException('GDELT archive contained '.$rowsRead.' rows but none matched the expected 61-field event schema; existing observations preserved');
  $db->exec("DELETE FROM gdelt_observations WHERE time < datetime('now','-48 hours')");
  $db->commit();
 }catch(Throwable $e){$db->rollBack();fwrite(STDERR,"GDELT import failure: ".$e->getMessage()."\n");exit(1);}
