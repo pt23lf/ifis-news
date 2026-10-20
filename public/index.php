@@ -982,6 +982,11 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
 
 /* Optical correction: collapsed map glyph sits slightly higher. */
 .globe-view .map-legend-shell:not(:has(.globe-legend[open])) .globe-legend-heading svg{transform:translateY(-4px)!important}
+
+/* Separate map projection symbol from the disclosure chevron. */
+.globe-view .map-view-switch{grid-column:1;grid-row:1;width:44px;height:44px;display:grid;place-items:center;cursor:pointer;border-radius:9px}
+.globe-view .map-view-switch:hover,.globe-view .map-view-switch:focus-visible{background:var(--line);outline-offset:-2px}
+.globe-view .map-legend-shell .map-view-switch svg{width:21px!important;height:21px!important;transform:none!important;margin:0!important}
 </style></head><body>
 <header class="topbar"><div class="topbar-inner"><a class="brand" href="?view=world"><strong>IFIS</strong></a><nav class="topnav" aria-label="Bereiche"><a href="?view=ifis&amp;map=0" class="<?= $view==='ifis'?'active':'' ?>" data-subtitle-de="Nachrichten mit Veränderungspotenzial" data-subtitle-en="News with potential for change">Potenzial</a><button class="globe-toggle" id="globeToggle" type="button" aria-pressed="false" data-subtitle-de="Nachrichten geografisch entdecken" data-subtitle-en="Explore news geographically">Karte</button><a href="?view=world&amp;map=0" class="<?= $view==='world'?'active':'' ?>" data-subtitle-de="Nachrichten aus aller Welt" data-subtitle-en="News from around the world">Weltlage</a></nav><button type="button" id="gridToggle" class="grid-toggle" title="Spaltenzahl ändern" aria-label="Spaltenzahl ändern"><svg class="grid-toggle-symbol" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="2.5" y="13.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="13.5" width="8" height="8" rx="1.3"/></svg><span id="gridCount">1</span></button><div class="top-actions"><button type="button" id="mobileSearchToggle" class="mobile-search-toggle" aria-label="Suche öffnen" aria-expanded="false" title="Nachrichten suchen"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg></button><input class="search" id="search" type="search" placeholder="Nachrichten durchsuchen …" aria-label="Nachrichten durchsuchen"></div></div></header>
 <div id="savedShareOverlay" class="news-share-overlay" hidden><div class="news-share-dialog" role="dialog" aria-modal="true" aria-labelledby="savedShareHeading"><div class="news-share-header"><strong id="savedShareHeading">Gemerktliste teilen</strong><button id="savedShareClose" type="button" aria-label="Schließen">×</button></div><p>Die gemerkten Artikel als unveränderliche Sammlung teilen.</p><div class="news-share-grid"><button id="savedShareCopy" type="button">Link kopieren</button><button id="savedShareSystem" type="button">Teilen …</button><button id="savedShareEmail" type="button">E-Mail</button><button id="savedShareWhatsapp" type="button">WhatsApp</button></div><small id="savedShareFeedback" role="status"></small></div></div><div class="layout">
@@ -991,7 +996,7 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
  <span><strong><?= $lastImportCount===null?'–':number_format($lastImportCount,0,',','.') ?></strong> neu beim letzten Import</span>
  <span>Letzter Import: <strong><?=esc($lastImportShown)?></strong><?= $lastImportShown!=='–'?' Uhr':'' ?></span>
  </div>
-<div class="globe-view" id="globeView"><div id="newsGlobe"></div><svg id="globeConnector" class="globe-connector" aria-hidden="true"><path id="globeConnectorPath"></path><circle id="globeConnectorEnd" r="4"></circle></svg><div class="map-legend-shell"><div class="map-time-menu"><button id="mapTimeMenuToggle" type="button" class="map-time-menu-toggle" aria-label="Zeitraum einstellen" title="Zeitraum einstellen" aria-expanded="false" aria-controls="mapTimePopover"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 6v6l4 2"></path></svg></button><div id="mapTimePopover" class="map-time-popover" hidden><div class="map-legend-section-title">Zeitraum <output id="mapTimeValue" for="mapTimeRange">24 h</output></div><input id="mapTimeRange" type="range" min="0.5" max="48" step="0.5" value="24" aria-label="Nachrichten der letzten Stunden"><div class="map-range-labels"><span>30 Min.</span><span>48 Std.</span></div></div></div><details class="globe-legend" id="mapLegend"><summary class="globe-legend-heading" title="Kartenart und Einstellungen" aria-label="Kartenart und Einstellungen"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3z"></path><path d="M9 3v15M15 6v15"></path></svg></summary>
+<div class="globe-view" id="globeView"><div id="newsGlobe"></div><svg id="globeConnector" class="globe-connector" aria-hidden="true"><path id="globeConnectorPath"></path><circle id="globeConnectorEnd" r="4"></circle></svg><div class="map-legend-shell"><div class="map-time-menu"><button id="mapTimeMenuToggle" type="button" class="map-time-menu-toggle" aria-label="Zeitraum einstellen" title="Zeitraum einstellen" aria-expanded="false" aria-controls="mapTimePopover"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 6v6l4 2"></path></svg></button><div id="mapTimePopover" class="map-time-popover" hidden><div class="map-legend-section-title">Zeitraum <output id="mapTimeValue" for="mapTimeRange">24 h</output></div><input id="mapTimeRange" type="range" min="0.5" max="48" step="0.5" value="24" aria-label="Nachrichten der letzten Stunden"><div class="map-range-labels"><span>30 Min.</span><span>48 Std.</span></div></div></div><details class="globe-legend" id="mapLegend"><summary class="globe-legend-heading" title="Weitere Karteneinstellungen" aria-label="Weitere Karteneinstellungen"><span class="map-view-switch" role="button" tabindex="0" title="Flache Karte anzeigen" aria-label="Flache Karte anzeigen" aria-pressed="false"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3z"></path><path d="M9 3v15M15 6v15"></path></svg></span></summary>
 <div class="map-legend-content">
  <div class="map-legend-projection-choice"><span>Globus / Karte</span><div class="map-projection-header-control"><button id="mapProjectionToggle" type="button" class="map-projection-toggle" title="Flache Karte anzeigen" aria-label="Flache Karte anzeigen" aria-pressed="false"><span class="projection-symbol projection-symbol-map" aria-hidden="true"></span></button></div></div>
 
@@ -1679,6 +1684,7 @@ function fitMapLegendPanel(){
 // by the map's pointer handlers after native <details> changes its layout.
 const legendSummary=mapLegend.querySelector('summary');
 legendSummary.addEventListener('click',event=>{
+ if(event.target.closest('.map-view-switch'))return;
  event.preventDefault();
  event.stopPropagation();
  mapLegend.open=!mapLegend.open;
@@ -1753,6 +1759,21 @@ mapAutoRotate.addEventListener('change',()=>rememberMapPreference('rotation',map
 window.requestAnimationFrame(rotateMap);
 let flatProjection=incomingMapParams.get('projection')==='flat';
 if(flatProjection){const control=document.getElementById('mapProjectionToggle');control.setAttribute('aria-pressed','true');control.title='Globus anzeigen';control.setAttribute('aria-label','Globus anzeigen');control.querySelector('.projection-symbol').className='projection-symbol projection-symbol-globe';}
+const mapViewSwitch=document.querySelector('.map-view-switch');
+function syncMapViewSwitch(){
+ mapViewSwitch.setAttribute('aria-pressed',String(flatProjection));
+ const label=flatProjection?'Globus anzeigen':'Flache Karte anzeigen';
+ mapViewSwitch.title=label;mapViewSwitch.setAttribute('aria-label',label);
+}
+mapViewSwitch.addEventListener('click',event=>{
+ event.preventDefault();event.stopPropagation();
+ document.getElementById('mapProjectionToggle').click();
+ syncMapViewSwitch();
+});
+mapViewSwitch.addEventListener('keydown',event=>{
+ if(event.key==='Enter'||event.key===' '){event.preventDefault();mapViewSwitch.click();}
+});
+syncMapViewSwitch();
 document.getElementById('mapProjectionToggle').addEventListener('click',event=>{event.preventDefault();event.stopPropagation();
  flatProjection=!flatProjection;
  const control=document.getElementById('mapProjectionToggle');
