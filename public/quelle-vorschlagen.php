@@ -7,6 +7,8 @@ header('Referrer-Policy: strict-origin-when-cross-origin');
 header('Cache-Control: no-store');
 if(empty($_SESSION['ifis_source_csrf']))$_SESSION['ifis_source_csrf']=bin2hex(random_bytes(24));
 $success=false;$error='';
+$lang=(($_POST['lang']??$_GET['lang']??'de')==='en')?'en':'de';
+function tr(string $de,string $en):string {global $lang;return $lang==='en'?$en:$de;}
 function val(string $key,int $max):string {return mb_substr(trim((string)($_POST[$key]??'')),0,$max,'UTF-8');}
 function feedUrlValid(string $value):bool {
  $p=parse_url($value);
@@ -22,16 +24,16 @@ function approvedUrl(string $value):bool {
 }
 if($_SERVER['REQUEST_METHOD']==='POST'){
  try{
-  if(!hash_equals($_SESSION['ifis_source_csrf'],(string)($_POST['csrf']??'')))throw new RuntimeException('Sitzung abgelaufen. Bitte erneut laden.');
-  if(!empty($_POST['website']))throw new RuntimeException('Einreichung nicht möglich.');
-  if(($_SESSION['ifis_source_last']??0)>time()-60)throw new RuntimeException('Bitte vor einer weiteren Einreichung kurz warten.');
+  if(!hash_equals($_SESSION['ifis_source_csrf'],(string)($_POST['csrf']??'')))throw new RuntimeException(tr('Sitzung abgelaufen. Bitte erneut laden.','Session expired. Please reload and try again.'));
+  if(!empty($_POST['website']))throw new RuntimeException(tr('Einreichung nicht möglich.','Submission could not be accepted.'));
+  if(($_SESSION['ifis_source_last']??0)>time()-60)throw new RuntimeException(tr('Bitte vor einer weiteren Einreichung kurz warten.','Please wait a moment before submitting again.'));
   $type=val('type',20);$url=val('url',500);$title=val('title',120);$place=val('place',160);$description=val('description',800);$feed=val('feed_url',500);
-  if(!in_array($type,['profile','post'],true)||!approvedUrl($url)||$title===''||$description==='')throw new RuntimeException('Bitte Titel, Beschreibung und eine gültige LinkedIn-URL oder einen lnkd.in-Kurzlink angeben.');
-  if($feed!==''&&!feedUrlValid($feed))throw new RuntimeException('Bitte eine gültige öffentliche HTTPS-Feedadresse eingeben.');
-  if($feed!==''&&empty($_POST['feed_permission']))throw new RuntimeException('Bitte bestätige, dass du diesen Feed selbst betreibst oder zur Einreichung berechtigt bist.');
-  if(empty($_POST['permission']))throw new RuntimeException('Bitte bestätige, dass du diese Angaben übermitteln darfst.');
+  if(!in_array($type,['profile','post'],true)||!approvedUrl($url)||$title===''||$description==='')throw new RuntimeException(tr('Bitte Titel, Beschreibung und eine gültige LinkedIn-URL oder einen lnkd.in-Kurzlink angeben.','Please provide a title, description, and a valid LinkedIn URL or lnkd.in short link.'));
+  if($feed!==''&&!feedUrlValid($feed))throw new RuntimeException(tr('Bitte eine gültige öffentliche HTTPS-Feedadresse eingeben.','Please enter a valid public HTTPS feed URL.'));
+  if($feed!==''&&empty($_POST['feed_permission']))throw new RuntimeException(tr('Bitte bestätige, dass du diesen Feed selbst betreibst oder zur Einreichung berechtigt bist.','Please confirm that you operate this feed or are authorized to submit it.'));
+  if(empty($_POST['permission']))throw new RuntimeException(tr('Bitte bestätige, dass du diese Angaben übermitteln darfst.','Please confirm that you are authorized to submit this information.'));
   $path=dirname(__DIR__).'/storage/source-submissions.sqlite';
-  if(!extension_loaded('pdo_sqlite'))throw new RuntimeException('Einreichungen sind vorübergehend nicht möglich.');
+  if(!extension_loaded('pdo_sqlite'))throw new RuntimeException(tr('Einreichungen sind vorübergehend nicht möglich.','Submissions are temporarily unavailable.'));
   $db=new PDO('sqlite:'.$path,null,null,[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION, PDO::ATTR_TIMEOUT=>5]);
   $db->exec('CREATE TABLE IF NOT EXISTS submissions (id INTEGER PRIMARY KEY AUTOINCREMENT, created_at TEXT NOT NULL, type TEXT NOT NULL, url TEXT NOT NULL, title TEXT NOT NULL, place TEXT NOT NULL, description TEXT NOT NULL, status TEXT NOT NULL DEFAULT "pending")');
   $columns=array_column($db->query('PRAGMA table_info(submissions)')->fetchAll(PDO::FETCH_ASSOC),'name');
@@ -39,25 +41,25 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   $stmt=$db->prepare('INSERT INTO submissions(created_at,type,url,title,place,description,feed_url,status) VALUES(?,?,?,?,?,?,?,"pending")');
   $stmt->execute([gmdate('c'),$type,$url,$title,$place,$description,$feed]);
   $_SESSION['ifis_source_last']=time();$_SESSION['ifis_source_csrf']=bin2hex(random_bytes(24));$success=true;
- }catch(Throwable $e){$error=$e instanceof RuntimeException?$e->getMessage():'Speichern derzeit nicht möglich.';}
+ }catch(Throwable $e){$error=$e instanceof RuntimeException?$e->getMessage():tr('Speichern derzeit nicht möglich.','Unable to save your submission right now.');}
 }
 function out(string $s):string{return htmlspecialchars($s,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8');}
-?><!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Quelle vorschlagen · IFIS News</title><style>
+?><!doctype html><html lang="<?=out($lang)?>"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title><?=out(tr("Quelle vorschlagen · IFIS News","Suggest a source · IFIS News"))?></title><style>
 :root{color-scheme:light dark;font-family:system-ui,-apple-system,sans-serif}body{max-width:650px;margin:4rem auto;padding:0 18px;line-height:1.5}a{color:inherit}form{display:grid;gap:15px}label{display:grid;gap:6px}input,select,textarea,button{font:inherit;padding:10px;border-radius:8px;border:1px solid #999}textarea{min-height:110px}button{background:#237e5c;color:#fff;border:0;cursor:pointer}.note{font-size:.91rem;opacity:.8}.error{color:#ad4444}.ok{color:#238056}.trap{position:absolute;left:-9999px}</style></head><body>
-<p><a href="/">← IFIS News</a></p><h1>Konstruktive Quelle vorschlagen</h1>
-<p>Du kannst ein öffentliches LinkedIn-Profil oder einen einzelnen Beitrag zur Prüfung einreichen. IFIS News übernimmt keine Beitragstexte oder Bilder und liest LinkedIn nicht automatisch aus.</p>
-<?php if($success):?><p class="ok" role="status">Vielen Dank! Deine Einreichung wurde gespeichert und wartet auf Prüfung. Sie ist noch nicht öffentlich sichtbar.</p><?php else:?>
+<p><a href="/">← IFIS News</a></p><h1><?=out(tr("Konstruktive Quelle vorschlagen","Suggest a constructive source"))?></h1>
+<p><?=out(tr("Du kannst ein öffentliches LinkedIn-Profil oder einen einzelnen Beitrag zur Prüfung einreichen. IFIS News übernimmt keine Beitragstexte oder Bilder und liest LinkedIn nicht automatisch aus.","You can submit a public LinkedIn profile or individual post for review. IFIS News does not copy post texts or images or automatically retrieve content from LinkedIn."))?></p>
+<?php if($success):?><p class="ok" role="status"><?=out(tr("Vielen Dank! Deine Einreichung wurde gespeichert und wartet auf Prüfung. Sie ist noch nicht öffentlich sichtbar.","Thank you! Your submission has been saved for review and is not publicly visible yet."))?></p><?php else:?>
 <?php if($error!==''):?><p class="error" role="alert"><?=out($error)?></p><?php endif;?>
-<form method="post" action=""><input type="hidden" name="csrf" value="<?=out($_SESSION['ifis_source_csrf'])?>"><label class="trap" aria-hidden="true">Website <input name="website" tabindex="-1" autocomplete="off"></label>
-<label>Art der Quelle<select name="type" required><option value="post">Einzelner LinkedIn-Beitrag</option><option value="profile">LinkedIn-Profil oder Unternehmensseite</option></select></label>
-<label>Öffentliche LinkedIn-URL<input type="url" name="url" maxlength="500" placeholder="https://www.linkedin.com/..." required></label>
-<label>Eigener Titel oder Name des Projekts<input name="title" maxlength="120" required></label>
-<label>Ereignisort / Region (optional)<input name="place" maxlength="160" placeholder="z. B. Lübeck"></label>
-<label>Eigene Beschreibung: Was ist konstruktiv daran?<textarea name="description" maxlength="800" required></textarea></label>
-<label>Eigener RSS-/Atom-Feed (optional)<input type="url" name="feed_url" maxlength="500" placeholder="https://beispiel.de/feed.xml"><small>Für selbst betriebene oder ausdrücklich freigegebene Feeds. Wird zunächst nur geprüft, nicht automatisch abgerufen.</small></label>
-<label><span><input type="checkbox" name="feed_permission" value="1"> Ich betreibe den angegebenen Feed selbst oder bin berechtigt, ihn für IFIS News vorzuschlagen.</span></label>
-<label><span><input type="checkbox" name="permission" value="1" required> Ich darf diese selbst formulierten Angaben übermitteln und bin mit ihrer Prüfung und Speicherung einverstanden.</span></label>
-<button type="submit">Zur Prüfung einreichen</button></form>
+<form method="post" action=""><input type="hidden" name="lang" value="<?=out($lang)?>"><input type="hidden" name="csrf" value="<?=out($_SESSION['ifis_source_csrf'])?>"><label class="trap" aria-hidden="true">Website <input name="website" tabindex="-1" autocomplete="off"></label>
+<label><?=out(tr("Art der Quelle","Source type"))?><select name="type" required><option value="post"><?=out(tr("Einzelner LinkedIn-Beitrag","Individual LinkedIn post"))?></option><option value="profile"><?=out(tr("LinkedIn-Profil oder Unternehmensseite","LinkedIn profile or company page"))?></option></select></label>
+<label><?=out(tr("Öffentliche LinkedIn-URL","Public LinkedIn URL"))?><input type="url" name="url" maxlength="500" placeholder="https://www.linkedin.com/..." required></label>
+<label><?=out(tr("Eigener Titel oder Name des Projekts","Your title or project name"))?><input name="title" maxlength="120" required></label>
+<label><?=out(tr("Ereignisort / Region (optional)","Event location / region (optional)"))?><input name="place" maxlength="160" placeholder="<?=out(tr("z. B. Lübeck","e.g. Lübeck"))?>"></label>
+<label><?=out(tr("Eigene Beschreibung: Was ist konstruktiv daran?","Your description: What makes it constructive?"))?><textarea name="description" maxlength="800" required></textarea></label>
+<label><?=out(tr("Eigener RSS-/Atom-Feed (optional)","Your own RSS/Atom feed (optional)"))?><input type="url" name="feed_url" maxlength="500" placeholder="<?=out(tr("https://beispiel.de/feed.xml","https://example.org/feed.xml"))?>"><small><?=out(tr("Für selbst betriebene oder ausdrücklich freigegebene Feeds. Wird zunächst nur geprüft, nicht automatisch abgerufen.","For feeds you operate or are explicitly authorized to submit. Reviewed first; not automatically fetched."))?></small></label>
+<label><span><input type="checkbox" name="feed_permission" value="1"> <?=out(tr("Ich betreibe den angegebenen Feed selbst oder bin berechtigt, ihn für IFIS News vorzuschlagen.","I operate this feed or am authorized to submit it to IFIS News."))?></span></label>
+<label><span><input type="checkbox" name="permission" value="1" required> <?=out(tr("Ich darf diese selbst formulierten Angaben übermitteln und bin mit ihrer Prüfung und Speicherung einverstanden.","I am authorized to submit this original information and agree to its review and storage."))?></span></label>
+<button type="submit"><?=out(tr("Zur Prüfung einreichen","Submit for review"))?></button></form>
 <?php endif;?>
-<p class="note">Nur zur manuellen Prüfung gespeichert; keine automatische Veröffentlichung. Bitte keine privaten Informationen Dritter oder kopierten Beitragstexte übermitteln. Für Rücknahme oder Auskunft: <a href="https://ifis.net/impressum">IFIS Kontakt/Impressum</a>. Eine öffentliche Einreichung gilt nicht als Berechtigung zum Scraping oder zur Veröffentlichung fremder Inhalte.</p>
+<p class="note"><?=out(tr("Nur zur manuellen Prüfung gespeichert; keine automatische Veröffentlichung. Bitte keine privaten Informationen Dritter oder kopierten Beitragstexte übermitteln. Für Rücknahme oder Auskunft:","Stored for manual review only; no automatic publication. Do not submit third-party private data or copied post text. For withdrawal or inquiries:"))?> <a href="https://ifis.net/impressum"><?=out(tr("IFIS Kontakt/Impressum","IFIS contact/legal notice"))?></a>. <?=out(tr("Eine öffentliche Einreichung gilt nicht als Berechtigung zum Scraping oder zur Veröffentlichung fremder Inhalte.","A public submission does not authorize scraping or republication of third-party content."))?></p>
 </body></html>
