@@ -46,6 +46,8 @@ $feeds = json_decode(file_get_contents($base . '/config/feeds.json'), true, 512,
 $articlesBeforeImport=(int)$db->query('SELECT COUNT(*) FROM articles')->fetchColumn();
 $stmt = $db->prepare("INSERT INTO articles(url,title,source,section,published_at,summary,image_url,first_seen_at) VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(url) DO UPDATE SET image_url=CASE WHEN excluded.image_url != '' THEN excluded.image_url ELSE articles.image_url END");
 foreach ($feeds as $feed) {
+ // Rights-safe default: only first-party articles; third-party feeds require explicit licensing review.
+ if (($feed['name'] ?? '') !== 'IFIS · Artikel' || ($feed['url'] ?? '') !== 'https://ifis.net/artikel.rss') continue;
  $url = $feed['url'] ?? '';
  if (!filter_var($url, FILTER_VALIDATE_URL) || parse_url($url, PHP_URL_SCHEME) !== 'https') continue;
  $context = stream_context_create(['http'=>['timeout'=>12,'user_agent'=>'IFIS-News/0.1 (+https://news.ifis.net)','follow_location'=>1,'max_redirects'=>3]]);
