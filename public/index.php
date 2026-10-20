@@ -1189,6 +1189,14 @@ body > .dock-time-panel input[type="range"]{
 #sourceSuggestFrame{width:100%;height:100%;border:0;background:white}
 #sourceSuggestClose{position:absolute;z-index:1;right:12px;top:11px;border-radius:50%;width:36px;height:36px;cursor:pointer;background:var(--bg,#fff);color:var(--text,#222);border:1px solid #aaa;font-size:24px}
 body.source-suggest-open{overflow:hidden}
+
+/* Informational pages use the same modal layout pattern as source submissions. */
+#ifisInfoOverlay[hidden]{display:none!important}
+#ifisInfoOverlay{position:fixed;inset:0;z-index:100001;background:rgba(8,16,24,.72);display:grid;place-items:center;padding:12px}
+#ifisInfoDialog{position:relative;width:min(860px,100%);height:min(790px,calc(100dvh - 24px));background:var(--bg,#fff);border-radius:14px;overflow:hidden;box-shadow:0 18px 65px #0007}
+#ifisInfoFrame{width:100%;height:100%;border:0;background:var(--bg,#fff)}
+#ifisInfoClose{position:absolute;right:13px;top:12px;z-index:2;width:38px;height:38px;border:1px solid #aaa;border-radius:50%;background:var(--bg,#fff);color:var(--text,#222);font-size:24px;cursor:pointer}
+body.ifis-info-open{overflow:hidden}
 </style></head><body>
 <header class="topbar"><div class="topbar-inner"><a class="brand" href="?view=world"><strong>IFIS</strong></a><nav class="topnav" aria-label="Bereiche"><a href="?view=world&amp;map=0#stories" class="<?= $view==='world'?'active':'' ?>" data-subtitle-de="Nachrichten als Linkübersicht" data-subtitle-en="News links in grid view">Links</a><button class="globe-toggle" id="globeToggle" type="button" aria-pressed="false" aria-label="Karte öffnen" title="Karte öffnen" data-subtitle-de="Nachrichten geografisch entdecken" data-subtitle-en="Explore news geographically">Karte</button><a href="quelle-vorschlagen.php" id="sourceSuggestTrigger" aria-haspopup="dialog" title="Konstruktive Quelle zur Prüfung vorschlagen">Quelle melden</a></nav><button type="button" id="gridToggle" class="grid-toggle" title="Spaltenzahl ändern" aria-label="Spaltenzahl ändern"><svg class="grid-toggle-symbol" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="2.5" y="13.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="13.5" width="8" height="8" rx="1.3"/></svg><span id="gridCount">1</span></button><div class="top-actions"><button type="button" id="mobileSearchToggle" class="mobile-search-toggle" aria-label="Suche öffnen" aria-expanded="false" title="Nachrichten suchen"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg></button><input class="search" id="search" type="search" placeholder="Nachrichten durchsuchen …" aria-label="Nachrichten durchsuchen"></div></div></header>
 <div id="savedShareOverlay" class="news-share-overlay" hidden><div class="news-share-dialog" role="dialog" aria-modal="true" aria-labelledby="savedShareHeading"><div class="news-share-header"><strong id="savedShareHeading">Gemerktliste teilen</strong><button id="savedShareClose" type="button" aria-label="Schließen">×</button></div><p>Die gemerkten Artikel als unveränderliche Sammlung teilen.</p><div class="news-share-grid"><button id="savedShareCopy" type="button">Link kopieren</button><button id="savedShareSystem" type="button">Teilen …</button><button id="savedShareEmail" type="button">E-Mail</button><button id="savedShareWhatsapp" type="button">WhatsApp</button></div><small id="savedShareFeedback" role="status"></small></div></div><div class="layout">
@@ -2821,6 +2829,28 @@ requestAnimationFrame(updateHeaderUnderline);
   if(frame.getAttribute('src')!==target)frame.src=target;
   overlay.hidden=false;document.body.classList.add('source-suggest-open');
   close.focus();document.addEventListener('keydown',keys);
+ });
+ close.addEventListener('click',hide);
+ overlay.addEventListener('click',e=>{if(e.target===overlay)hide()});
+})();
+</script>
+<div id="ifisInfoOverlay" hidden><section id="ifisInfoDialog" role="dialog" aria-modal="true" aria-label="Informationsseite" tabindex="-1"><button id="ifisInfoClose" type="button" aria-label="Fenster schließen">×</button><iframe id="ifisInfoFrame" title="IFIS News Informationsseite" loading="lazy"></iframe></section></div>
+<script>
+(()=>{
+ const overlay=document.getElementById('ifisInfoOverlay'),frame=document.getElementById('ifisInfoFrame'),close=document.getElementById('ifisInfoClose');
+ if(!overlay||!frame||!close)return;
+ let previousFocus=null;
+ function hide(){overlay.hidden=true;document.body.classList.remove('ifis-info-open');document.removeEventListener('keydown',onKey);(previousFocus||document.getElementById('infoPagesToggle'))?.focus();}
+ function onKey(e){if(e.key==='Escape'){e.preventDefault();hide();}else if(e.key==='Tab'&&document.activeElement===close&&e.shiftKey){e.preventDefault();frame.focus();}}
+ document.getElementById('infoPagesPanel')?.addEventListener('click',e=>{
+  const link=e.target.closest('a[href^="info.php?page="]');
+  if(!link||e.ctrlKey||e.metaKey||e.shiftKey||e.altKey)return;
+  e.preventDefault();previousFocus=document.activeElement;
+  const url=new URL(link.href,location.href);url.searchParams.set('overlay','1');
+  frame.src=url.toString();overlay.hidden=false;document.body.classList.add('ifis-info-open');
+  document.getElementById('infoPagesPanel').hidden=true;
+  const toggle=document.getElementById('infoPagesToggle');if(toggle){toggle.setAttribute('aria-expanded','false');toggle.classList.remove('active')}
+  close.focus();document.addEventListener('keydown',onKey);
  });
  close.addEventListener('click',hide);
  overlay.addEventListener('click',e=>{if(e.target===overlay)hide()});
