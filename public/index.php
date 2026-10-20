@@ -2746,32 +2746,31 @@ function loadLinkedInSources(){
    el.classList.add('ifis-positive-compass');
    el.innerHTML='<span aria-hidden="true" class="positive-compass-needle"></span>';
    const kind={feed:'RSS/Atom',website:'Webseite',linkedin:'LinkedIn',network:'Netzwerk',ifis:'IFIS',post:'LinkedIn',profile:'LinkedIn'}[item.type]||'Quelle';
-   el.title=item.title+' · '+kind;
+   el.removeAttribute('title');
    el.setAttribute('aria-label',el.title+'; klicken für Artikel');
    const tip=document.createElement('div');
    tip.className='ifis-source-hover';tip.hidden=true;
    const tipName=document.createElement('strong');tipName.textContent=item.title;tip.append(tipName);
    const tipKind=document.createElement('div');tipKind.textContent=kind;tip.append(tipKind);
    if(item.description){const short=document.createElement('div');short.textContent=item.description.length>135?item.description.slice(0,132)+'…':item.description;tip.append(short);}
-   // Place hover bubble outside MapLibre's clipped marker DOM.
-   tip.style.position='fixed';tip.style.transform='none';tip.style.zIndex='10030';
+   // Match the existing GDELT hover behavior: fixed tooltip beside the marker.
+   tip.className='ifis-activity-hover';
    document.body.append(tip);
    el._ifisSourceTip=tip;
    const positionTip=()=>{
-    const box=el.getBoundingClientRect(),width=tip.offsetWidth||230,height=tip.offsetHeight||80;
-    tip.style.left=Math.max(8,Math.min(window.innerWidth-width-8,box.left+box.width/2-width/2))+'px';
-    tip.style.top=(box.top-height-12<8?Math.min(window.innerHeight-height-8,box.bottom+12):box.top-height-12)+'px';
+    const rect=el.getBoundingClientRect();
+    tip.style.left=Math.max(8,Math.min(innerWidth-tip.offsetWidth-8,rect.left+18))+'px';
+    tip.style.top=Math.max(8,Math.min(innerHeight-tip.offsetHeight-8,rect.top+20))+'px';
    };
-   const showTip=()=>{tip.hidden=false;positionTip();};
+   const showTip=e=>{
+    if(e?.pointerType==='touch')return;
+    tip.hidden=false;positionTip();
+   };
    const hideTip=()=>{tip.hidden=true;};
    el.addEventListener('pointerenter',showTip);
-   el.addEventListener('mouseenter',showTip);
    el.addEventListener('pointerleave',hideTip);
-   el.addEventListener('mouseleave',hideTip);
    el.addEventListener('focus',showTip);
    el.addEventListener('blur',hideTip);
-   map.on('movestart',hideTip);
-   el.addEventListener('pointerdown',e=>e.stopPropagation());
    el.addEventListener('click',()=>{
     tip.hidden=true;
     const root=document.createElement('div');root.className='ifis-activity-source-list';
