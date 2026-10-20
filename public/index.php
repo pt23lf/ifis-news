@@ -1052,6 +1052,69 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
  .topbar .brand{font-size:18px!important;letter-spacing:.05em!important}
  .topbar-inner .topnav>a:not(.world-view-link),.topbar-inner .topnav .globe-toggle{padding:0 3px!important;font-size:11px!important}
 }
+
+/* Refined mobile header: calm IFIS wordmark, compact pill navigation and aligned controls. */
+@media(max-width:720px){
+ .topbar{height:68px!important;min-height:68px!important}
+ .topbar .topbar-inner{
+  height:68px!important;min-height:68px!important;
+  display:grid!important;grid-template-columns:minmax(56px,1fr) auto 36px 36px!important;
+  align-items:center!important;justify-content:initial!important;
+  column-gap:9px!important;padding:0 17px!important
+ }
+ .topbar .brand{
+  font-size:21px!important;font-weight:400!important;letter-spacing:.12em!important;
+  margin:0!important;min-width:0!important;justify-self:start!important;line-height:1!important
+ }
+ .topbar-inner .topnav{
+  display:flex!important;position:static!important;justify-self:end!important;
+  align-items:center!important;align-self:center!important;
+  flex:none!important;width:auto!important;min-width:0!important;height:36px!important;
+  padding:3px!important;margin:0!important;gap:1px!important;
+  border:1px solid var(--line)!important;border-radius:20px!important;
+  background:var(--hover)!important
+ }
+ .topbar-inner .topnav::after{display:none!important}
+ .topbar-inner .topnav a:not(.world-view-link),
+ .topbar-inner .topnav .globe-toggle{
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  flex:none!important;width:auto!important;height:29px!important;min-height:29px!important;
+  margin:0!important;padding:0 10px!important;border:0!important;border-radius:16px!important;
+  background:transparent!important;box-shadow:none!important;
+  color:var(--text)!important;font-size:12px!important;font-weight:450!important;
+  line-height:1!important;white-space:nowrap!important
+ }
+ .topbar-inner .topnav .globe-toggle::before,
+ .topbar-inner .topnav .globe-toggle::after{display:none!important;content:none!important}
+ .topbar-inner .topnav a.world-view-link{display:none!important}
+ .topbar-inner .topnav a.active,
+ .topbar-inner .topnav .globe-toggle.active{
+  background:var(--bg)!important;box-shadow:0 1px 3px #00000014!important
+ }
+ .topbar-inner .grid-toggle{
+  display:flex!important;justify-self:center!important;align-items:center!important;justify-content:center!important;
+  flex:none!important;width:36px!important;min-width:36px!important;height:40px!important;
+  margin:0!important;padding:0!important
+ }
+ .topbar-inner .grid-toggle svg{width:21px!important;height:21px!important}
+ .topbar-inner .grid-toggle #gridCount{font-size:10px!important}
+ .topbar-inner .top-actions{
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  justify-self:end!important;width:36px!important;min-width:36px!important;
+  flex:none!important;margin:0!important
+ }
+ .topbar-inner .mobile-search-toggle{
+  width:36px!important;height:40px!important;padding:0!important;display:grid!important;place-items:center!important
+ }
+ .topbar-inner .mobile-search-toggle svg{width:25px!important;height:25px!important}
+ .topbar-inner .search{top:68px!important}
+}
+@media(max-width:390px){
+ .topbar .topbar-inner{column-gap:5px!important;padding:0 10px!important;grid-template-columns:minmax(48px,1fr) auto 32px 32px!important}
+ .topbar .brand{font-size:19px!important;letter-spacing:.09em!important}
+ .topbar-inner .topnav a:not(.world-view-link),.topbar-inner .topnav .globe-toggle{font-size:11px!important;padding:0 7px!important}
+ .topbar-inner .grid-toggle,.topbar-inner .top-actions,.topbar-inner .mobile-search-toggle{width:32px!important;min-width:32px!important}
+}
 </style></head><body>
 <header class="topbar"><div class="topbar-inner"><a class="brand" href="?view=world"><strong>IFIS</strong></a><nav class="topnav" aria-label="Bereiche"><a href="?view=ifis&amp;map=0" class="<?= $view==='ifis'?'active':'' ?>" data-subtitle-de="Nachrichten mit Veränderungspotenzial" data-subtitle-en="News with potential for change">Potenzial</a><button class="globe-toggle" id="globeToggle" type="button" aria-pressed="false" aria-label="Karte öffnen" title="Karte öffnen" data-subtitle-de="Nachrichten geografisch entdecken" data-subtitle-en="Explore news geographically">Karte</button><a href="?view=world&amp;map=0" class="world-view-link <?= $view==='world'?'active':'' ?>" data-subtitle-de="Nachrichten aus aller Welt" data-subtitle-en="News from around the world" aria-label="Nachrichtenübersicht">Weltlage</a></nav><button type="button" id="gridToggle" class="grid-toggle" title="Spaltenzahl ändern" aria-label="Spaltenzahl ändern"><svg class="grid-toggle-symbol" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="2.5" y="13.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="13.5" width="8" height="8" rx="1.3"/></svg><span id="gridCount">1</span></button><div class="top-actions"><button type="button" id="mobileSearchToggle" class="mobile-search-toggle" aria-label="Suche öffnen" aria-expanded="false" title="Nachrichten suchen"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg></button><input class="search" id="search" type="search" placeholder="Nachrichten durchsuchen …" aria-label="Nachrichten durchsuchen"></div></div></header>
 <div id="savedShareOverlay" class="news-share-overlay" hidden><div class="news-share-dialog" role="dialog" aria-modal="true" aria-labelledby="savedShareHeading"><div class="news-share-header"><strong id="savedShareHeading">Gemerktliste teilen</strong><button id="savedShareClose" type="button" aria-label="Schließen">×</button></div><p>Die gemerkten Artikel als unveränderliche Sammlung teilen.</p><div class="news-share-grid"><button id="savedShareCopy" type="button">Link kopieren</button><button id="savedShareSystem" type="button">Teilen …</button><button id="savedShareEmail" type="button">E-Mail</button><button id="savedShareWhatsapp" type="button">WhatsApp</button></div><small id="savedShareFeedback" role="status"></small></div></div><div class="layout">
