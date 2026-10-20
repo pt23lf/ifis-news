@@ -2734,7 +2734,7 @@ function focusMapMarker(lon,lat,popupElement){
 }
 function loadLinkedInSources(){
  fetch('linkedin-sources-data.php',{credentials:'omit'}).then(r=>r.ok?r.json():Promise.reject()).then(data=>{
-  linkedinMarkers.forEach(x=>x.remove());linkedinMarkers=[];
+  linkedinMarkers.forEach(x=>{x.getElement()._ifisSourceTip?.remove();x.remove()});linkedinMarkers=[];
   for(const item of data.sources||[]){
    if(!Number.isFinite(item.lat)||!Number.isFinite(item.lon))continue;
    const el=document.createElement('button');el.type='button';el.className='ifis-activity-pin';
@@ -2748,11 +2748,22 @@ function loadLinkedInSources(){
    const tipName=document.createElement('strong');tipName.textContent=item.title;tip.append(tipName);
    const tipKind=document.createElement('div');tipKind.textContent=kind;tip.append(tipKind);
    if(item.description){const short=document.createElement('div');short.textContent=item.description.length>135?item.description.slice(0,132)+'…':item.description;tip.append(short);}
-   el.append(tip);
-   el.addEventListener('mouseenter',()=>{tip.hidden=false});
-   el.addEventListener('mouseleave',()=>{tip.hidden=true});
-   el.addEventListener('focus',()=>{tip.hidden=false});
-   el.addEventListener('blur',()=>{tip.hidden=true});
+   // Place hover bubble outside MapLibre's clipped marker DOM.
+   tip.style.position='fixed';tip.style.transform='none';tip.style.zIndex='10030';
+   document.body.append(tip);
+   el._ifisSourceTip=tip;
+   const positionTip=()=>{
+    const box=el.getBoundingClientRect(),width=tip.offsetWidth||230,height=tip.offsetHeight||80;
+    tip.style.left=Math.max(8,Math.min(window.innerWidth-width-8,box.left+box.width/2-width/2))+'px';
+    tip.style.top=(box.top-height-12<8?Math.min(window.innerHeight-height-8,box.bottom+12):box.top-height-12)+'px';
+   };
+   const showTip=()=>{tip.hidden=false;positionTip();};
+   const hideTip=()=>{tip.hidden=true;};
+   el.addEventListener('mouseenter',showTip);
+   el.addEventListener('mouseleave',hideTip);
+   el.addEventListener('focus',showTip);
+   el.addEventListener('blur',hideTip);
+   map.on('movestart',hideTip);
    el.addEventListener('click',()=>{
     tip.hidden=true;
     const root=document.createElement('div');root.className='ifis-activity-source-list';
