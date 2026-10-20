@@ -1,0 +1,31 @@
+# GDELT activity map – initial rollout (2026-10-20)
+
+This uses the **classic GDELT 2.0 Event stream** (NOT GDELT Cloud). Source: https://gdeltproject.org/data.html ; codebook: https://data.gdeltproject.org/documentation/GDELT-Event_Codebook-V2.0.pdf
+
+## Data and legal scope
+- GDELT credit mandatory: https://www.gdeltproject.org/
+- No publisher text, headlines, snippets, photographs or downloaded publisher pages.
+- Collected fields: GDELT global event ID, UTC date, ActionGeo coordinates and place, first source URL and its host, and GDELT's NumMentions/NumSources/NumArticles.
+- GDELT's source URL is a *first reported source*, **not a list of all publishers reporting on that event**.
+- At hover the popup shows nearby clustered event places and the hosts of the available first-source citations.
+- On click only those original HTTPS source URLs are shown. Counts refer to clustered GDELT event observations, not number of independently verified real-world events.
+- Grouping is approximate 1-degree cells, so a displayed marker is not a precisely geocoded single event.
+- No claims of comprehensive source coverage, completeness or factual correctness.
+- Original rights of linked pages remain with their publishers. This ingestion does not bypass the source feed restrictions.
+
+## Operations
+```sh
+cd /www/htdocs/w0221385/news.ifis.net/repo
+git pull origin main
+php bin/import-gdelt.php
+```
+
+The importer requires PHP CLI with `ZipArchive` and `pdo_sqlite`, fetches the latest official classical GDELT 15-minute export, and appends up to 8000 raw event rows to `gdelt_observations`, keeping 48 hours. Background cron invokes it alongside the existing first-party and USGS importers. The public API `public/activity-data.php` returns a maximum of 250 active map cells and at most 45 source URLs per cell. Poll frequency currently follows the configured server cron (typically 30 minutes).
+
+If the GDELT index, zip, PHP zip extension or database is unavailable, importer fails without clearing previous records. Map shows no GDELT markers until first successful import. Check CLI output and server logs. No production smoke test has been performed.
+
+## Next iterations
+- Retrieve GDELT Mentions table or an explicitly licensed dataset when complete per-event publisher lists are needed; keep counts and unique publishers distinct.
+- Validate actual GDELT export schema columns (ActionGeo FullName 51, Latitude 55, Longitude 56, NumMentions 31, NumSources 32, NumArticles 33, DATEADDED 58, SOURCEURL 59) against a live downloaded file.
+- Apply map time slider to GDELT markers and permit user toggles/zoom-dependent aggregation after first live verification.
+- Ensure caching, permissions, retention, and operational reliability meet production policies. A legal review is still recommended.
