@@ -2347,12 +2347,15 @@ compassLegend.textContent='GDELT-Ereignistypen: 🟢 Kooperation · 🟠 Konflik
 document.querySelector('#mapLegend .map-legend-content')?.append(compassLegend);
 let gdeltMarkers=[];
 let gdeltSourceOffices={};
+let gdeltSourceRegistryLoaded=false;
 fetch('source-offices.json',{credentials:'omit'}).then(r=>r.ok?r.json():Promise.reject()).then(data=>{
  for(const item of data.entries||[]){
   if(item.status!=='manual_review'||!Array.isArray(item.coordinates))continue;
   for(const domain of item.domains||[])gdeltSourceOffices[domain.toLowerCase()]=item.coordinates;
  }
-}).catch(()=>{});
+ gdeltSourceRegistryLoaded=true;
+ if(gdeltSelectedPoint)showGdeltConnections(gdeltSelectedPoint);
+}).catch(()=>{gdeltSourceRegistryLoaded=false});
 let gdeltSelectedPoint=null;
 function gdeltVisible(point){
  const hours=Number(document.getElementById('mapTimeRange').value)||24;
@@ -2398,19 +2401,24 @@ function gdeltOffice(domain){
 }
 function showGdeltConnections(point){
  if(!map)return;
- const features=[],used=new Set();
+ const features=[],offices=[],used=new Set();
  for(const item of gdeltVisible(point).links){
   const office=gdeltOffice(item.domain),host=String(item.domain||'').toLowerCase();
   if(!office||used.has(host))continue;
   used.add(host);
   if(Math.abs(office[0]-point.lon)+Math.abs(office[1]-point.lat)<0.15)continue;
   features.push({type:'Feature',geometry:{type:'LineString',coordinates:[office,[point.lon,point.lat]]},properties:{source:host}});
+  offices.push({type:'Feature',geometry:{type:'Point',coordinates:office},properties:{source:host}});
  }
  const id='ifis-gdelt-verified-links',layer=id+'-lines';
+ const pins='ifis-gdelt-offices',pinsLayer=pins+'-dots';
  try{
   if(!map.getSource(id))map.addSource(id,{type:'geojson',data:{type:'FeatureCollection',features:[]}});
   map.getSource(id).setData({type:'FeatureCollection',features});
-  if(!map.getLayer(layer))map.addLayer({id:layer,type:'line',source:id,paint:{'line-color':'#e69b36','line-opacity':0.7,'line-width':1.25,'line-dasharray':[2,2]}});
+  if(!map.getLayer(layer))map.addLayer({id:layer,type:'line',source:id,paint:{'line-color':'#e69b36','line-opacity':0.9,'line-width':1.8,'line-dasharray':[2,2]}});
+  if(!map.getSource(pins))map.addSource(pins,{type:'geojson',data:{type:'FeatureCollection',features:[]}});
+  map.getSource(pins).setData({type:'FeatureCollection',features:offices});
+  if(!map.getLayer(pinsLayer))map.addLayer({id:pinsLayer,type:'circle',source:pins,paint:{'circle-radius':3.5,'circle-color':'#e69b36','circle-stroke-color':'#fff','circle-stroke-width':1}});
  }catch(e){console.warn('GDELT link overlay unavailable',e)}
 }
 function loadGdeltActivity(){
@@ -2452,7 +2460,7 @@ function loadGdeltActivity(){
     const heading=document.createElement('strong');heading.textContent=current.observations+' GDELT-Ereignisbeobachtungen';root.append(heading);
     const types=document.createElement('p');types.textContent='CAMEO-Ereignistypen – Kooperation: '+(current.classes[1]+current.classes[2])+' · Konflikt: '+(current.classes[3]+current.classes[4])+' · unbekannt: '+current.classes[0];root.append(types);
     const note=document.createElement('p');note.textContent='Ungefähre Ortsgruppe. Die Verweise sind belegte Erstquellen einzelner Ereignisse, keine vollständige Berichterstattung. Keine kopierten Artikel.';root.append(note);
-    const methodology=document.createElement('p');methodology.textContent='Gestrichelte Verbindungen erscheinen nur für ausdrücklich zugeordnete Redaktionsstandorte. Domainendungen sind kein verlässlicher Herkunftsnachweis; Linien zeigen Erstquellen-Zuordnungen, keine Nachrichtenwege.';root.append(methodology);
+    const methodology=document.createElement('p');methodology.textContent='Gestrichelte Verbindungen: '+gdeltVisible(point).links.filter(x=>gdeltOffice(x.domain)).length+' passende Erstquellen in der kuratierten Standortliste. '+(!gdeltSourceRegistryLoaded?'Standortliste noch nicht geladen. ':'')+'Fehlende Linien bedeuten fehlende Standortzuordnung, nicht fehlende Berichterstattung. Linien zeigen keine Nachrichtenwege.';root.append(methodology);
     const places=document.createElement('p');places.textContent='Ereignisorte: '+(point.places||[]).slice(0,10).join(' · ');root.append(places);
     const list=document.createElement('div');list.className='ifis-activity-links';
     for(const x of current.links.slice(0,40)){
@@ -2462,7 +2470,7 @@ function loadGdeltActivity(){
      a.textContent=x.domain+' ↗';list.append(a);
     }
     root.append(list);
-    const credit=document.createElement('small');credit.textContent='Datengrundlage: GDELT Project · gdeltproject.org';root.append(credit);
+    const credit=document.createElement('small');credit.textContent='Datengrundlage: GDELT Project · gdeltproject.org · Standorte vorläufig, nicht einzeln verifiziert';root.append(credit);
     popup.setLngLat([point.lon,point.lat]).setDOMContent(root).addTo(map);
    });
    const marker=new maplibregl.Marker({element:button,anchor:'center'}).setLngLat([point.lon,point.lat]).addTo(map);
