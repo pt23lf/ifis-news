@@ -7,15 +7,29 @@ if(PHP_SAPI!=='cli'){http_response_code(404);exit;}
 $root=dirname(__DIR__);
 if(!extension_loaded('pdo_sqlite')||!class_exists('ZipArchive')){fwrite(STDERR,"PDO SQLite or ZipArchive missing\n");exit(1);}
 function getGdelt(string $url,int $max): string {
- $ctx=stream_context_create(['http'=>['timeout'=>24,'follow_location'=>0,'user_agent'=>'IFIS-News/1.0 (+https://news.ifis.net)']]);
+ // HTTPS-only transport for fetching; index entries may historically contain HTTP URLs.
+ $opts=['http'=>['timeout'=>25,'follow_location'=>1,'max_redirects'=>3,
+   'user_agent'=>'IFIS-News/1.0 (+https://news.ifis.net)',
+   'header'=>"Accept: text/plain, application/zip, */*\\r\\nConnection: close\\r\\n"]];
+ $ctx=stream_context_create($opts);
  $result=@file_get_contents($url,false,$ctx,0,$max+1);
- return is_string($result)&&strlen($result)<=$max?$result:'';
+ if($result===false){
+  $error=error_get_last();
+  fwrite(STDERR,"GDELT request failed (".parse_url($url,PHP_URL_HOST)."): ".($error['message']??'Unknown network error')."\\n");
+  return '';
+ }
+ if(strlen($result)>$max){fwrite(STDERR,"GDELT response exceeds size limit\\n");return '';}
+ return $result;
 }
 $index=getGdelt('https://data.gdeltproject.org/gdeltv2/lastupdate.txt',12000);
-if(!preg_match('~https://data\.gdeltproject\.org/gdeltv2/(\d{14})\.export\.CSV\.zip~i',$index,$m)){fwrite(STDERR,"GDELT index unavailable; keeping old observation data\n");exit(1);}
+if($index===''){fwrite(STDERR,"GDELT index could not be downloaded; previous data preserved\\n");exit(1);}
+if(!preg_match('~(?:https?://)?data\\.gdeltproject\\.org/gdeltv2/(\\d{14})\\.export\\.CSV\\.zip~i',$index,$m)){
+ fwrite(STDERR,"GDELT index was received but did not contain an event export URL. Check GDELT pointer format.\\n");exit(1);
+}
+// Never use arbitrary locations supplied by the index, always build the official HTTPS endpoint.
 $feed='https://data.gdeltproject.org/gdeltv2/'.$m[1].'.export.CSV.zip';
-$archive=getGdelt($feed,12000000);
-if(!$archive){fwrite(STDERR,"GDELT archive unavailable\n");exit(1);}
+$archive=getGdelt($feed,16000000);
+if(!$archive){fwrite(STDERR,"GDELT event archive download failed; previous data preserved\\n");exit(1);}
 $tmp=tempnam(sys_get_temp_dir(),'ifis-gdelt-');
 if(!$tmp)exit(1);
 file_put_contents($tmp,$archive);
