@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "description": "Curated approximate editorial offices. An office coordinate is not the reporting location. Never infer geographical origin from TLD alone.",
+  "description": "Approximate editorial head-office locations manually curated as starting hypotheses; not audited. Actual article reporting locations can differ. Do not infer geography from TLDs.",
   "entries": [
     {
       "domains": [
@@ -64,6 +64,149 @@
       "coordinates": [
         51.531,
         25.285
+      ],
+      "status": "manual_review",
+      "kind": "editorial_office"
+    },
+    {
+      "domains": [
+        "reuters.com"
+      ],
+      "name": "Reuters",
+      "city": "London",
+      "coordinates": [
+        -0.108,
+        51.517
+      ],
+      "status": "manual_review",
+      "kind": "editorial_office"
+    },
+    {
+      "domains": [
+        "apnews.com"
+      ],
+      "name": "Associated Press",
+      "city": "New York",
+      "coordinates": [
+        -74.006,
+        40.713
+      ],
+      "status": "manual_review",
+      "kind": "editorial_office"
+    },
+    {
+      "domains": [
+        "nytimes.com"
+      ],
+      "name": "The New York Times",
+      "city": "New York",
+      "coordinates": [
+        -73.985,
+        40.748
+      ],
+      "status": "manual_review",
+      "kind": "editorial_office"
+    },
+    {
+      "domains": [
+        "npr.org"
+      ],
+      "name": "NPR",
+      "city": "Washington",
+      "coordinates": [
+        -77.037,
+        38.907
+      ],
+      "status": "manual_review",
+      "kind": "editorial_office"
+    },
+    {
+      "domains": [
+        "france24.com"
+      ],
+      "name": "France 24",
+      "city": "Issy-les-Moulineaux",
+      "coordinates": [
+        2.273,
+        48.823
+      ],
+      "status": "manual_review",
+      "kind": "editorial_office"
+    },
+    {
+      "domains": [
+        "euronews.com"
+      ],
+      "name": "Euronews",
+      "city": "Lyon",
+      "coordinates": [
+        4.836,
+        45.764
+      ],
+      "status": "manual_review",
+      "kind": "editorial_office"
+    },
+    {
+      "domains": [
+        "tagesschau.de"
+      ],
+      "name": "ARD-aktuell",
+      "city": "Hamburg",
+      "coordinates": [
+        10.016,
+        53.56
+      ],
+      "status": "manual_review",
+      "kind": "editorial_office"
+    },
+    {
+      "domains": [
+        "zeit.de"
+      ],
+      "name": "DIE ZEIT",
+      "city": "Hamburg",
+      "coordinates": [
+        9.995,
+        53.55
+      ],
+      "status": "manual_review",
+      "kind": "editorial_office"
+    },
+    {
+      "domains": [
+        "washingtonpost.com"
+      ],
+      "name": "The Washington Post",
+      "city": "Washington",
+      "coordinates": [
+        -77.036,
+        38.907
+      ],
+      "status": "manual_review",
+      "kind": "editorial_office"
+    },
+    {
+      "domains": [
+        "cnn.com"
+      ],
+      "name": "CNN",
+      "city": "Atlanta",
+      "coordinates": [
+        -84.39,
+        33.75
+      ],
+      "status": "manual_review",
+      "kind": "editorial_office"
+    },
+    {
+      "domains": [
+        "cbc.ca"
+      ],
+      "name": "CBC",
+      "city": "Toronto",
+      "coordinates": [
+        -79.387,
+        43.65
       ],
       "status": "manual_review",
       "kind": "editorial_office"
