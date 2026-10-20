@@ -1165,7 +1165,7 @@ body > .dock-time-panel input[type="range"]{
 .ifis-positive-compass .positive-compass-needle{display:block;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:12px solid #7cf2b3;transform:translateY(-1px);filter:drop-shadow(0 1px 1px #103a2d)}
 .ifis-positive-compass:hover,.ifis-positive-compass:focus-visible{box-shadow:0 0 0 5px rgba(70,193,133,.25),0 2px 9px rgba(0,0,0,.3)}
 /* Responsive timeline width for short and long history ranges. */
-#mapTimeRange{width:clamp(140px,32vw,360px);max-width:100%;min-width:0}
+#mapTimePopover #mapTimeRange,.globe-legend #mapTimeRange{width:clamp(140px,32vw,360px);max-width:100%;min-width:0}
 #dockTimeRange{width:100%;min-width:0}
 #mapTimePopover{max-width:min(94vw,430px)}
 #ifisTimelineCoverageNote{max-width:360px;font-size:11px;line-height:1.35}
