@@ -7,19 +7,24 @@ $path=dirname(__DIR__).'/storage/news.sqlite';
 if(!is_file($path)||!extension_loaded('pdo_sqlite')){echo '{"points":[],"credit":"GDELT Project"}';exit;}
 try{
  $db=new PDO('sqlite:'.$path,null,null,[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
- $days=$db->query("SELECT id,time,place,lat,lon,source_domain,source_url,mentions,sources,articles FROM gdelt_observations WHERE time >= datetime('now','-48 hours') ORDER BY time DESC LIMIT 12000")->fetchAll(PDO::FETCH_ASSOC);
+ $columns=$db->query('PRAGMA table_info(gdelt_observations)')->fetchAll(PDO::FETCH_ASSOC);
+ $quadColumn=in_array('quad_class',array_column($columns,'name'),true)?'quad_class':'0 AS quad_class';
+ $days=$db->query("SELECT id,time,place,lat,lon,source_domain,source_url,mentions,sources,articles,$quadColumn FROM gdelt_observations WHERE time >= datetime('now','-48 hours') ORDER BY time DESC LIMIT 12000")->fetchAll(PDO::FETCH_ASSOC);
  $points=[];
  foreach($days as $row){
   $lat=(float)$row['lat'];$lon=(float)$row['lon'];
   // About 110km latitude grid, only an approximate aggregation cell.
   $key=round($lat,0).':'.round($lon,0);
-  if(!isset($points[$key]))$points[$key]=['lat'=>round($lat),'lon'=>round($lon),'observations'=>0,'reported_articles'=>0,'reported_sources'=>0,'places'=>[],'links'=>[],'hours'=>[],'time_bins'=>[]];
+  if(!isset($points[$key]))$points[$key]=['lat'=>round($lat),'lon'=>round($lon),'observations'=>0,'reported_articles'=>0,'reported_sources'=>0,'places'=>[],'links'=>[],'hours'=>[],'time_bins'=>[],'quad_bins'=>[]];
   $p=&$points[$key];$p['observations']++;
   $hour=substr((string)$row['time'],0,13).':00:00';
   if(!isset($p['hours'][$hour]))$p['hours'][$hour]=['time'=>$hour,'observations'=>0,'reported_articles'=>0,'reported_sources'=>0];
   $p['hours'][$hour]['observations']++;
   $bin=substr((string)$row['time'],0,16);
   $p['time_bins'][$bin]=($p['time_bins'][$bin]??0)+1;
+  $quad=(int)$row['quad_class'];if($quad<1||$quad>4)$quad=0;
+  if(!isset($p['quad_bins'][$bin]))$p['quad_bins'][$bin]=[0,0,0,0,0];
+  $p['quad_bins'][$bin][$quad]++;
   $p['hours'][$hour]['reported_articles']+=min(100000,(int)$row['articles']);
   $p['hours'][$hour]['reported_sources']+=min(100000,(int)$row['sources']);$p['reported_articles']+=min(100000,(int)$row['articles']);$p['reported_sources']+=min(100000,(int)$row['sources']);
   if(count($p['places'])<12&&$row['place']!=='')$p['places'][$row['place']]=true;
