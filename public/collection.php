@@ -126,10 +126,17 @@ $name=(string)($data['name']??'Sammlung');
 $kind=(string)($data['kind']??'event');
 $section=(string)($data['view']??'ifis');
 $created=(string)($data['created_at']??'');
-$articles=array_values(array_filter($data['articles'],static function($item){
- return is_array($item) && ($item['source']??'')==='IFIS · Artikel'
-  && str_starts_with((string)($item['url']??''),'https://ifis.net/artikel/');
-}));
+// Fail closed: even mixed legacy snapshots must never expose retained external material.
+foreach($data['articles'] as $item){
+ if(!is_array($item) || ($item['source']??'')!=='IFIS · Artikel'
+    || !str_starts_with((string)($item['url']??''),'https://ifis.net/artikel/')){
+  http_response_code(410);
+  header('Content-Type: text/plain; charset=utf-8');
+  echo 'Diese historische Sammlung ist aus Lizenzschutzgründen nicht mehr verfügbar.';
+  exit;
+ }
+}
+$articles=$data['articles'];
 // Do not serve titles, snippets or other third-party material from legacy snapshots.
 if(!$articles){http_response_code(410);header('Content-Type: text/plain; charset=utf-8');echo 'Diese Sammlung enthält derzeit keine freigegebenen Artikel.';exit;}
 $appearance=is_array($data['appearance']??null)?$data['appearance']:[];
