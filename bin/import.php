@@ -46,8 +46,8 @@ $feeds = json_decode(file_get_contents($base . '/config/feeds.json'), true, 512,
 $articlesBeforeImport=(int)$db->query('SELECT COUNT(*) FROM articles')->fetchColumn();
 $stmt = $db->prepare("INSERT INTO articles(url,title,source,section,published_at,summary,image_url,first_seen_at) VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(url) DO UPDATE SET
  section=excluded.section,
- title=CASE WHEN excluded.source IN ('NASA · News','NOAA · Environment') THEN excluded.title ELSE articles.title END,
- summary=CASE WHEN excluded.source IN ('NASA · News','NOAA · Environment') THEN '' ELSE articles.summary END,
+ title=CASE WHEN excluded.source='IFIS · Artikel' OR excluded.source IN ('NASA · News','NOAA · Environment') THEN excluded.title ELSE articles.title END,
+ summary=CASE WHEN excluded.source='IFIS · Artikel' THEN excluded.summary WHEN excluded.source IN ('NASA · News','NOAA · Environment') THEN '' ELSE articles.summary END,
  image_url=CASE WHEN excluded.source IN ('NASA · News','NOAA · Environment') THEN '' WHEN excluded.image_url != '' THEN excluded.image_url ELSE articles.image_url END");
 $rights=json_decode((string)file_get_contents($base.'/config/rss-rights.json'),true,512,JSON_THROW_ON_ERROR);
 $allowed=[];
@@ -84,9 +84,9 @@ foreach ($feeds as $feed) {
   if (!$link && isset($entry->link)) $link = (string)$entry->link['href'];
   if (!$link && isset($entry->link)) { foreach ($entry->link as $atomLink) { if ((string)$atomLink['rel'] === 'alternate' || !(string)$atomLink['rel']) { $link = (string)$atomLink['href']; break; } } }
   if (!filter_var($link, FILTER_VALIDATE_URL) || !in_array(parse_url($link, PHP_URL_SCHEME), ['http','https'], true)) continue;
-  $title = trim(strip_tags((string)$entry->title));
+  $title = trim(html_entity_decode(strip_tags((string)$entry->title), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
   if (!$title) continue;
-  $summary = trim(strip_tags((string)($entry->description ?? $entry->summary ?? '')));
+  $summary = trim(html_entity_decode(strip_tags((string)($entry->description ?? $entry->summary ?? '')), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
   $date = (string)($entry->pubDate ?? $entry->published ?? $entry->updated ?? '');
   $timestamp = $date ? strtotime($date) : false;
   $image = '';
@@ -120,7 +120,7 @@ foreach ($feeds as $feed) {
    $summary='';
    $image='';
   }
-  $stmt->execute([$link,substr($title,0,400),$feed['name'],$feed['section'],gmdate('Y-m-d H:i:s',$timestamp ?: time()),substr($summary,0,450),$image,gmdate('Y-m-d H:i:s')]);
+  $stmt->execute([$link,mb_substr($title,0,400,'UTF-8'),$feed['name'],$feed['section'],gmdate('Y-m-d H:i:s',$timestamp ?: time()),mb_substr($summary,0,450,'UTF-8'),$image,gmdate('Y-m-d H:i:s')]);
   $imported++;
   $articleId->execute([$link]);
   $row=$articleId->fetch(PDO::FETCH_ASSOC);
