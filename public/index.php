@@ -1804,7 +1804,7 @@ function showMarkerArticles(coordinates,title,articles,routePoints=[],descriptio
  wrapper.style.overscrollBehavior='contain';
  const popupOptions={
   closeButton:false,closeOnClick:false,
-  anchor:'bottom',offset:gap,
+  anchor:'top',offset:gap,
   maxWidth:compact?'min(340px,calc(100vw - 28px))':'min(360px,85vw)',
   className:'marker-article-popup'
  };
@@ -1821,7 +1821,7 @@ function showMarkerArticles(coordinates,title,articles,routePoints=[],descriptio
  });
  const markerOffset=selectedMarker?selectedMarker._ifisScreenOffset||[0,0]:[0,0];
  if(markerOffset[0]||markerOffset[1])
-  selectedPopup.setOffset({bottom:[markerOffset[0],markerOffset[1]-gap]});
+  selectedPopup.setOffset({top:[markerOffset[0],markerOffset[1]+gap]});
  // MapLibre's panBy cannot reliably move a globe marker near the horizon
  // into view: the projection is nonlinear. Reorient to its real coordinate,
  // then offset the map camera to reserve room for the complete popup.
@@ -1849,7 +1849,7 @@ function showMarkerArticles(coordinates,title,articles,routePoints=[],descriptio
   const visibleCenterY=visibleTop+freeHeight/2;
   // Prefer fitting the entire card near the top edge, with the marker below it.
   // The card remains scrollable when the available viewport is too short.
-  const desiredMarkerY=Math.min(visibleBottom-16,visibleTop+popupHeight+gap+20);
+  const desiredMarkerY=Math.max(visibleTop+16,Math.min(visibleTop+38,visibleBottom-popupHeight-gap-12));
   // Bound the marker to the earth's disk in globe mode. All longitudes,
   // including points at the limb, are centered via the camera instead of
   // attempting to pan an offscreen projected point.
@@ -2538,7 +2538,7 @@ function loadGdeltActivity(){
  fetch('activity-data.php',{credentials:'omit'}).then(res=>{if(!res.ok)throw Error('data');return res.json()}).then(data=>{
   gdeltMarkers.forEach(m=>m.remove());gdeltMarkers=[];
   if(!Array.isArray(data.points))return;
-  const popup=new maplibregl.Popup({closeButton:true,closeOnClick:false,maxWidth:'310px'});
+  const popup=new maplibregl.Popup({closeButton:true,closeOnClick:false,maxWidth:'310px',anchor:'top',offset:18});
   for(const point of data.points){
    if(!Number.isFinite(point.lat)||!Number.isFinite(point.lon)||!Array.isArray(point.links))continue;
    const button=document.createElement('button');button.type='button';button.className='ifis-activity-pin';button._gdeltPoint=point;
@@ -2566,7 +2566,6 @@ function loadGdeltActivity(){
    button.addEventListener('blur',()=>{label.hidden=true});
    button.addEventListener('click',e=>{
     e.stopPropagation();label.hidden=true;
-    focusMapMarker(point.lon,point.lat);
     gdeltSelectedPoint=point;showGdeltConnections(point);
     const current=gdeltVisible(point);
     const root=document.createElement('div');root.className='ifis-activity-source-list';
@@ -2585,6 +2584,7 @@ function loadGdeltActivity(){
     root.append(list);
     const credit=document.createElement('small');credit.textContent='Datengrundlage: GDELT Project · gdeltproject.org · Standorte vorläufig, nicht einzeln verifiziert';root.append(credit);
     popup.setLngLat([point.lon,point.lat]).setDOMContent(root).addTo(map);
+    focusMapMarker(point.lon,point.lat,popup.getElement());
    });
    const marker=new maplibregl.Marker({element:button,anchor:'center'}).setLngLat([point.lon,point.lat]).addTo(map);
    const remove=marker.remove.bind(marker);marker.remove=()=>{label.remove();remove()};
@@ -2600,9 +2600,14 @@ function refreshLinkedInVisibility(){
  const show=document.getElementById('showLinkedInData')?.checked;
  for(const m of linkedinMarkers){const visible=show&&externalMarkerFacing(m);m.getElement().style.visibility=visible?'visible':'hidden';m.getElement().style.pointerEvents=visible?'auto':'none';}
 }
-function focusMapMarker(lon,lat){
+function focusMapMarker(lon,lat,popupElement){
  if(!map||!Number.isFinite(lon)||!Number.isFinite(lat))return;
- map.easeTo({center:[lon,lat],duration:650,essential:true});
+ const box=map.getContainer().getBoundingClientRect();
+ const top=Math.max(12,-box.top+12);
+ const bottom=Math.min(box.height-12,window.innerHeight-box.top-12);
+ const popupHeight=popupElement?Math.min(popupElement.getBoundingClientRect().height,Math.max(80,bottom-top-55)):180;
+ const targetY=Math.max(top+16,Math.min(top+38,bottom-popupHeight-22));
+ map.easeTo({center:[lon,lat],offset:[0,targetY-box.height/2],duration:480,essential:true});
 }
 function loadLinkedInSources(){
  fetch('linkedin-sources-data.php',{credentials:'omit'}).then(r=>r.ok?r.json():Promise.reject()).then(data=>{
@@ -2615,12 +2620,12 @@ function loadLinkedInSources(){
    el.title='Freigegebene LinkedIn-Quelle: '+item.title;
    el.setAttribute('aria-label',el.title);
    el.addEventListener('click',()=>{
-    focusMapMarker(item.lon,item.lat);
     const root=document.createElement('div');root.className='ifis-activity-source-list';
     const title=document.createElement('strong');title.textContent=item.title;root.append(title);
     const d=document.createElement('p');d.textContent=item.description;root.append(d);
     const a=document.createElement('a');a.href=item.url;a.target='_blank';a.rel='noopener noreferrer';a.textContent='Original auf LinkedIn öffnen ↗';root.append(a);
-    new maplibregl.Popup({maxWidth:'310px'}).setLngLat([item.lon,item.lat]).setDOMContent(root).addTo(map);
+    const popup=new maplibregl.Popup({maxWidth:'310px',anchor:'top',offset:18}).setLngLat([item.lon,item.lat]).setDOMContent(root).addTo(map);
+    focusMapMarker(item.lon,item.lat,popup.getElement());
    });
    linkedinMarkers.push(new maplibregl.Marker({element:el,anchor:'center'}).setLngLat([item.lon,item.lat]).addTo(map));
   }
