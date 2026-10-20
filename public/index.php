@@ -2591,8 +2591,21 @@ function externalMarkerFacing(marker){
  }
  const q=map.project(p),box=map.getContainer();
  if(!Number.isFinite(q.x)||!Number.isFinite(q.y))return false;
- // Globe projection does not fill the rectangular map canvas at low zoom.
- // The projection-based hemisphere check above removes the far side.
+ // On globe projection, the visible Earth is a disc, not the entire map canvas.
+ // Use MapLibre's pixels-per-meter radius at the current zoom via a projected
+ // horizon point, rather than showing markers in the white corners.
+ if(!flatProjection){
+  const center=map.project(c);
+  const rad=Math.PI/180;
+  const bearing=map.getBearing()*rad;
+  // 90° angular separation corresponds to the globe horizon.
+  const horizon=map.project([c.lng+90,c.lat]);
+  const radius=Math.hypot(horizon.x-center.x,horizon.y-center.y);
+  if(Number.isFinite(radius)&&radius>0){
+   const distance=Math.hypot(q.x-center.x,q.y-center.y);
+   if(distance>radius*0.975)return false;
+  }
+ }
  return q.x>=0&&q.y>=0&&q.x<=box.clientWidth&&q.y<=box.clientHeight;
 }
 function refreshExternalMarkerFacing(){
