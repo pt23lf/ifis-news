@@ -1201,6 +1201,12 @@ body > .dock-time-panel input[type="range"]{
 #stories .story .story-menu{position:absolute!important;right:0;bottom:15px;top:auto;grid-column:auto!important;grid-row:auto!important;justify-self:auto!important;align-self:auto!important}
 #stories .story>div:not(.story-menu){min-width:0}
 #stories .story .story-menu>.save{width:26px;height:26px}
+/* Two-stage source markers: summary on hover, article links on click. */
+.ifis-activity-pin{position:relative}
+.ifis-source-hover{position:absolute;left:50%;bottom:calc(100% + 12px);transform:translateX(-50%);width:max-content;max-width:min(280px,80vw);min-width:170px;background:var(--bg);color:var(--text);text-align:left;white-space:normal;border:1px solid var(--line);box-shadow:0 4px 18px #0003;border-radius:9px;padding:10px;pointer-events:none;font:12px/1.4 system-ui,sans-serif;z-index:40}
+.ifis-source-hover[hidden]{display:none!important}
+.ifis-source-article-list{max-height:min(45vh,360px);overflow-y:auto;display:grid;gap:8px;margin:8px 0 12px}
+.ifis-source-article-list a{display:block}
 /* Source submission as an accessible overlay; standalone page remains available. */
 #sourceSuggestOverlay[hidden]{display:none!important}
 #sourceSuggestOverlay{position:fixed;inset:0;z-index:99999;background:rgba(8,16,24,.72);display:grid;place-items:center;padding:12px}
@@ -2735,14 +2741,46 @@ function loadLinkedInSources(){
    el.classList.add('ifis-positive-compass');
    el.innerHTML='<span aria-hidden="true" class="positive-compass-needle"></span>';
    const kind={feed:'RSS/Atom',website:'Webseite',linkedin:'LinkedIn',network:'Netzwerk',ifis:'IFIS',post:'LinkedIn',profile:'LinkedIn'}[item.type]||'Quelle';
-   el.title='Freigegebene '+kind+'-Quelle: '+item.title;
-   el.setAttribute('aria-label',el.title);
+   el.title=item.title+' · '+kind;
+   el.setAttribute('aria-label',el.title+'; klicken für Artikel');
+   const tip=document.createElement('div');
+   tip.className='ifis-source-hover';tip.hidden=true;
+   const tipName=document.createElement('strong');tipName.textContent=item.title;tip.append(tipName);
+   const tipKind=document.createElement('div');tipKind.textContent=kind;tip.append(tipKind);
+   if(item.description){const short=document.createElement('div');short.textContent=item.description.length>135?item.description.slice(0,132)+'…':item.description;tip.append(short);}
+   el.append(tip);
+   el.addEventListener('mouseenter',()=>{tip.hidden=false});
+   el.addEventListener('mouseleave',()=>{tip.hidden=true});
+   el.addEventListener('focus',()=>{tip.hidden=false});
+   el.addEventListener('blur',()=>{tip.hidden=true});
    el.addEventListener('click',()=>{
+    tip.hidden=true;
     const root=document.createElement('div');root.className='ifis-activity-source-list';
     const title=document.createElement('strong');title.textContent=item.title+' · '+kind;root.append(title);
-    const d=document.createElement('p');d.textContent=item.description;root.append(d);
-    const a=document.createElement('a');a.href=item.url;a.target='_blank';a.rel='noopener noreferrer';a.textContent=item.type==='ifis'?'IFIS-Artikel öffnen ↗':'Quelle öffnen ↗';root.append(a);
-    const popup=new maplibregl.Popup({maxWidth:'310px',anchor:'top',offset:18}).setLngLat([item.lon,item.lat]).setDOMContent(root).addTo(map);
+    if(item.description){const d=document.createElement('p');d.textContent=item.description;root.append(d);}
+    const heading=document.createElement('div');heading.style.marginTop='10px';heading.textContent=item.type==='ifis'?'IFIS-Artikel':'Beiträge / Inhalte';root.append(heading);
+    const list=document.createElement('div');list.className='ifis-source-article-list';root.append(list);
+    const addLink=(name,url)=>{
+     if(typeof url!=='string'||!/^https:\/\//i.test(url))return;
+     const a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener noreferrer';a.textContent=name+' ↗';list.append(a);
+    };
+    if(item.type==='ifis'){
+     const articles=[...document.querySelectorAll('.story')].filter(story=>{
+      try{return new URL(story.dataset.url).hostname==='ifis.net'}catch{return false}
+     });
+     const seen=new Set();
+     for(const story of articles){
+      if(seen.has(story.dataset.url))continue;seen.add(story.dataset.url);
+      addLink(story.querySelector('h2')?.textContent?.trim()||'IFIS-Artikel',story.dataset.url);
+     }
+    }else if(Array.isArray(item.articles)){
+     for(const article of item.articles)addLink(article.title||'Beitrag',article.url);
+    }
+    if(!list.childElementCount){
+     const p=document.createElement('p');p.textContent='Keine einzeln erfassten Beiträge verfügbar.';list.append(p);
+    }
+    const sourceLink=document.createElement('a');sourceLink.href=item.url;sourceLink.target='_blank';sourceLink.rel='noopener noreferrer';sourceLink.textContent='Quellenseite öffnen ↗';root.append(sourceLink);
+    const popup=new maplibregl.Popup({maxWidth:'350px',anchor:'top',offset:18}).setLngLat([item.lon,item.lat]).setDOMContent(root).addTo(map);
     popup.getElement()._ifisPopup=popup;
     focusMapMarker(item.lon,item.lat,popup.getElement());
    });
