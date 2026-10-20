@@ -2623,15 +2623,18 @@ function refreshExternalMarkerFacing(){ refreshLinkedInVisibility(); }
 function refreshGdeltActivity(){ updateGdeltLayer(); if(gdeltSelectedPoint)showGdeltConnections(gdeltSelectedPoint); }
 // These are manually assigned approximate editorial-office locations,
 // NOT inferred from TLDs. Lines mean first-source citation, not causation.
-function gdeltOffice(domain){
- const host=String(domain||'').toLowerCase().replace(/^www\\./,'');
- return Object.entries(gdeltSourceOffices).find(([key])=>host===key||host.endsWith('.'+key))?.[1]||null;
+function gdeltOffice(url){
+ // A URL can identify its publisher's domain, not the newsroom's location.
+ // Draw a line only for an exact, manually verified source-domain match.
+ let host;
+ try{const parsed=new URL(url);if(parsed.protocol!=='https:')return null;host=parsed.hostname.toLowerCase().replace(/^www\\./,'');}catch{return null;}
+ return Object.prototype.hasOwnProperty.call(gdeltSourceOffices,host)?gdeltSourceOffices[host]:null;
 }
 function showGdeltConnections(point){
  if(!map)return;
  const features=[],offices=[],used=new Set();
  for(const item of (document.getElementById('showGdeltData').checked?gdeltVisible(point).links:[])){
-  const office=gdeltOffice(item.domain),host=String(item.domain||'').toLowerCase();
+  const office=gdeltOffice(item.url),host=String(item.domain||'').toLowerCase();
   if(!office||used.has(host))continue;
   used.add(host);
   if(Math.abs(office[0]-point.lon)+Math.abs(office[1]-point.lat)<0.15)continue;
@@ -2701,7 +2704,7 @@ function updateGdeltLayer(){
     const heading=document.createElement('strong');heading.textContent=current.observations+' GDELT-Ereignisbeobachtungen';root.append(heading);
     const types=document.createElement('p');types.textContent='CAMEO-Ereignistypen – Kooperation: '+(current.classes[1]+current.classes[2])+' · Konflikt: '+(current.classes[3]+current.classes[4])+' · unbekannt: '+current.classes[0];root.append(types);
     const note=document.createElement('p');note.textContent='Ungefähre Ortsgruppe. Die Verweise sind belegte Erstquellen einzelner Ereignisse, keine vollständige Berichterstattung. Keine kopierten Artikel.';root.append(note);
-    const methodology=document.createElement('p');methodology.textContent='Gestrichelte Verbindungen: '+gdeltVisible(point).links.filter(x=>gdeltOffice(x.domain)).length+' passende Erstquellen in der kuratierten Standortliste. '+(!gdeltSourceRegistryLoaded?'Standortliste noch nicht geladen. ':'')+'Fehlende Linien bedeuten fehlende Standortzuordnung, nicht fehlende Berichterstattung. Linien zeigen keine Nachrichtenwege.';root.append(methodology);
+    const methodology=document.createElement('p');methodology.textContent='Gestrichelte Verbindungen: '+gdeltVisible(point).links.filter(x=>gdeltOffice(x.url)).length+' passende Erstquellen in der kuratierten Standortliste. '+(!gdeltSourceRegistryLoaded?'Standortliste noch nicht geladen. ':'')+'Fehlende Linien bedeuten fehlende Standortzuordnung, nicht fehlende Berichterstattung. Linien zeigen keine Nachrichtenwege.';root.append(methodology);
     const places=document.createElement('p');places.textContent='Ereignisorte: '+(point.places||[]).slice(0,10).join(' · ');root.append(places);
     const list=document.createElement('div');list.className='ifis-activity-links';
     for(const x of current.links.slice(0,40)){
