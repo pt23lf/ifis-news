@@ -1572,6 +1572,7 @@ function updateMapReadState(){
   el.style.backgroundColor=colorMode.value==='unseen'&&!unread?'#718096':'';
  });
  hideFarSide();
+ refreshGdeltActivity();
 }
 colorMode.addEventListener('change',updateMapReadState);
 stories.forEach(story=>story.querySelectorAll('h2 a').forEach(link=>link.addEventListener('click',()=>markStorySeen(story))));
@@ -1892,7 +1893,7 @@ function applyMapStyle(){
   if(serial!==styleSwitchSerial)return;
   try{
    map.setProjection({type:flatProjection?'mercator':'globe'});
-   addNightLayer();restoreSourceLineLayer();updateMapReadState();updateConnector();
+   addNightLayer();restoreSourceLineLayer();updateMapReadState();updateConnector();if(gdeltSelectedPoint)showGdeltConnections(gdeltSelectedPoint);
   }catch(err){console.warn('Kartenebenen konnten nicht vollständig wiederhergestellt werden',err)}
  });
  map.setStyle(style);
@@ -2339,11 +2340,38 @@ function restoreSharedCollection(){
 }
 /* GDELT factual activity markers. No article text or thumbnails. */
 let gdeltMarkers=[];
-const gdeltSourceOffices={
- 'bbc.com':[-0.143,51.518], 'bbc.co.uk':[-0.143,51.518],
- 'theguardian.com':[-0.122,51.534], 'dw.com':[7.098,50.737],
- 'spiegel.de':[10.001,53.550], 'aljazeera.com':[51.531,25.285]
-};
+let gdeltSourceOffices={};
+fetch('source-offices.json',{credentials:'omit'}).then(r=>r.ok?r.json():Promise.reject()).then(data=>{
+ for(const item of data.entries||[]){
+  if(item.status!=='manual_review'||!Array.isArray(item.coordinates))continue;
+  for(const domain of item.domains||[])gdeltSourceOffices[domain.toLowerCase()]=item.coordinates;
+ }
+}).catch(()=>{});
+let gdeltSelectedPoint=null;
+function gdeltVisible(point){
+ const hours=Number(document.getElementById('mapTimeRange').value)||24;
+ const cutoff=Date.now()-hours*3600000;
+ const buckets=(point.hours||[]).filter(x=>{
+  const t=Date.parse(x.time.replace(' ','T')+'Z');
+  return Number.isFinite(t)&&t+3600000>cutoff&&t<=Date.now();
+ });
+ return {
+  observations:buckets.reduce((n,x)=>n+Number(x.observations||0),0),
+  links:(point.links||[]).filter(x=>{
+   const t=Date.parse(x.time.replace(' ','T')+'Z');
+   return Number.isFinite(t)&&t>=cutoff&&t<=Date.now();
+  })
+ };
+}
+function refreshGdeltActivity(){
+ for(const marker of gdeltMarkers){
+  const button=marker.getElement(),n=gdeltVisible(button._gdeltPoint).observations;
+  button.style.display=n>0?'':'none';
+  button.setAttribute('aria-label',n+' GDELT-Beobachtungen im Zeitraum');
+  button.title=n+' GDELT-Beobachtungen';
+ }
+ if(gdeltSelectedPoint)showGdeltConnections(gdeltSelectedPoint);
+}
 // These are manually assigned approximate editorial-office locations,
 // NOT inferred from TLDs. Lines mean first-source citation, not causation.
 function gdeltOffice(domain){
@@ -2353,7 +2381,7 @@ function gdeltOffice(domain){
 function showGdeltConnections(point){
  if(!map)return;
  const features=[],used=new Set();
- for(const item of point.links||[]){
+ for(const item of gdeltVisible(point).links){
   const office=gdeltOffice(item.domain),host=String(item.domain||'').toLowerCase();
   if(!office||used.has(host))continue;
   used.add(host);
@@ -2375,11 +2403,11 @@ function loadGdeltActivity(){
   const popup=new maplibregl.Popup({closeButton:true,closeOnClick:false,maxWidth:'310px'});
   for(const point of data.points){
    if(!Number.isFinite(point.lat)||!Number.isFinite(point.lon)||!Array.isArray(point.links))continue;
-   const button=document.createElement('button');button.type='button';button.className='ifis-activity-pin';
+   const button=document.createElement('button');button.type='button';button.className='ifis-activity-pin';button._gdeltPoint=point;
    button.setAttribute('aria-label','GDELT: '+point.observations+' Ereignisbeobachtungen; Quellen öffnen');
    button.title=point.observations+' GDELT-Beobachtungen';
    const label=document.createElement('div');label.className='ifis-activity-hover';label.hidden=true;
-   const strong=document.createElement('strong');strong.textContent=point.observations+' Ereignisbeobachtungen';
+   const strong=document.createElement('strong');strong.textContent=gdeltVisible(point).observations+' Ereignisbeobachtungen';
    const loc=document.createElement('div');loc.textContent='Ereignisorte: '+(point.places||[]).slice(0,5).join(' · ');
    const sources=document.createElement('div');sources.textContent='Belegte Erstquellen: '+[...new Set(point.links.map(x=>x.domain))].slice(0,8).join(' · ');
    label.append(strong,loc,sources);
@@ -2389,20 +2417,21 @@ function loadGdeltActivity(){
     label.style.left=Math.max(8,Math.min(innerWidth-label.offsetWidth-8,rect.left+18))+'px';
     label.style.top=Math.max(8,Math.min(innerHeight-label.offsetHeight-8,rect.top+20))+'px';
    };
-   button.addEventListener('pointerenter',e=>{if(e.pointerType==='touch')return;label.hidden=false;reposition()});
+   button.addEventListener('pointerenter',e=>{if(e.pointerType==='touch')return;strong.textContent=gdeltVisible(point).observations+' Ereignisbeobachtungen';label.hidden=false;reposition()});
    button.addEventListener('pointerleave',()=>{label.hidden=true});
    button.addEventListener('focus',()=>{label.hidden=false;reposition()});
    button.addEventListener('blur',()=>{label.hidden=true});
    button.addEventListener('click',e=>{
     e.stopPropagation();label.hidden=true;
-    showGdeltConnections(point);
+    gdeltSelectedPoint=point;showGdeltConnections(point);
+    const current=gdeltVisible(point);
     const root=document.createElement('div');root.className='ifis-activity-source-list';
-    const heading=document.createElement('strong');heading.textContent=point.observations+' GDELT-Ereignisbeobachtungen';root.append(heading);
+    const heading=document.createElement('strong');heading.textContent=current.observations+' GDELT-Ereignisbeobachtungen';root.append(heading);
     const note=document.createElement('p');note.textContent='Ungefähre Ortsgruppe. Die Verweise sind belegte Erstquellen einzelner Ereignisse, keine vollständige Berichterstattung. Keine kopierten Artikel.';root.append(note);
     const methodology=document.createElement('p');methodology.textContent='Gestrichelte Verbindungen erscheinen nur für ausdrücklich zugeordnete Redaktionsstandorte. Domainendungen sind kein verlässlicher Herkunftsnachweis; Linien zeigen Erstquellen-Zuordnungen, keine Nachrichtenwege.';root.append(methodology);
     const places=document.createElement('p');places.textContent='Ereignisorte: '+(point.places||[]).slice(0,10).join(' · ');root.append(places);
     const list=document.createElement('div');list.className='ifis-activity-links';
-    for(const x of point.links.slice(0,40)){
+    for(const x of current.links.slice(0,40)){
      let url;try{url=new URL(x.url)}catch{continue}
      if(url.protocol!=='https:')continue;
      const a=document.createElement('a');a.href=url.href;a.target='_blank';a.rel='noopener noreferrer';
@@ -2416,6 +2445,7 @@ function loadGdeltActivity(){
    const remove=marker.remove.bind(marker);marker.remove=()=>{label.remove();remove()};
    gdeltMarkers.push(marker);
   }
+  refreshGdeltActivity();
  }).catch(()=>{});
 }
 function openNewsMap(scrollToMap=true){panel.classList.add('open');btn.classList.add('active');btn.setAttribute('aria-pressed','true');updateHeaderUnderline();requestAnimationFrame(updateHeaderUnderline);if(scrollToMap)panel.scrollIntoView({behavior:'smooth',block:'start'});if(map){map.resize();return;}if(!window.maplibregl){info.textContent='Die Kartenbibliothek konnte nicht geladen werden.';return;}map=new maplibregl.Map({container:'newsGlobe',style:selectedMapStyle(),center:[10,20],zoom:1.15,attributionControl:true});
