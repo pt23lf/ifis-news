@@ -11,18 +11,5 @@
       "legal_basis": "First-party"
     }
   ],
-  "event_sources": [
-    {
-      "id": "usgs-earthquakes",
-      "mode": "public_event_data",
-      "endpoint": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson",
-      "attribution": "U.S. Geological Survey (USGS)",
-      "rights": "USGS-authored government data; no third-party images or text",
-      "sources": [
-        "https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php",
-        "https://www.usgs.gov/information-policies-and-instructions/acknowledging-or-crediting-usgs"
-      ],
-      "reviewed": "2026-10-20"
-    }
-  ]
+  "event_sources": []
 }
