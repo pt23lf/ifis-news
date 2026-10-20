@@ -1846,10 +1846,21 @@ function showMarkerArticles(coordinates,title,articles,routePoints=[],descriptio
   // push the entire overlay out of the map.
   wrapper.style.setProperty('max-height',Math.max(65,availableCardHeight-18)+'px','important');
   const popupHeight=Math.min(popupEl.getBoundingClientRect().height,availableCardHeight);
-  const visibleCenterY=visibleTop+freeHeight/2;
-  // Prefer fitting the entire card near the top edge, with the marker below it.
-  // The card remains scrollable when the available viewport is too short.
-  const desiredMarkerY=Math.max(visibleTop+16,Math.min(visibleTop+38,visibleBottom-popupHeight-gap-12));
+  // Choose the shortest vertical move which fits the card either below
+  // (marker near top) or above (marker near bottom). Hemisphere is not
+  // sufficient on its own: actual viewport position determines travel.
+  const projected=map.project(coordinates);
+  const currentY=projected.y+(selectedMarker?selectedMarker._ifisScreenOffset?.[1]||0:0);
+  const belowY=Math.max(visibleTop+16,Math.min(currentY,visibleBottom-popupHeight-gap-12));
+  const aboveY=Math.min(visibleBottom-16,Math.max(currentY,visibleTop+popupHeight+gap+12));
+  const belowFits=belowY+popupHeight+gap<=visibleBottom;
+  const aboveFits=aboveY-popupHeight-gap>=visibleTop;
+  const chooseAbove=aboveFits&&(!belowFits||Math.abs(aboveY-currentY)<Math.abs(belowY-currentY));
+  const desiredMarkerY=chooseAbove?aboveY:belowY;
+  selectedPopup.setOptions({anchor:chooseAbove?'bottom':'top',offset:gap});
+  if(markerOffset[0]||markerOffset[1]){
+   selectedPopup.setOffset(chooseAbove?{bottom:[markerOffset[0],markerOffset[1]-gap]}:{top:[markerOffset[0],markerOffset[1]+gap]});
+  }
   // Bound the marker to the earth's disk in globe mode. All longitudes,
   // including points at the limb, are centered via the camera instead of
   // attempting to pan an offscreen projected point.
@@ -2584,6 +2595,7 @@ function loadGdeltActivity(){
     root.append(list);
     const credit=document.createElement('small');credit.textContent='Datengrundlage: GDELT Project · gdeltproject.org · Standorte vorläufig, nicht einzeln verifiziert';root.append(credit);
     popup.setLngLat([point.lon,point.lat]).setDOMContent(root).addTo(map);
+    popup.getElement()._ifisPopup=popup;
     focusMapMarker(point.lon,point.lat,popup.getElement());
    });
    const marker=new maplibregl.Marker({element:button,anchor:'center'}).setLngLat([point.lon,point.lat]).addTo(map);
@@ -2606,7 +2618,17 @@ function focusMapMarker(lon,lat,popupElement){
  const top=Math.max(12,-box.top+12);
  const bottom=Math.min(box.height-12,window.innerHeight-box.top-12);
  const popupHeight=popupElement?Math.min(popupElement.getBoundingClientRect().height,Math.max(80,bottom-top-55)):180;
- const targetY=Math.max(top+16,Math.min(top+38,bottom-popupHeight-22));
+ const projected=map.project([lon,lat]),gap=18;
+ const below=Math.max(top+16,Math.min(projected.y,bottom-popupHeight-gap-12));
+ const above=Math.min(bottom-16,Math.max(projected.y,top+popupHeight+gap+12));
+ const belowFits=below+popupHeight+gap<=bottom;
+ const aboveFits=above-popupHeight-gap>=top;
+ const chooseAbove=aboveFits&&(!belowFits||Math.abs(above-projected.y)<Math.abs(below-projected.y));
+ const targetY=chooseAbove?above:below;
+ if(popupElement){
+  const popup=popupElement._ifisPopup;
+  if(popup)popup.setOptions({anchor:chooseAbove?'bottom':'top',offset:gap});
+ }
  map.easeTo({center:[lon,lat],offset:[0,targetY-box.height/2],duration:480,essential:true});
 }
 function loadLinkedInSources(){
@@ -2625,6 +2647,7 @@ function loadLinkedInSources(){
     const d=document.createElement('p');d.textContent=item.description;root.append(d);
     const a=document.createElement('a');a.href=item.url;a.target='_blank';a.rel='noopener noreferrer';a.textContent='Original auf LinkedIn öffnen ↗';root.append(a);
     const popup=new maplibregl.Popup({maxWidth:'310px',anchor:'top',offset:18}).setLngLat([item.lon,item.lat]).setDOMContent(root).addTo(map);
+    popup.getElement()._ifisPopup=popup;
     focusMapMarker(item.lon,item.lat,popup.getElement());
    });
    linkedinMarkers.push(new maplibregl.Marker({element:el,anchor:'center'}).setLngLat([item.lon,item.lat]).addTo(map));
