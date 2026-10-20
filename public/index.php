@@ -1857,10 +1857,11 @@ function showMarkerArticles(coordinates,title,articles,routePoints=[],descriptio
   const aboveFits=aboveY-popupHeight-gap>=visibleTop;
   const chooseAbove=aboveFits&&(!belowFits||Math.abs(aboveY-currentY)<Math.abs(belowY-currentY));
   const desiredMarkerY=chooseAbove?aboveY:belowY;
-  selectedPopup.setOptions({anchor:chooseAbove?'bottom':'top',offset:gap});
+  selectedPopup.options.anchor=chooseAbove?'bottom':'top';
   if(markerOffset[0]||markerOffset[1]){
    selectedPopup.setOffset(chooseAbove?{bottom:[markerOffset[0],markerOffset[1]-gap]}:{top:[markerOffset[0],markerOffset[1]+gap]});
   }
+  selectedPopup.setLngLat(coordinates);
   // Bound the marker to the earth's disk in globe mode. All longitudes,
   // including points at the limb, are centered via the camera instead of
   // attempting to pan an offscreen projected point.
@@ -2627,7 +2628,7 @@ function focusMapMarker(lon,lat,popupElement){
  const targetY=chooseAbove?above:below;
  if(popupElement){
   const popup=popupElement._ifisPopup;
-  if(popup)popup.setOptions({anchor:chooseAbove?'bottom':'top',offset:gap});
+  if(popup){popup.options.anchor=chooseAbove?'bottom':'top';popup.setLngLat([lon,lat]);}
  }
  map.easeTo({center:[lon,lat],offset:[0,targetY-box.height/2],duration:480,essential:true});
 }
