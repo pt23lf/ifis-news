@@ -1178,7 +1178,7 @@ body > .dock-time-panel input[type="range"]{
  <span><strong><?= $lastImportCount===null?'–':number_format($lastImportCount,0,',','.') ?></strong> neu beim letzten Import</span>
  <span>Letzter Import: <strong><?=esc($lastImportShown)?></strong><?= $lastImportShown!=='–'?' Uhr':'' ?></span>
  </div>
-<div class="globe-view" id="globeView"><div id="newsGlobe"></div><svg id="globeConnector" class="globe-connector" aria-hidden="true"><path id="globeConnectorPath"></path><circle id="globeConnectorEnd" r="4"></circle></svg><div class="map-legend-shell"><div class="map-time-menu"><button id="mapTimeMenuToggle" type="button" class="map-time-menu-toggle" aria-label="Zeitraum einstellen" title="Zeitraum einstellen" aria-expanded="false" aria-controls="mapTimePopover"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 6v6l4 2"></path></svg></button><div id="mapTimePopover" class="map-time-popover" hidden><div class="map-legend-section-title">Zeitraum <output id="mapTimeValue" for="mapTimeRange">24 h</output></div><input id="mapTimeRange" type="range" min="0.5" max="48" step="0.5" value="24" aria-label="Nachrichten der letzten Stunden"><div class="map-range-labels"><span>30 Min.</span><span>48 Std.</span></div></div></div><details class="globe-legend" id="mapLegend"><summary class="globe-legend-heading" title="Weitere Karteneinstellungen" aria-label="Weitere Karteneinstellungen"><span class="map-view-switch" role="button" tabindex="0" title="Flache Karte anzeigen" aria-label="Flache Karte anzeigen" aria-pressed="false"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3z"></path><path d="M9 3v15M15 6v15"></path></svg></span></summary>
+<div class="globe-view" id="globeView"><div id="newsGlobe"></div><svg id="globeConnector" class="globe-connector" aria-hidden="true"><path id="globeConnectorPath"></path><circle id="globeConnectorEnd" r="4"></circle></svg><div class="map-legend-shell"><div class="map-time-menu"><button id="mapTimeMenuToggle" type="button" class="map-time-menu-toggle" aria-label="Zeitraum einstellen" title="Zeitraum einstellen" aria-expanded="false" aria-controls="mapTimePopover"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 6v6l4 2"></path></svg></button><div id="mapTimePopover" class="map-time-popover" hidden><div class="map-legend-section-title">Zeitraum <output id="mapTimeValue" for="mapTimeRange">24 h</output></div><input id="mapTimeRange" type="range" min="0" max="11" step="1" value="9" aria-label="Nachrichten der letzten Stunden"><div class="map-range-labels"><span>30 Min.</span><span>48 Std.</span></div></div></div><details class="globe-legend" id="mapLegend"><summary class="globe-legend-heading" title="Weitere Karteneinstellungen" aria-label="Weitere Karteneinstellungen"><span class="map-view-switch" role="button" tabindex="0" title="Flache Karte anzeigen" aria-label="Flache Karte anzeigen" aria-pressed="false"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3z"></path><path d="M9 3v15M15 6v15"></path></svg></span></summary>
 <div class="map-legend-content">
  <div class="map-legend-projection-choice"><span>Globus / Karte</span><div class="map-projection-header-control"><button id="mapProjectionToggle" type="button" class="map-projection-toggle" title="Flache Karte anzeigen" aria-label="Flache Karte anzeigen" aria-pressed="false"><span class="projection-symbol projection-symbol-map" aria-hidden="true"></span></button></div></div>
 
@@ -1204,7 +1204,7 @@ body > .dock-time-panel input[type="range"]{
 </div></details></div><div class="globe-info" id="globeInfo">Nachrichten geografisch entdecken. Punkte zeigen erkannte Ereignisorte, nicht den Sitz der Redaktion. Die Zuordnung ist vorläufig.</div></div><div class="filter-dock" id="filterDock"><button class="filter-dock-toggle" id="filterDockToggle" type="button" aria-label="Filterleiste ein- oder ausklappen" aria-expanded="false">☷</button><div class="filter-toolbar" aria-label="Nachrichtenfilter"><button type="button" data-open-filter="direction" aria-expanded="false" title="Entwicklungsrichtung"><span class="dock-symbol" aria-hidden="true">↗</span><span>Richtung</span></button><button type="button" data-open-filter="topics" aria-expanded="false" title="Themen"><span class="dock-symbol" aria-hidden="true">▦</span><span>Themen</span></button><button type="button" data-open-filter="quality" aria-expanded="false" title="Tonlage und Quellen"><span class="dock-symbol" aria-hidden="true">⚑</span><span>Qualität</span></button><button type="button" id="dockTimeToggle" title="Nachrichtenzeitraum" aria-label="Nachrichtenzeitraum einstellen" aria-expanded="false" aria-controls="dockTimePanel"><span class="dock-symbol" aria-hidden="true">◷</span><span>Zeitraum</span></button><button type="button" id="statsToggle" title="Nachrichtenbilanz" aria-expanded="false"><span class="dock-symbol" aria-hidden="true">▥</span><span>Bilanz</span></button><button type="button" data-open-filter="saved" title="Gemerkt"><span class="dock-symbol" aria-hidden="true">☆</span><span>Gemerkt</span></button><button type="button" data-open-filter="hidden" title="Ausgeblendet"><span class="dock-symbol" aria-hidden="true">⊘</span><span>Verborgen</span></button><button type="button" id="infoPagesToggle" title="Infoseiten" aria-expanded="false" aria-controls="infoPagesPanel"><span class="dock-symbol" aria-hidden="true">☷</span><span>Seiten</span></button><label class="dock-language" title="Sprache auswählen"><select id="language" aria-label="Sprache auswählen" title="Sprache" style="border:1px solid var(--line);border-radius:16px;background:var(--bg);color:var(--text);padding:6px"><option value="de">DE</option><option value="en">EN</option></select></label></div></div><nav id="infoPagesPanel" class="info-pages-panel" aria-label="Informationsseiten" hidden>
 <a href="info.php?page=about">Über IFIS News</a><a href="info.php?page=method">Quellen &amp; Methodik</a>
 <a href="info.php?page=imprint">Impressum</a><a href="info.php?page=privacy">Datenschutz</a><a href="https://ifis.net/">IFIS.net ↗</a>
-</nav><section id="dockTimePanel" class="dock-time-panel" aria-label="Nachrichtenzeitraum" hidden><div class="dock-time-heading"><strong>Zeitraum</strong><output id="dockTimeValue" for="dockTimeRange">24 h</output></div><input id="dockTimeRange" type="range" min="0.5" max="48" step="0.5" value="24" aria-label="Nachrichten der letzten Stunden"><div class="map-range-labels"><span>30 Min.</span><span>48 Std.</span></div></section><section id="newsStats" class="news-stats" hidden><div class="news-stats-head"><strong>Nachrichtenbilanz</strong><button type="button" id="statsClose" aria-label="Schließen">×</button></div><p id="statsScope"></p><div id="statsContent"></div><p class="stats-disclaimer">Automatische Stichwort-Schätzungen aus Titel und Kurztext. Clickbait-Verdacht ist kein Qualitätsurteil; Tonlage und Entwicklungsrichtung sind unterschiedliche Dimensionen. „Nicht bestimmbar“ wird mitgezählt.</p></section><div class="direction-nav filter-section" data-filter-section="direction"><span class="direction-label">Planetare Entwicklungsrichtung <span title="Vorläufige Zuordnung aus Titel und Kurztext; keine Wirkungsanalyse">ⓘ</span></span><div class="direction-buttons"><button data-direction="all" class="active">Alle</button><button data-direction="constructive">↗ Konstruktiv</button><button data-direction="harmful">↘ Problematisch</button><button data-direction="mixed">↔ Ambivalent</button><button data-direction="unknown">? Offen</button></div></div><div class="chips filter-section" data-filter-section="topics" id="chips" aria-label="Themenfilter"><button class="chip active" data-cat="Alle">Alle</button><?php foreach(['Politik','Gesellschaft','Wirtschaft','Technologie','Umwelt','Gesundheit','Bildung','Wissenschaft','Weitere'] as $c): ?><button class="chip" data-cat="<?=esc($c)?>"><?=esc($c)?></button><?php endforeach; ?></div>
+</nav><section id="dockTimePanel" class="dock-time-panel" aria-label="Nachrichtenzeitraum" hidden><div class="dock-time-heading"><strong>Zeitraum</strong><output id="dockTimeValue" for="dockTimeRange">24 h</output></div><input id="dockTimeRange" type="range" min="0" max="11" step="1" value="9" aria-label="Nachrichten der letzten Stunden"><div class="map-range-labels"><span>30 Min.</span><span>48 Std.</span></div></section><section id="newsStats" class="news-stats" hidden><div class="news-stats-head"><strong>Nachrichtenbilanz</strong><button type="button" id="statsClose" aria-label="Schließen">×</button></div><p id="statsScope"></p><div id="statsContent"></div><p class="stats-disclaimer">Automatische Stichwort-Schätzungen aus Titel und Kurztext. Clickbait-Verdacht ist kein Qualitätsurteil; Tonlage und Entwicklungsrichtung sind unterschiedliche Dimensionen. „Nicht bestimmbar“ wird mitgezählt.</p></section><div class="direction-nav filter-section" data-filter-section="direction"><span class="direction-label">Planetare Entwicklungsrichtung <span title="Vorläufige Zuordnung aus Titel und Kurztext; keine Wirkungsanalyse">ⓘ</span></span><div class="direction-buttons"><button data-direction="all" class="active">Alle</button><button data-direction="constructive">↗ Konstruktiv</button><button data-direction="harmful">↘ Problematisch</button><button data-direction="mixed">↔ Ambivalent</button><button data-direction="unknown">? Offen</button></div></div><div class="chips filter-section" data-filter-section="topics" id="chips" aria-label="Themenfilter"><button class="chip active" data-cat="Alle">Alle</button><?php foreach(['Politik','Gesellschaft','Wirtschaft','Technologie','Umwelt','Gesundheit','Bildung','Wissenschaft','Weitere'] as $c): ?><button class="chip" data-cat="<?=esc($c)?>"><?=esc($c)?></button><?php endforeach; ?></div>
 <details class="refine filter-section" data-filter-section="quality"><summary>Filter & Quellen <span class="muted">· optional</span></summary><div class="source-controls"><button id="sourcesToggle" type="button">⚙ Quellen auswählen</button><div id="sourcePanel" hidden><div id="sourceList"></div><button id="sourcesAll" type="button">Alle</button><button id="sourcesNone" type="button">Keine</button><p class="subtle">Auswahl wird nur in diesem Browser gespeichert. Eigene RSS-Adressen folgen mit einer sicheren serverseitigen Importfunktion.</p></div></div><div class="quality-controls"><label>Tonlage <select id="toneFilter"><option value="all">Alle</option><option value="positive">Hoffnungsvoll</option><option value="balanced">Sachlich / gemischt</option><option value="negative">Belastend</option><option value="unknown">Unbestimmt</option></select></label><label><input type="checkbox" id="filterClickbait" checked> Clickbait-Verdacht ausblenden</label><button id="showFiltered" type="button">Ausgefilterte anzeigen</button></div><p class="subtle">Tonlage beschreibt die Wortwahl, nicht den Wert einer Nachricht. Entwicklungsrichtung und Gestaltbarkeit sind davon zu unterscheiden. Automatische Schlagwort-Einschätzung aus Titel und Kurztext, keine Inhaltsprüfung.</p></details><div class="feedhead"><h1 id="feedTitle">Links</h1><button id="shareSaved" type="button" class="news-share-trigger" hidden aria-label="Gemerktliste teilen">↗ Teilen</button></div><div id="stories"><?php foreach($items as $i=>$item): ?><article id="news-<?=esc(substr(hash('sha256',$item['url']),0,16))?>" class="story <?= $i===0?'feature':'' ?>" data-source="<?=esc($item['source'])?>" data-url="<?=esc($item['url'])?>" data-cat="<?=esc($item['category'])?>" data-search="<?=esc(mb_strtolower(($item['title']??'').' '.($item['summary']??'').' '.($item['source']??''),'UTF-8'))?>"><?php
  $imageCandidate=(string)($item['image_url']??'');
  $imageHost=strtolower((string)parse_url($imageCandidate,PHP_URL_HOST));
@@ -1277,18 +1277,54 @@ dockTimePanel.addEventListener('click',event=>event.stopPropagation());
 
 const dockTimeRange=document.getElementById('dockTimeRange');
 const dockTimeValue=document.getElementById('dockTimeValue');
-function syncDockTime(){const main=document.getElementById('mapTimeRange');if(!main)return;dockTimeRange.value=main.value;dockTimeValue.textContent=Number(main.value).toLocaleString('de-DE')+' h';}
+// A non-linear time axis: fine steps at present, gradually larger jumps into history.
+const IFIS_TIME_TICKS=[.5,1,2,3,4,6,9,12,18,24,36,48];
+let ifisMaxHistoryHours=48;
+function ifisTimelineTicks(maxHours){
+ const result=[...IFIS_TIME_TICKS.filter(h=>h<=maxHours)];
+ let h=72;
+ while(h<maxHours){result.push(h);h=h<168?h+24:h<720?h+72:h<2160?h+168:h<8760?h+720:h+2160;}
+ if(!result.includes(maxHours))result.push(maxHours);
+ return [...new Set(result)].sort((a,b)=>a-b);
+}
+let ifisTicks=ifisTimelineTicks(48);
+function ifisTimeHours(){return ifisTicks[Math.max(0,Math.min(ifisTicks.length-1,Number(document.getElementById('mapTimeRange').value)||0))]||24;}
+function ifisTimeLabel(hours){
+ return hours<24?ifisTimeLabel(hours):hours<24*30?(hours/24).toLocaleString('de-DE',{maximumFractionDigits:1})+' Tage':hours<24*365?Math.round(hours/24)+' Tage':(hours/(24*365.25)).toLocaleString('de-DE',{maximumFractionDigits:1})+' Jahre';
+}
+window.ifisTimeHours=ifisTimeHours;
+window.ifisTimelineUpdateMax=function(maxHours){
+ ifisMaxHistoryHours=Math.max(48,Math.min(24*365*30,maxHours));
+ const previous=ifisTimeHours();
+ ifisTicks=ifisTimelineTicks(ifisMaxHistoryHours);
+ for(const id of ['mapTimeRange','dockTimeRange']){
+  const el=document.getElementById(id);if(!el)continue;
+  el.min='0';el.max=String(ifisTicks.length-1);el.step='1';
+  el.value=String(ifisTicks.reduce((best,h,i)=>Math.abs(h-previous)<Math.abs(ifisTicks[best]-previous)?i:best,0));
+  const row=el.parentElement.querySelector('.map-range-labels');
+  if(row?.lastElementChild)row.lastElementChild.textContent=ifisTimeLabel(ifisMaxHistoryHours);
+ }
+ const display=ifisTimeLabel(ifisTimeHours());
+ for(const id of ['mapTimeValue','dockTimeValue']){const el=document.getElementById(id);if(el)el.textContent=display;}
+};
+window.ifisTimelineUpdateMax(48);
+function syncDockTime(){const main=document.getElementById('mapTimeRange');if(!main)return;dockTimeRange.value=main.value;dockTimeValue.textContent=ifisTimeLabel(ifisTimeHours());}
 document.getElementById('mapTimeRange').addEventListener('input',syncDockTime);
 function applyDockTimeRange(){
  const main=document.getElementById('mapTimeRange');
  if(!main)return;
  main.value=dockTimeRange.value;
- dockTimeValue.textContent=Number(dockTimeRange.value).toLocaleString('de-DE')+' h';
+ dockTimeValue.textContent=ifisTimeLabel(ifisTimeHours());
  main.dispatchEvent(new Event('input',{bubbles:true}));
 }
 dockTimeRange.addEventListener('input',applyDockTimeRange);
 dockTimeRange.addEventListener('change',applyDockTimeRange);
 document.getElementById('mapTimeRange').addEventListener('input',()=>window.ifisNewsFeed?.refresh?.());
+let ifisTimelineFetchTimer;
+document.getElementById('mapTimeRange').addEventListener('input',()=>{
+ clearTimeout(ifisTimelineFetchTimer);
+ ifisTimelineFetchTimer=setTimeout(()=>window.ifisReloadGdelt?.(),220);
+});
 dockTimeToggle.addEventListener('click',()=>{const opening=dockTimePanel.hidden;closeDockOverlays();dockTimePanel.hidden=!opening;dockTimeToggle.setAttribute('aria-expanded',String(opening));if(opening){syncDockTime();positionDockPanel(dockTimePanel,dockTimeToggle);}});
 syncDockTime();
 function closeDockOverlays(){
@@ -1637,11 +1673,11 @@ function markStorySeen(story){
  updateMapReadState();
 }
 function storyAge(story){const raw=story.querySelector('time')?.getAttribute('datetime')||'';const parsed=Date.parse(raw.endsWith('Z')?raw:raw.replace(' ','T')+'Z');return Number.isFinite(parsed)?(Date.now()-parsed)/3600000:Infinity}
-function mapTimeStories(items){const hours=Number(document.getElementById('mapTimeRange').value)||24;return items.filter(story=>{const age=storyAge(story);return age>=0&&age<=hours;});}
+function mapTimeStories(items){const hours=window.ifisTimeHours();return items.filter(story=>{const age=storyAge(story);return age>=0&&age<=hours;});}
 window.ifisNewsMap={refreshMarkers:()=>updateMapReadState()};
 function updateMapReadState(){
- const hours=Number(document.getElementById('mapTimeRange').value)||24;
- document.getElementById('mapTimeValue').textContent=hours.toLocaleString('de-DE')+' h';
+ const hours=window.ifisTimeHours();
+ document.getElementById('mapTimeValue').textContent=ifisTimeLabel(hours);
  if(!map)return;
  markers.forEach(marker=>{
   const el=marker.getElement();
@@ -1652,7 +1688,7 @@ function updateMapReadState(){
   const events=new Set(matching.map(story=>story.dataset.place).filter(Boolean));
   const unread=matching.filter(story=>!seenUrls.has(story.dataset.url)).length;
   el.textContent='';
-  const description=(el._ifisLabel||'')+' · '+matching.length+' Artikel · '+(source?events.size+' Ereignisorte':new Set(matching.map(story=>story.dataset.source).filter(Boolean)).size+' Quellen')+' · '+hours.toLocaleString('de-DE')+' h'+(colorMode.value==='unseen'?' · '+unread+' ungesehen':'');
+  const description=(el._ifisLabel||'')+' · '+matching.length+' Artikel · '+(source?events.size+' Ereignisorte':new Set(matching.map(story=>story.dataset.source).filter(Boolean)).size+' Quellen')+' · '+ifisTimeLabel(hours)+(colorMode.value==='unseen'?' · '+unread+' ungesehen':'');
   el.setAttribute('aria-label',description);
   if(hoveredMarkerButton===el)showMarkerHover(el);
   el.style.backgroundColor=colorMode.value==='unseen'&&!unread?'#718096':'';
@@ -1884,7 +1920,7 @@ let batchMarkers=[];
 function addCountryBatchMarkers(){
  batchMarkers.forEach(marker=>{marker.remove();const index=markers.indexOf(marker);if(index>=0)markers.splice(index,1)});
  batchMarkers=[];
- const selectedHours=Number(document.getElementById('mapTimeRange').value)||24;
+ const selectedHours=window.ifisTimeHours();
  document.getElementById('mapTimeValue').textContent=selectedHours.toLocaleString('de-DE')+' h';
  const now=Date.now();
  const bands=[{from:0,to:.5,label:'0–30 Min.'},{from:.5,to:2.5,label:'30 Min.–2,5 Std.'},{from:2.5,to:6,label:'2,5–6 Std.'},{from:6,to:12,label:'6–12 Std.'},{from:12,to:48,label:'12–48 Std.'}];
@@ -2460,7 +2496,7 @@ fetch('source-offices.json',{credentials:'omit'}).then(r=>r.ok?r.json():Promise.
 }).catch(()=>{gdeltSourceRegistryLoaded=false});
 let gdeltSelectedPoint=null;
 function gdeltVisible(point){
- const hours=Number(document.getElementById('mapTimeRange').value)||24;
+ const hours=window.ifisTimeHours();
  const cutoff=Date.now()-hours*3600000;
  const entries=Object.entries(point.time_bins||{});
  const observations=entries.reduce((sum,[stamp,count])=>{
@@ -2545,9 +2581,14 @@ function showGdeltConnections(point){
   if(!map.getLayer(pinsLayer))map.addLayer({id:pinsLayer,type:'circle',source:pins,paint:{'circle-radius':3.5,'circle-color':'#e69b36','circle-stroke-color':'#fff','circle-stroke-width':1}});
  }catch(e){console.warn('GDELT link overlay unavailable',e)}
 }
+let gdeltRequestSerial=0;
+window.ifisReloadGdelt=()=>loadGdeltActivity();
 function loadGdeltActivity(){
  if(!map)return;
- fetch('activity-data.php',{credentials:'omit'}).then(res=>{if(!res.ok)throw Error('data');return res.json()}).then(data=>{
+ const serial=++gdeltRequestSerial;
+ fetch('activity-data.php?hours='+encodeURIComponent(window.ifisTimeHours()),{credentials:'omit'}).then(res=>{if(!res.ok)throw Error('data');return res.json()}).then(data=>{
+  if(serial!==gdeltRequestSerial)return;
+  if(Number.isFinite(data.oldest_hours))window.ifisTimelineUpdateMax(data.oldest_hours);
   gdeltMarkers.forEach(m=>m.remove());gdeltMarkers=[];
   if(!Array.isArray(data.points))return;
   const popup=new maplibregl.Popup({closeButton:true,closeOnClick:false,maxWidth:'310px',anchor:'top',offset:18});
