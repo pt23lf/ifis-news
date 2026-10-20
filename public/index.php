@@ -872,11 +872,14 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
 }
 .globe-view .map-legend-shell .globe-legend-heading::after,
 .globe-view .map-legend-shell .globe-legend[open] .globe-legend-heading::after{
- content:'▸'!important;display:block!important;position:static!important;
- font-size:15px!important;line-height:1!important;color:var(--text);
- transform:none!important;flex:none!important;
+ content:''!important;display:block!important;position:static!important;
+ width:10px!important;height:10px!important;box-sizing:border-box!important;
+ border-right:3px solid currentColor!important;border-bottom:3px solid currentColor!important;
+ border-top:0!important;border-left:0!important;border-radius:0!important;
+ background:none!important;font-size:0!important;
+ transform:rotate(-45deg)!important;flex:none!important;
 }
-.globe-view .map-legend-shell .globe-legend[open] .globe-legend-heading::after{transform:rotate(-90deg)!important}
+.globe-view .map-legend-shell .globe-legend[open] .globe-legend-heading::after{transform:rotate(45deg)!important}
 </style></head><body>
 <header class="topbar"><div class="topbar-inner"><a class="brand" href="?view=world"><strong>IFIS</strong></a><nav class="topnav" aria-label="Bereiche"><a href="?view=ifis&amp;map=0" class="<?= $view==='ifis'?'active':'' ?>" data-subtitle-de="Nachrichten mit Veränderungspotenzial" data-subtitle-en="News with potential for change">Potenzial</a><button class="globe-toggle" id="globeToggle" type="button" aria-pressed="false" data-subtitle-de="Nachrichten geografisch entdecken" data-subtitle-en="Explore news geographically">Karte</button><a href="?view=world&amp;map=0" class="<?= $view==='world'?'active':'' ?>" data-subtitle-de="Nachrichten aus aller Welt" data-subtitle-en="News from around the world">Weltlage</a></nav><button type="button" id="gridToggle" class="grid-toggle" title="Spaltenzahl ändern" aria-label="Spaltenzahl ändern"><svg class="grid-toggle-symbol" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="2.5" y="13.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="13.5" width="8" height="8" rx="1.3"/></svg><span id="gridCount">1</span></button><div class="top-actions"><button type="button" id="mobileSearchToggle" class="mobile-search-toggle" aria-label="Suche öffnen" aria-expanded="false" title="Nachrichten suchen"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg></button><input class="search" id="search" type="search" placeholder="Nachrichten durchsuchen …" aria-label="Nachrichten durchsuchen"></div></div></header>
 <div id="savedShareOverlay" class="news-share-overlay" hidden><div class="news-share-dialog" role="dialog" aria-modal="true" aria-labelledby="savedShareHeading"><div class="news-share-header"><strong id="savedShareHeading">Gemerktliste teilen</strong><button id="savedShareClose" type="button" aria-label="Schließen">×</button></div><p>Die gemerkten Artikel als unveränderliche Sammlung teilen.</p><div class="news-share-grid"><button id="savedShareCopy" type="button">Link kopieren</button><button id="savedShareSystem" type="button">Teilen …</button><button id="savedShareEmail" type="button">E-Mail</button><button id="savedShareWhatsapp" type="button">WhatsApp</button></div><small id="savedShareFeedback" role="status"></small></div></div><div class="layout">
