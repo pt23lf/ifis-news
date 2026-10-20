@@ -2587,9 +2587,12 @@ function externalMarkerFacing(marker){
  if(!flatProjection){
   const rad=Math.PI/180;
   const dot=Math.sin(c.lat*rad)*Math.sin(p.lat*rad)+Math.cos(c.lat*rad)*Math.cos(p.lat*rad)*Math.cos((p.lng-c.lng)*rad);
-  if(dot<=0.11)return false;
+  if(dot<=0.16)return false; // Hide markers before the visible globe horizon.
  }
  const q=map.project(p),box=map.getContainer();
+ if(!Number.isFinite(q.x)||!Number.isFinite(q.y))return false;
+ // Globe projection does not fill the rectangular map canvas at low zoom.
+ // The projection-based hemisphere check above removes the far side.
  return q.x>=0&&q.y>=0&&q.x<=box.clientWidth&&q.y<=box.clientHeight;
 }
 function refreshExternalMarkerFacing(){
@@ -2707,7 +2710,7 @@ function loadGdeltActivity(){
     popup.getElement()._ifisPopup=popup;
     focusMapMarker(point.lon,point.lat,popup.getElement());
    });
-   const marker=new maplibregl.Marker({element:button,anchor:'center'}).setLngLat([point.lon,point.lat]).addTo(map);
+   const marker=new maplibregl.Marker({element:button,anchor:'center',occludedOpacity:0}).setLngLat([point.lon,point.lat]).addTo(map);
    const remove=marker.remove.bind(marker);marker.remove=()=>{label.remove();remove()};
    gdeltMarkers.push(marker);
   }
@@ -2808,7 +2811,7 @@ function loadLinkedInSources(){
     popup.getElement()._ifisPopup=popup;
     focusMapMarker(item.lon,item.lat,popup.getElement());
    });
-   linkedinMarkers.push(new maplibregl.Marker({element:el,anchor:'center',draggable:false}).setLngLat([item.lon,item.lat]).addTo(map));
+   linkedinMarkers.push(new maplibregl.Marker({element:el,anchor:'center',draggable:false,occludedOpacity:0}).setLngLat([item.lon,item.lat]).addTo(map));
   }
   refreshLinkedInVisibility();
  }).catch(()=>{});
