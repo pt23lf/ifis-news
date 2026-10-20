@@ -1127,7 +1127,7 @@ body > .dock-time-panel input[type="range"]{
 }
 
 /* Activity overlays use first-source links, never copied publisher text. */
-.ifis-activity-pin{width:28px;height:28px;border:1px solid #fafafa;border-radius:50%;background:#e69b36;color:#182126;font-size:10px;font-weight:700;cursor:pointer;box-shadow:0 1px 7px #0006;display:grid;place-items:center;z-index:2}
+.ifis-activity-pin{width:12px;height:12px;min-width:12px;padding:0;border:1px solid #fff;border-radius:50%;background:#e69b36;cursor:pointer;box-shadow:0 1px 4px #0007;display:block;z-index:2}.ifis-activity-pin:hover,.ifis-activity-pin:focus-visible{width:17px;height:17px;outline:2px solid #fff;outline-offset:1px}
 .ifis-activity-hover{position:fixed;z-index:10020;max-width:min(300px,calc(100vw - 16px));background:var(--bg);color:var(--text);border:1px solid var(--line);padding:10px 12px;border-radius:10px;box-shadow:0 8px 22px #0005;font-size:12px;pointer-events:none}
 .ifis-activity-hover[hidden]{display:none!important}
 .ifis-activity-source-list{font-size:12px;line-height:1.5;color:#1d2b3b;max-height:320px;overflow:auto}
@@ -2339,6 +2339,34 @@ function restoreSharedCollection(){
 }
 /* GDELT factual activity markers. No article text or thumbnails. */
 let gdeltMarkers=[];
+const gdeltSourceOffices={
+ 'bbc.com':[-0.143,51.518], 'bbc.co.uk':[-0.143,51.518],
+ 'theguardian.com':[-0.122,51.534], 'dw.com':[7.098,50.737],
+ 'spiegel.de':[10.001,53.550], 'aljazeera.com':[51.531,25.285]
+};
+// These are manually assigned approximate editorial-office locations,
+// NOT inferred from TLDs. Lines mean first-source citation, not causation.
+function gdeltOffice(domain){
+ const host=String(domain||'').toLowerCase().replace(/^www\\./,'');
+ return Object.entries(gdeltSourceOffices).find(([key])=>host===key||host.endsWith('.'+key))?.[1]||null;
+}
+function showGdeltConnections(point){
+ if(!map)return;
+ const features=[],used=new Set();
+ for(const item of point.links||[]){
+  const office=gdeltOffice(item.domain),host=String(item.domain||'').toLowerCase();
+  if(!office||used.has(host))continue;
+  used.add(host);
+  if(Math.abs(office[0]-point.lon)+Math.abs(office[1]-point.lat)<0.15)continue;
+  features.push({type:'Feature',geometry:{type:'LineString',coordinates:[office,[point.lon,point.lat]]},properties:{source:host}});
+ }
+ const id='ifis-gdelt-verified-links',layer=id+'-lines';
+ try{
+  if(!map.getSource(id))map.addSource(id,{type:'geojson',data:{type:'FeatureCollection',features:[]}});
+  map.getSource(id).setData({type:'FeatureCollection',features});
+  if(!map.getLayer(layer))map.addLayer({id:layer,type:'line',source:id,paint:{'line-color':'#e69b36','line-opacity':0.7,'line-width':1.25,'line-dasharray':[2,2]}});
+ }catch(e){console.warn('GDELT link overlay unavailable',e)}
+}
 function loadGdeltActivity(){
  if(!map)return;
  fetch('activity-data.php',{credentials:'omit'}).then(res=>{if(!res.ok)throw Error('data');return res.json()}).then(data=>{
@@ -2349,7 +2377,7 @@ function loadGdeltActivity(){
    if(!Number.isFinite(point.lat)||!Number.isFinite(point.lon)||!Array.isArray(point.links))continue;
    const button=document.createElement('button');button.type='button';button.className='ifis-activity-pin';
    button.setAttribute('aria-label','GDELT: '+point.observations+' Ereignisbeobachtungen; Quellen öffnen');
-   button.title='Aktivitätsquellen öffnen';button.textContent=String(point.observations);
+   button.title=point.observations+' GDELT-Beobachtungen';
    const label=document.createElement('div');label.className='ifis-activity-hover';label.hidden=true;
    const strong=document.createElement('strong');strong.textContent=point.observations+' Ereignisbeobachtungen';
    const loc=document.createElement('div');loc.textContent='Ereignisorte: '+(point.places||[]).slice(0,5).join(' · ');
@@ -2367,9 +2395,11 @@ function loadGdeltActivity(){
    button.addEventListener('blur',()=>{label.hidden=true});
    button.addEventListener('click',e=>{
     e.stopPropagation();label.hidden=true;
+    showGdeltConnections(point);
     const root=document.createElement('div');root.className='ifis-activity-source-list';
     const heading=document.createElement('strong');heading.textContent=point.observations+' GDELT-Ereignisbeobachtungen';root.append(heading);
     const note=document.createElement('p');note.textContent='Ungefähre Ortsgruppe. Die Verweise sind belegte Erstquellen einzelner Ereignisse, keine vollständige Berichterstattung. Keine kopierten Artikel.';root.append(note);
+    const methodology=document.createElement('p');methodology.textContent='Gestrichelte Verbindungen erscheinen nur für ausdrücklich zugeordnete Redaktionsstandorte. Domainendungen sind kein verlässlicher Herkunftsnachweis; Linien zeigen Erstquellen-Zuordnungen, keine Nachrichtenwege.';root.append(methodology);
     const places=document.createElement('p');places.textContent='Ereignisorte: '+(point.places||[]).slice(0,10).join(' · ');root.append(places);
     const list=document.createElement('div');list.className='ifis-activity-links';
     for(const x of point.links.slice(0,40)){
