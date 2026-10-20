@@ -1282,6 +1282,7 @@ document.querySelector('.topnav a[href^="?view=ifis"]').textContent=lang==='en'?
 language.addEventListener('change',()=>translate(language.value));translate(localStorage.getItem(prefix+'lang')||'de');
 // Feed and map are separate closures: expose an explicit selection interface.
 window.ifisNewsFeed={
+ refresh,
  isSavedView(){return mode==='saved'},
  isSavedUrl(url){return saved.includes(url)},
  selectMapStories(ids){
