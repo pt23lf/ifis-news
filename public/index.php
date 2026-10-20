@@ -1191,6 +1191,11 @@ body > .dock-time-panel input[type="range"]{
 .story .story-menu>.save{display:grid;place-items:center;border:0;background:transparent;color:var(--muted);font:26px/1 system-ui,sans-serif;width:38px;height:38px;padding:0;border-radius:9px;cursor:pointer}
 .story .story-menu>.save:hover,.story .story-menu>.save:focus-visible{background:var(--hover);color:var(--accent)}
 .story .story-menu>.save.saved{color:#d49a20}
+/* Small monochrome saved-star; hide redundant hidden-items dock entry. */
+.filter-toolbar [data-open-filter="hidden"]{display:none!important}
+.story .story-menu>.save{font-size:19px;line-height:1;width:29px;height:29px;color:var(--text)!important}
+.story .story-menu>.save.saved{color:var(--text)!important}
+.story .story-menu>.save:hover,.story .story-menu>.save:focus-visible{color:var(--text)!important}
 /* Source submission as an accessible overlay; standalone page remains available. */
 #sourceSuggestOverlay[hidden]{display:none!important}
 #sourceSuggestOverlay{position:fixed;inset:0;z-index:99999;background:rgba(8,16,24,.72);display:grid;place-items:center;padding:12px}
