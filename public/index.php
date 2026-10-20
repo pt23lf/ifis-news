@@ -2637,7 +2637,7 @@ window.ifisReloadGdelt=()=>loadGdeltActivity();
 const GDELT_LAYER='ifis-gdelt-event-circles',GDELT_SOURCE='ifis-gdelt-event-points';
 let gdeltPoints=[],gdeltHoverTip=null,gdeltHandlersBound=false;
 function updateGdeltLayer(){
- if(!map||!map.isStyleLoaded())return;
+ if(!map||!map.getStyle())return;
  const features=[];
  if(document.getElementById('showGdeltData')?.checked){
   gdeltPoints.forEach((point,i)=>{
