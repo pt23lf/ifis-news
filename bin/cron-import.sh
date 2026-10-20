@@ -37,6 +37,7 @@ fi
   printf '\n[%s] Import start\n' "$(date -u +%FT%TZ)"
   "$PHP_BIN" bin/import.php
   "$PHP_BIN" bin/import-usgs.php || printf "[%s] USGS event import failed; previous data retained\n" "$(date -u +%FT%TZ)"
+  "$PHP_BIN" bin/import-gdelt.php || printf "[%s] GDELT import failed; previous observations retained\n" "$(date -u +%FT%TZ)"
   "$PHP_BIN" bin/import-ifis.php || printf "[%s] IFIS index refresh failed; previous index retained\\n" "$(date -u +%FT%TZ)"
   printf '[%s] Import finished\n' "$(date -u +%FT%TZ)"
 } >> storage/logs/import.log 2>&1
