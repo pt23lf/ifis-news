@@ -1960,10 +1960,10 @@ function selectedMapStyle(){
  panel.classList.toggle('map-dark',dark);
  panel.classList.toggle('map-light',!dark);
  if(mapBasemap.value==='satellite'){
-  return {version:8,name:'Satellite',sources:{imagery:{type:'raster',tiles:['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],tileSize:256,attribution:'Tiles © Esri, Maxar, Earthstar Geographics'}},layers:[{id:'satellite-imagery',type:'raster',source:'imagery',paint:{}}]};
+  return {version:8,name:'Satellite',sources:{imagery:{type:'raster',tiles:['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],tileSize:256,attribution:'Tiles © Esri, Maxar, Earthstar Geographics'}},layers:[{id:'globe-opaque-background',type:'background',paint:{'background-color':dark?'#111720':'#e8f0ef','background-opacity':1}},{id:'satellite-imagery',type:'raster',source:'imagery',paint:{}}]};
  }
  if(mapBasemap.value==='political')return 'https://demotiles.maplibre.org/style.json';
- return {version:8,name:'Geografisch · Relief',sources:{topography:{type:'raster',tiles:['https://a.tile.opentopomap.org/{z}/{x}/{y}.png','https://b.tile.opentopomap.org/{z}/{x}/{y}.png','https://c.tile.opentopomap.org/{z}/{x}/{y}.png'],tileSize:256,maxzoom:17,attribution:'© OpenStreetMap-Mitwirkende · SRTM · OpenTopoMap (CC BY-SA)'}},layers:[{id:'geographic-terrain',type:'raster',source:'topography',paint:{}}]};
+ return {version:8,name:'Geografisch · Relief',sources:{topography:{type:'raster',tiles:['https://a.tile.opentopomap.org/{z}/{x}/{y}.png','https://b.tile.opentopomap.org/{z}/{x}/{y}.png','https://c.tile.opentopomap.org/{z}/{x}/{y}.png'],tileSize:256,maxzoom:17,attribution:'© OpenStreetMap-Mitwirkende · SRTM · OpenTopoMap (CC BY-SA)'}},layers:[{id:'globe-opaque-background',type:'background',paint:{'background-color':dark?'#111720':'#e8f0ef','background-opacity':1}},{id:'geographic-terrain',type:'raster',source:'topography',paint:{}}]};
 }
 let styleSwitchSerial=0;
 function applyMapStyle(){
@@ -2536,6 +2536,7 @@ function loadGdeltActivity(){
    button.addEventListener('blur',()=>{label.hidden=true});
    button.addEventListener('click',e=>{
     e.stopPropagation();label.hidden=true;
+    focusMapMarker(point.lon,point.lat);
     gdeltSelectedPoint=point;showGdeltConnections(point);
     const current=gdeltVisible(point);
     const root=document.createElement('div');root.className='ifis-activity-source-list';
@@ -2569,6 +2570,10 @@ function refreshLinkedInVisibility(){
  const show=document.getElementById('showLinkedInData')?.checked;
  for(const m of linkedinMarkers)m.getElement().style.visibility=show?'visible':'hidden';
 }
+function focusMapMarker(lon,lat){
+ if(!map||!Number.isFinite(lon)||!Number.isFinite(lat))return;
+ map.easeTo({center:[lon,lat],duration:650,essential:true});
+}
 function loadLinkedInSources(){
  fetch('linkedin-sources-data.php',{credentials:'omit'}).then(r=>r.ok?r.json():Promise.reject()).then(data=>{
   linkedinMarkers.forEach(x=>x.remove());linkedinMarkers=[];
@@ -2579,6 +2584,7 @@ function loadLinkedInSources(){
    el.title='Freigegebene LinkedIn-Quelle: '+item.title;
    el.setAttribute('aria-label',el.title);
    el.addEventListener('click',()=>{
+    focusMapMarker(item.lon,item.lat);
     const root=document.createElement('div');root.className='ifis-activity-source-list';
     const title=document.createElement('strong');title.textContent=item.title;root.append(title);
     const d=document.createElement('p');d.textContent=item.description;root.append(d);
