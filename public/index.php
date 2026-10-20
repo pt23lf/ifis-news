@@ -1115,6 +1115,14 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
  .topbar-inner .topnav a:not(.world-view-link),.topbar-inner .topnav .globe-toggle{font-size:11px!important;padding:0 7px!important}
  .topbar-inner .grid-toggle,.topbar-inner .top-actions,.topbar-inner .mobile-search-toggle{width:32px!important;min-width:32px!important}
 }
+
+/* Touch-safe detached dock time popup; preserve native iOS slider dragging. */
+body > .dock-time-panel{z-index:10010!important;pointer-events:auto!important;touch-action:auto!important}
+body > .dock-time-panel input[type="range"]{
+ position:relative!important;z-index:1!important;pointer-events:auto!important;
+ touch-action:pan-x!important;-webkit-user-select:none;user-select:none;
+ min-height:34px!important;cursor:pointer
+}
 </style></head><body>
 <header class="topbar"><div class="topbar-inner"><a class="brand" href="?view=world"><strong>IFIS</strong></a><nav class="topnav" aria-label="Bereiche"><a href="?view=ifis&amp;map=0" class="<?= $view==='ifis'?'active':'' ?>" data-subtitle-de="Nachrichten mit Veränderungspotenzial" data-subtitle-en="News with potential for change">Potenzial</a><button class="globe-toggle" id="globeToggle" type="button" aria-pressed="false" aria-label="Karte öffnen" title="Karte öffnen" data-subtitle-de="Nachrichten geografisch entdecken" data-subtitle-en="Explore news geographically">Karte</button><a href="?view=world&amp;map=0" class="world-view-link <?= $view==='world'?'active':'' ?>" data-subtitle-de="Nachrichten aus aller Welt" data-subtitle-en="News from around the world" aria-label="Nachrichtenübersicht">Weltlage</a></nav><button type="button" id="gridToggle" class="grid-toggle" title="Spaltenzahl ändern" aria-label="Spaltenzahl ändern"><svg class="grid-toggle-symbol" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="2.5" y="13.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="13.5" width="8" height="8" rx="1.3"/></svg><span id="gridCount">1</span></button><div class="top-actions"><button type="button" id="mobileSearchToggle" class="mobile-search-toggle" aria-label="Suche öffnen" aria-expanded="false" title="Nachrichten suchen"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg></button><input class="search" id="search" type="search" placeholder="Nachrichten durchsuchen …" aria-label="Nachrichten durchsuchen"></div></div></header>
 <div id="savedShareOverlay" class="news-share-overlay" hidden><div class="news-share-dialog" role="dialog" aria-modal="true" aria-labelledby="savedShareHeading"><div class="news-share-header"><strong id="savedShareHeading">Gemerktliste teilen</strong><button id="savedShareClose" type="button" aria-label="Schließen">×</button></div><p>Die gemerkten Artikel als unveränderliche Sammlung teilen.</p><div class="news-share-grid"><button id="savedShareCopy" type="button">Link kopieren</button><button id="savedShareSystem" type="button">Teilen …</button><button id="savedShareEmail" type="button">E-Mail</button><button id="savedShareWhatsapp" type="button">WhatsApp</button></div><small id="savedShareFeedback" role="status"></small></div></div><div class="layout">
@@ -1205,11 +1213,26 @@ function hideInfoPages(){infoPagesPanel.hidden=true;infoPagesToggle.setAttribute
 infoPagesToggle.addEventListener('click',()=>{const opening=infoPagesPanel.hidden;closeDockOverlays();infoPagesPanel.hidden=!opening;infoPagesToggle.setAttribute('aria-expanded',String(opening));infoPagesToggle.classList.toggle('active',opening);if(opening)positionDockPanel(infoPagesPanel,infoPagesToggle)});
 const dockTimeToggle=document.getElementById('dockTimeToggle');
 const dockTimePanel=document.getElementById('dockTimePanel');
+/* The range popup must be outside the floating dock's transformed/stacking
+   context; otherwise iOS Safari can route touch gestures to the dock instead. */
+document.body.appendChild(dockTimePanel);
+dockTimePanel.style.setProperty('z-index','10010','important');
+dockTimePanel.addEventListener('pointerdown',event=>event.stopPropagation());
+dockTimePanel.addEventListener('click',event=>event.stopPropagation());
+
 const dockTimeRange=document.getElementById('dockTimeRange');
 const dockTimeValue=document.getElementById('dockTimeValue');
 function syncDockTime(){const main=document.getElementById('mapTimeRange');if(!main)return;dockTimeRange.value=main.value;dockTimeValue.textContent=Number(main.value).toLocaleString('de-DE')+' h';}
 document.getElementById('mapTimeRange').addEventListener('input',syncDockTime);
-dockTimeRange.addEventListener('input',()=>{const main=document.getElementById('mapTimeRange');main.value=dockTimeRange.value;syncDockTime();main.dispatchEvent(new Event('input',{bubbles:true}));});
+function applyDockTimeRange(){
+ const main=document.getElementById('mapTimeRange');
+ if(!main)return;
+ main.value=dockTimeRange.value;
+ dockTimeValue.textContent=Number(dockTimeRange.value).toLocaleString('de-DE')+' h';
+ main.dispatchEvent(new Event('input',{bubbles:true}));
+}
+dockTimeRange.addEventListener('input',applyDockTimeRange);
+dockTimeRange.addEventListener('change',applyDockTimeRange);
 document.getElementById('mapTimeRange').addEventListener('input',()=>window.ifisNewsFeed?.refresh?.());
 dockTimeToggle.addEventListener('click',()=>{const opening=dockTimePanel.hidden;closeDockOverlays();dockTimePanel.hidden=!opening;dockTimeToggle.setAttribute('aria-expanded',String(opening));if(opening){syncDockTime();positionDockPanel(dockTimePanel,dockTimeToggle);}});
 syncDockTime();
