@@ -45,9 +45,20 @@ $articleId=$db->prepare("SELECT id,title,summary FROM articles WHERE url=?");
 $feeds = json_decode(file_get_contents($base . '/config/feeds.json'), true, 512, JSON_THROW_ON_ERROR);
 $articlesBeforeImport=(int)$db->query('SELECT COUNT(*) FROM articles')->fetchColumn();
 $stmt = $db->prepare("INSERT INTO articles(url,title,source,section,published_at,summary,image_url,first_seen_at) VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(url) DO UPDATE SET image_url=CASE WHEN excluded.image_url != '' THEN excluded.image_url ELSE articles.image_url END");
+$rights=json_decode((string)file_get_contents($base.'/config/rss-rights.json'),true,512,JSON_THROW_ON_ERROR);
+$allowed=[];
+foreach(($rights['feeds']??[]) as $entry){
+ if(!is_array($entry)||!in_array($entry['mode']??'', ['own','links_activity'],true))continue;
+ $allowed[(string)($entry['name']??'').'|'.(string)($entry['url']??'')]=$entry['mode'];
+}
 foreach ($feeds as $feed) {
- // Rights-safe default: only first-party articles; third-party feeds require explicit licensing review.
- if (($feed['name'] ?? '') !== 'IFIS · Artikel' || ($feed['url'] ?? '') !== 'https://ifis.net/artikel.rss') continue;
+ $mode=$allowed[(string)($feed['name']??'').'|'.(string)($feed['url']??'')]??'blocked';
+ if($mode==='blocked')continue;
+ // Only NASA/NOAA and exact URLs documented in the rights register are permitted.
+ if($mode==='links_activity' && !in_array(($feed['name']??'').'|'.($feed['url']??''),[
+ 'NASA · News|https://www.nasa.gov/feed/',
+ 'NOAA · Environment|https://www.noaa.gov/rss.xml'
+ ],true))continue;
  $url = $feed['url'] ?? '';
  if (!filter_var($url, FILTER_VALIDATE_URL) || parse_url($url, PHP_URL_SCHEME) !== 'https') continue;
  $context = stream_context_create(['http'=>['timeout'=>12,'user_agent'=>'IFIS-News/0.1 (+https://news.ifis.net)','follow_location'=>1,'max_redirects'=>3]]);
@@ -97,6 +108,12 @@ foreach ($feeds as $feed) {
     }
   }
   if ($image && (!filter_var($image, FILTER_VALIDATE_URL) || parse_url($image, PHP_URL_SCHEME) !== 'https')) $image = '';
+  if($mode==='links_activity'){
+   // Do not retain source headline, description, photo, enclosure, or article text.
+   $title=$feed['name'].' · Originalmeldung';
+   $summary='';
+   $image='';
+  }
   $stmt->execute([$link,substr($title,0,400),$feed['name'],$feed['section'],gmdate('Y-m-d H:i:s',$timestamp ?: time()),substr($summary,0,450),$image,gmdate('Y-m-d H:i:s')]);
   $imported++;
   $articleId->execute([$link]);
