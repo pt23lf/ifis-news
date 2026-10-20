@@ -22,8 +22,8 @@ if (is_file($dbPath) && extension_loaded('pdo_sqlite')) {
  try {
   $db = new PDO('sqlite:' . $dbPath);
   $articleTotal=(int)$db->query("SELECT COUNT(*) FROM articles WHERE source='IFIS · Artikel'")->fetchColumn();
-  $query = $db->prepare('SELECT title,url,source,published_at,summary,image_url FROM articles WHERE section=:section AND source='IFIS · Artikel' ORDER BY published_at DESC LIMIT 400');
-  $query->execute(['section'=>$view]);
+  $query = $db->prepare('SELECT title,url,source,published_at,summary,image_url FROM articles WHERE section=:section AND source=:allowed_source ORDER BY published_at DESC LIMIT 400');
+  $query->execute(['section'=>$view,'allowed_source'=>'IFIS · Artikel']);
   $items = $query->fetchAll(PDO::FETCH_ASSOC);
   // Keep IFIS articles selectable even if the general 400-item news window moves on.
   if(true){
@@ -36,8 +36,8 @@ if (is_file($dbPath) && extension_loaded('pdo_sqlite')) {
    usort($items,static fn($a,$b)=>strcmp((string)$b['published_at'],(string)$a['published_at']));
   }
   $cols=$db->query('PRAGMA table_info(articles)')->fetchAll(PDO::FETCH_ASSOC);
-  $recent=$db->prepare("SELECT source,published_at,COUNT(*) AS count FROM articles WHERE section=:section AND source='IFIS · Artikel' AND published_at >= :since AND published_at <= :until GROUP BY source, strftime('%Y-%m-%d %H:',published_at), CAST(CAST(strftime('%M',published_at) AS INTEGER)/30 AS INTEGER) ORDER BY published_at DESC");
-  $recent->execute(['section'=>$view,'since'=>gmdate('Y-m-d H:i:s',time()-172800),'until'=>gmdate('Y-m-d H:i:s')]);
+  $recent=$db->prepare("SELECT source,published_at,COUNT(*) AS count FROM articles WHERE section=:section AND source=:allowed_source AND published_at >= :since AND published_at <= :until GROUP BY source, strftime('%Y-%m-%d %H:',published_at), CAST(CAST(strftime('%M',published_at) AS INTEGER)/30 AS INTEGER) ORDER BY published_at DESC");
+  $recent->execute(['section'=>$view,'allowed_source'=>'IFIS · Artikel','since'=>gmdate('Y-m-d H:i:s',time()-172800),'until'=>gmdate('Y-m-d H:i:s')]);
   $sourceBatches=$recent->fetchAll(PDO::FETCH_ASSOC);
 
  } catch (Throwable $e) { error_log($e->getMessage()); }
