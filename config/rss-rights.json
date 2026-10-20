@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "default_mode": "blocked",
+  "notes": "Only listed feed URLs may be fetched. A: manual links; B: automated URL/date/source only; C: activity counts from those B records. No RSS headlines, abstracts or images are persisted.",
+  "feeds": [
+    {
+      "name": "IFIS · Artikel",
+      "url": "https://ifis.net/artikel.rss",
+      "section": "ifis",
+      "mode": "own",
+      "legal_basis": "First party"
+    },
+    {
+      "name": "NASA · News",
+      "url": "https://www.nasa.gov/feed/",
+      "section": "ifis",
+      "mode": "links_activity",
+      "legal_basis": "https://www.nasa.gov/rss-feeds/ ; https://www.nasa.gov/nasa-brand-center/",
+      "checked": "2026-10-20"
+    },
+    {
+      "name": "NOAA · Environment",
+      "url": "https://www.noaa.gov/rss.xml",
+      "section": "ifis",
+      "mode": "links_activity",
+      "legal_basis": "https://www.weather.gov/phi/rssfeed",
+      "checked": "2026-10-20"
+    }
+  ]
+}
