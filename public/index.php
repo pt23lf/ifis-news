@@ -747,6 +747,20 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
 }
 /* The icon popup and the filtered feed below the map replace the redundant bottom-left map list. */
 .globe-view #globeInfo{display:none!important}
+
+/* The settings legend is anchored to the map's lower right corner. */
+.globe-view .map-legend-shell{top:auto!important;bottom:12px!important;right:12px!important;z-index:18}
+.globe-view .map-legend-shell>.globe-legend{position:relative}
+.globe-view .map-legend-shell .map-legend-content{max-height:min(58vh,420px);overflow-y:auto;overscroll-behavior:contain}
+.globe-view .map-legend-shell>.map-projection-header-control{top:10px}
+.globe-view .map-time-menu{position:absolute;right:97px;top:10px;z-index:26}
+.globe-view .map-time-menu-toggle{display:flex;align-items:center;justify-content:center;width:34px;height:34px;padding:4px;border:0;background:transparent;color:var(--text);cursor:pointer;border-radius:8px}
+.globe-view .map-time-menu-toggle:hover,.globe-view .map-time-menu-toggle[aria-expanded=true]{background:var(--line)}
+.globe-view .map-time-popover{position:absolute;right:-96px;bottom:calc(100% + 12px);width:min(268px,calc(100vw - 44px));box-sizing:border-box;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:14px;box-shadow:0 8px 26px #0004}
+.globe-view .map-time-popover[hidden]{display:none!important}
+.globe-view .map-time-popover #mapTimeRange{display:block;width:100%;max-width:none;margin:12px 0 5px;accent-color:#e59a35}
+.globe-view .map-time-popover .map-range-labels{display:flex;justify-content:space-between}
+.globe-view .map-time-menu:has(.map-time-popover:not([hidden])){z-index:30}
 </style></head><body>
 <header class="topbar"><div class="topbar-inner"><a class="brand" href="?view=world"><strong>IFIS</strong></a><nav class="topnav" aria-label="Bereiche"><a href="?view=ifis&amp;map=0" class="<?= $view==='ifis'?'active':'' ?>" data-subtitle-de="Nachrichten mit Veränderungspotenzial" data-subtitle-en="News with potential for change">Potenzial</a><button class="globe-toggle" id="globeToggle" type="button" aria-pressed="false" data-subtitle-de="Nachrichten geografisch entdecken" data-subtitle-en="Explore news geographically">Karte</button><a href="?view=world&amp;map=0" class="<?= $view==='world'?'active':'' ?>" data-subtitle-de="Nachrichten aus aller Welt" data-subtitle-en="News from around the world">Weltlage</a></nav><button type="button" id="gridToggle" class="grid-toggle" title="Spaltenzahl ändern" aria-label="Spaltenzahl ändern"><svg class="grid-toggle-symbol" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="2.5" y="13.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="13.5" width="8" height="8" rx="1.3"/></svg><span id="gridCount">1</span></button><div class="top-actions"><button type="button" id="mobileSearchToggle" class="mobile-search-toggle" aria-label="Suche öffnen" aria-expanded="false" title="Nachrichten suchen"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg></button><input class="search" id="search" type="search" placeholder="Nachrichten durchsuchen …" aria-label="Nachrichten durchsuchen"></div></div></header>
 <div id="savedShareOverlay" class="news-share-overlay" hidden><div class="news-share-dialog" role="dialog" aria-modal="true" aria-labelledby="savedShareHeading"><div class="news-share-header"><strong id="savedShareHeading">Gemerktliste teilen</strong><button id="savedShareClose" type="button" aria-label="Schließen">×</button></div><p>Die gemerkten Artikel als unveränderliche Sammlung teilen.</p><div class="news-share-grid"><button id="savedShareCopy" type="button">Link kopieren</button><button id="savedShareSystem" type="button">Teilen …</button><button id="savedShareEmail" type="button">E-Mail</button><button id="savedShareWhatsapp" type="button">WhatsApp</button></div><small id="savedShareFeedback" role="status"></small></div></div><div class="layout">
@@ -756,13 +770,9 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
  <span><strong><?= $lastImportCount===null?'–':number_format($lastImportCount,0,',','.') ?></strong> neu beim letzten Import</span>
  <span>Letzter Import: <strong><?=esc($lastImportShown)?></strong><?= $lastImportShown!=='–'?' Uhr':'' ?></span>
  </div>
-<div class="globe-view" id="globeView"><div id="newsGlobe"></div><svg id="globeConnector" class="globe-connector" aria-hidden="true"><path id="globeConnectorPath"></path><circle id="globeConnectorEnd" r="4"></circle></svg><div class="map-legend-shell"><div class="map-projection-header-control"><button id="mapProjectionToggle" type="button" class="map-projection-toggle" title="Flache Karte anzeigen" aria-label="Flache Karte anzeigen" aria-pressed="false"><span class="projection-symbol projection-symbol-map" aria-hidden="true"></span></button></div><details class="globe-legend" id="mapLegend"><summary class="globe-legend-heading">Karte einstellen</summary>
+<div class="globe-view" id="globeView"><div id="newsGlobe"></div><svg id="globeConnector" class="globe-connector" aria-hidden="true"><path id="globeConnectorPath"></path><circle id="globeConnectorEnd" r="4"></circle></svg><div class="map-legend-shell"><div class="map-time-menu"><button id="mapTimeMenuToggle" type="button" class="map-time-menu-toggle" aria-label="Zeitraum einstellen" title="Zeitraum einstellen" aria-expanded="false" aria-controls="mapTimePopover"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 6v6l4 2"></path></svg></button><div id="mapTimePopover" class="map-time-popover" hidden><div class="map-legend-section-title">Zeitraum <output id="mapTimeValue" for="mapTimeRange">24 h</output></div><input id="mapTimeRange" type="range" min="0.5" max="48" step="0.5" value="24" aria-label="Nachrichten der letzten Stunden"><div class="map-range-labels"><span>30 Min.</span><span>48 Std.</span></div></div></div><div class="map-projection-header-control"><button id="mapProjectionToggle" type="button" class="map-projection-toggle" title="Flache Karte anzeigen" aria-label="Flache Karte anzeigen" aria-pressed="false"><span class="projection-symbol projection-symbol-map" aria-hidden="true"></span></button></div><details class="globe-legend" id="mapLegend"><summary class="globe-legend-heading">Karte einstellen</summary>
 <div class="map-legend-content">
- <section class="map-legend-section" aria-label="Zeitraum">
-  <div class="map-legend-section-title">Zeitraum <output id="mapTimeValue" for="mapTimeRange">24 h</output></div>
-  <input id="mapTimeRange" type="range" min="0.5" max="48" step="0.5" value="24" aria-label="Nachrichten der letzten Stunden">
-  <div class="map-range-labels"><span>30 Min.</span><span>48 Std.</span></div>
- </section>
+
  <section class="map-legend-section" aria-label="Kartenelemente">
   <div class="map-legend-section-title">Anzeigen</div>
   <label class="map-legend-check"><input id="showEventMarkers" type="checkbox" checked><span class="map-legend-swatch map-legend-event" aria-hidden="true"></span><span>Ereignisorte</span></label>
@@ -1057,6 +1067,12 @@ if(sharedSelection&&Number.isFinite(requestedHours)&&requestedHours>=.5&&request
 const seenStorageKey='ifis-news-seen-v1';
 let seenUrls=new Set();
 try{seenUrls=new Set(JSON.parse(localStorage.getItem(seenStorageKey)||'[]'))}catch(e){}
+const mapTimeMenuToggle=document.getElementById('mapTimeMenuToggle');
+const mapTimePopover=document.getElementById('mapTimePopover');
+function setMapTimeMenuOpen(open){mapTimePopover.hidden=!open;mapTimeMenuToggle.setAttribute('aria-expanded',String(open));}
+mapTimeMenuToggle.addEventListener('click',event=>{event.stopPropagation();setMapTimeMenuOpen(mapTimePopover.hidden);});
+document.addEventListener('pointerdown',event=>{if(!event.target.closest('.map-time-menu'))setMapTimeMenuOpen(false);});
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!mapTimePopover.hidden){setMapTimeMenuOpen(false);mapTimeMenuToggle.focus();}});
 const colorMode=document.getElementById('mapColorMode');
 const focusMode=document.getElementById('mapFocusMode');
 focusMode.addEventListener('change',()=>{if(map){hideFarSide();updateConnector();}});
