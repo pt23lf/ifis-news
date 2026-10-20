@@ -1207,6 +1207,11 @@ body > .dock-time-panel input[type="range"]{
 .ifis-source-hover[hidden]{display:none!important}
 .ifis-source-article-list{max-height:min(45vh,360px);overflow-y:auto;display:grid;gap:8px;margin:8px 0 12px}
 .ifis-source-article-list a{display:block}
+/* Raise verified source markers above general news pins and make tap targets reliable. */
+.globe-view #newsGlobe>.maplibregl-marker.ifis-positive-compass{z-index:25!important;pointer-events:auto!important;touch-action:manipulation}
+.globe-view #newsGlobe>.maplibregl-marker.ifis-positive-compass:hover,
+.globe-view #newsGlobe>.maplibregl-marker.ifis-positive-compass:focus-visible{z-index:26!important}
+.ifis-source-hover{z-index:10040!important}
 /* Source submission as an accessible overlay; standalone page remains available. */
 #sourceSuggestOverlay[hidden]{display:none!important}
 #sourceSuggestOverlay{position:fixed;inset:0;z-index:99999;background:rgba(8,16,24,.72);display:grid;place-items:center;padding:12px}
@@ -2759,11 +2764,14 @@ function loadLinkedInSources(){
    };
    const showTip=()=>{tip.hidden=false;positionTip();};
    const hideTip=()=>{tip.hidden=true;};
+   el.addEventListener('pointerenter',showTip);
    el.addEventListener('mouseenter',showTip);
+   el.addEventListener('pointerleave',hideTip);
    el.addEventListener('mouseleave',hideTip);
    el.addEventListener('focus',showTip);
    el.addEventListener('blur',hideTip);
    map.on('movestart',hideTip);
+   el.addEventListener('pointerdown',e=>e.stopPropagation());
    el.addEventListener('click',()=>{
     tip.hidden=true;
     const root=document.createElement('div');root.className='ifis-activity-source-list';
@@ -2795,7 +2803,7 @@ function loadLinkedInSources(){
     popup.getElement()._ifisPopup=popup;
     focusMapMarker(item.lon,item.lat,popup.getElement());
    });
-   linkedinMarkers.push(new maplibregl.Marker({element:el,anchor:'center'}).setLngLat([item.lon,item.lat]).addTo(map));
+   linkedinMarkers.push(new maplibregl.Marker({element:el,anchor:'center',draggable:false}).setLngLat([item.lon,item.lat]).addTo(map));
   }
   refreshLinkedInVisibility();
  }).catch(()=>{});
