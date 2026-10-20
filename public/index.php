@@ -2701,7 +2701,6 @@ function updateGdeltLayer(){
   });
  }
 }
-map.on('style.load',()=>{updateGdeltLayer()});
 function loadGdeltActivity(){
  if(!map)return;
  const serial=++gdeltRequestSerial;
@@ -2829,7 +2828,7 @@ function openNewsMap(scrollToMap=true){panel.classList.add('open');btn.classList
 map.getContainer().style.backgroundColor=isDarkMap()?'#111720':'#ffffff';
 map.getCanvas().addEventListener('pointerdown',()=>{rotationHoldUntil=performance.now()+4500});
 map.getCanvas().addEventListener('wheel',()=>{rotationHoldUntil=performance.now()+4500},{passive:true});
-map.on('dragstart',()=>{rotationHoldUntil=performance.now()+4500});map.on('load',()=>{try{map.setProjection({type:flatProjection?'mercator':'globe'});}catch(e){};addNightLayer();addSourceLinks();loadGdeltActivity();loadLinkedInSources();flightLayer=document.createElementNS('http://www.w3.org/2000/svg','g');connector.append(flightLayer);
+map.on('dragstart',()=>{rotationHoldUntil=performance.now()+4500});map.on('style.load',()=>updateGdeltLayer());map.on('load',()=>{try{map.setProjection({type:flatProjection?'mercator':'globe'});}catch(e){};addNightLayer();addSourceLinks();loadGdeltActivity();loadLinkedInSources();flightLayer=document.createElementNS('http://www.w3.org/2000/svg','g');connector.append(flightLayer);
 // The flight-line SVG belongs inside MapLibre: above tiles but BELOW marker buttons.
 map.getContainer().append(connector);updateMapReadState();map.on('move',()=>{hideFarSide();refreshExternalMarkerFacing();updateConnector()});map.on('render',refreshExternalMarkerFacing);map.on('resize',()=>{refreshExternalMarkerFacing();updateConnector();renderFlightArcs();});hideFarSide();if(!groups.size)info.textContent='Noch keine eindeutigen Ereignisorte erkannt.';restoreSharedCollection();});}
 btn.addEventListener('click',()=>openNewsMap(true));
