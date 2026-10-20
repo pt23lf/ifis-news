@@ -1174,8 +1174,16 @@ body > .dock-time-panel input[type="range"]{
 .filter-toolbar [data-open-filter="topics"],
 .filter-toolbar [data-open-filter="quality"],
 .filter-toolbar #statsToggle{display:none!important}
+
+/* Source submission as an accessible overlay; standalone page remains available. */
+#sourceSuggestOverlay[hidden]{display:none!important}
+#sourceSuggestOverlay{position:fixed;inset:0;z-index:99999;background:rgba(8,16,24,.72);display:grid;place-items:center;padding:12px}
+#sourceSuggestDialog{position:relative;width:min(740px,100%);height:min(790px,calc(100dvh - 24px));background:var(--bg,#fff);color:var(--text,#222);border-radius:14px;overflow:hidden;box-shadow:0 18px 65px #0007}
+#sourceSuggestFrame{width:100%;height:100%;border:0;background:white}
+#sourceSuggestClose{position:absolute;z-index:1;right:12px;top:11px;border-radius:50%;width:36px;height:36px;cursor:pointer;background:var(--bg,#fff);color:var(--text,#222);border:1px solid #aaa;font-size:24px}
+body.source-suggest-open{overflow:hidden}
 </style></head><body>
-<header class="topbar"><div class="topbar-inner"><a class="brand" href="?view=world"><strong>IFIS</strong></a><nav class="topnav" aria-label="Bereiche"><a href="?view=world&amp;map=0#stories" class="<?= $view==='world'?'active':'' ?>" data-subtitle-de="Nachrichten als Linkübersicht" data-subtitle-en="News links in grid view">Links</a><button class="globe-toggle" id="globeToggle" type="button" aria-pressed="false" aria-label="Karte öffnen" title="Karte öffnen" data-subtitle-de="Nachrichten geografisch entdecken" data-subtitle-en="Explore news geographically">Karte</button><a href="quelle-vorschlagen.php" title="Konstruktive Quelle zur Prüfung vorschlagen">Quelle melden</a></nav><button type="button" id="gridToggle" class="grid-toggle" title="Spaltenzahl ändern" aria-label="Spaltenzahl ändern"><svg class="grid-toggle-symbol" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="2.5" y="13.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="13.5" width="8" height="8" rx="1.3"/></svg><span id="gridCount">1</span></button><div class="top-actions"><button type="button" id="mobileSearchToggle" class="mobile-search-toggle" aria-label="Suche öffnen" aria-expanded="false" title="Nachrichten suchen"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg></button><input class="search" id="search" type="search" placeholder="Nachrichten durchsuchen …" aria-label="Nachrichten durchsuchen"></div></div></header>
+<header class="topbar"><div class="topbar-inner"><a class="brand" href="?view=world"><strong>IFIS</strong></a><nav class="topnav" aria-label="Bereiche"><a href="?view=world&amp;map=0#stories" class="<?= $view==='world'?'active':'' ?>" data-subtitle-de="Nachrichten als Linkübersicht" data-subtitle-en="News links in grid view">Links</a><button class="globe-toggle" id="globeToggle" type="button" aria-pressed="false" aria-label="Karte öffnen" title="Karte öffnen" data-subtitle-de="Nachrichten geografisch entdecken" data-subtitle-en="Explore news geographically">Karte</button><a href="quelle-vorschlagen.php" id="sourceSuggestTrigger" aria-haspopup="dialog" title="Konstruktive Quelle zur Prüfung vorschlagen">Quelle melden</a></nav><button type="button" id="gridToggle" class="grid-toggle" title="Spaltenzahl ändern" aria-label="Spaltenzahl ändern"><svg class="grid-toggle-symbol" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="2.5" y="13.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="13.5" width="8" height="8" rx="1.3"/></svg><span id="gridCount">1</span></button><div class="top-actions"><button type="button" id="mobileSearchToggle" class="mobile-search-toggle" aria-label="Suche öffnen" aria-expanded="false" title="Nachrichten suchen"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg></button><input class="search" id="search" type="search" placeholder="Nachrichten durchsuchen …" aria-label="Nachrichten durchsuchen"></div></div></header>
 <div id="savedShareOverlay" class="news-share-overlay" hidden><div class="news-share-dialog" role="dialog" aria-modal="true" aria-labelledby="savedShareHeading"><div class="news-share-header"><strong id="savedShareHeading">Gemerktliste teilen</strong><button id="savedShareClose" type="button" aria-label="Schließen">×</button></div><p>Die gemerkten Artikel als unveränderliche Sammlung teilen.</p><div class="news-share-grid"><button id="savedShareCopy" type="button">Link kopieren</button><button id="savedShareSystem" type="button">Teilen …</button><button id="savedShareEmail" type="button">E-Mail</button><button id="savedShareWhatsapp" type="button">WhatsApp</button></div><small id="savedShareFeedback" role="status"></small></div></div><div class="layout">
 
 <main id="main"><div class="news-import-strip" role="status" aria-label="Nachrichtenbestand und Aktualisierung">
@@ -2771,4 +2779,36 @@ requestAnimationFrame(updateHeaderUnderline);
   if(el)count('saved_view',1500);
  });
 })();
-</script></body></html>
+</script><div id="sourceSuggestOverlay" hidden><section id="sourceSuggestDialog" role="dialog" aria-modal="true" aria-label="Quelle melden" tabindex="-1"><button id="sourceSuggestClose" type="button" aria-label="Overlay schließen">×</button><iframe id="sourceSuggestFrame" title="Quelle zur Prüfung einreichen" loading="lazy" data-src="quelle-vorschlagen.php"></iframe></section></div>
+<script>
+(()=>{
+ const trigger=document.getElementById('sourceSuggestTrigger');
+ const overlay=document.getElementById('sourceSuggestOverlay');
+ const dialog=document.getElementById('sourceSuggestDialog');
+ const close=document.getElementById('sourceSuggestClose');
+ const frame=document.getElementById('sourceSuggestFrame');
+ if(!trigger||!overlay||!dialog||!close||!frame)return;
+ let previousFocus=null;
+ const hide=()=>{
+  overlay.hidden=true;
+  document.body.classList.remove('source-suggest-open');
+  document.removeEventListener('keydown',keys);
+  (previousFocus||trigger).focus();
+ };
+ const keys=e=>{
+  if(e.key==='Escape'){e.preventDefault();hide();}
+  if(e.key==='Tab'&&document.activeElement===close&&e.shiftKey){e.preventDefault();frame.focus();}
+ };
+ trigger.addEventListener('click',e=>{
+  if(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey)return;
+  e.preventDefault();
+  previousFocus=document.activeElement;
+  if(!frame.getAttribute('src'))frame.src=frame.dataset.src;
+  overlay.hidden=false;document.body.classList.add('source-suggest-open');
+  close.focus();document.addEventListener('keydown',keys);
+ });
+ close.addEventListener('click',hide);
+ overlay.addEventListener('click',e=>{if(e.target===overlay)hide()});
+})();
+</script>
+</body></html>
