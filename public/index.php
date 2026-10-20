@@ -1193,14 +1193,14 @@ body > .dock-time-panel input[type="range"]{
 .story .story-menu>.save.saved{color:#d49a20}
 /* Small monochrome saved-star; hide redundant hidden-items dock entry. */
 .filter-toolbar [data-open-filter="hidden"]{display:none!important}
-.story .story-menu>.save{font-size:19px;line-height:1;width:29px;height:29px;color:var(--text)!important}
+.story .story-menu>.save{font-size:16px;line-height:1;width:26px;height:26px;color:var(--text)!important}
 .story .story-menu>.save.saved{color:var(--text)!important}
 .story .story-menu>.save:hover,.story .story-menu>.save:focus-visible{color:var(--text)!important}
 /* Save star stays bottom-right, aligned with the location flags row. */
 #stories .story{position:relative}
 #stories .story .story-menu{position:absolute!important;right:0;bottom:15px;top:auto;grid-column:auto!important;grid-row:auto!important;justify-self:auto!important;align-self:auto!important}
 #stories .story>div:not(.story-menu){min-width:0}
-#stories .story .story-menu>.save{width:29px;height:29px}
+#stories .story .story-menu>.save{width:26px;height:26px}
 /* Source submission as an accessible overlay; standalone page remains available. */
 #sourceSuggestOverlay[hidden]{display:none!important}
 #sourceSuggestOverlay{position:fixed;inset:0;z-index:99999;background:rgba(8,16,24,.72);display:grid;place-items:center;padding:12px}
@@ -2734,14 +2734,14 @@ function loadLinkedInSources(){
    const el=document.createElement('button');el.type='button';el.className='ifis-activity-pin';
    el.classList.add('ifis-positive-compass');
    el.innerHTML='<span aria-hidden="true" class="positive-compass-needle"></span>';
-   const kind={feed:'RSS/Atom',website:'Webseite',linkedin:'LinkedIn',network:'Netzwerk',post:'LinkedIn',profile:'LinkedIn'}[item.type]||'Quelle';
+   const kind={feed:'RSS/Atom',website:'Webseite',linkedin:'LinkedIn',network:'Netzwerk',ifis:'IFIS',post:'LinkedIn',profile:'LinkedIn'}[item.type]||'Quelle';
    el.title='Freigegebene '+kind+'-Quelle: '+item.title;
    el.setAttribute('aria-label',el.title);
    el.addEventListener('click',()=>{
     const root=document.createElement('div');root.className='ifis-activity-source-list';
     const title=document.createElement('strong');title.textContent=item.title+' · '+kind;root.append(title);
     const d=document.createElement('p');d.textContent=item.description;root.append(d);
-    const a=document.createElement('a');a.href=item.url;a.target='_blank';a.rel='noopener noreferrer';a.textContent='Quelle öffnen ↗';root.append(a);
+    const a=document.createElement('a');a.href=item.url;a.target='_blank';a.rel='noopener noreferrer';a.textContent=item.type==='ifis'?'IFIS-Artikel öffnen ↗':'Quelle öffnen ↗';root.append(a);
     const popup=new maplibregl.Popup({maxWidth:'310px',anchor:'top',offset:18}).setLngLat([item.lon,item.lat]).setDOMContent(root).addTo(map);
     popup.getElement()._ifisPopup=popup;
     focusMapMarker(item.lon,item.lat,popup.getElement());
