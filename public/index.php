@@ -907,6 +907,49 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
 .globe-view .map-legend-shell .map-legend-content{
  overscroll-behavior:contain;min-height:0!important;
 }
+
+/* Stable three equal icon slots in both disclosure states. */
+.globe-view .map-legend-shell,
+.globe-view .map-legend-shell:has(.globe-legend[open]){
+ width:144px!important;min-width:144px!important;height:56px!important;
+ padding:5px!important;display:flex!important;gap:0!important;align-items:center!important;
+ justify-content:flex-start!important;overflow:visible!important;
+}
+.globe-view .map-legend-shell .map-time-menu,
+.globe-view .map-legend-shell .map-time-menu-toggle{
+ flex:0 0 44px!important;width:44px!important;height:44px!important;
+ margin:0!important;padding:0!important;display:grid!important;place-items:center!important;
+}
+.globe-view .map-legend-shell>.globe-legend,
+.globe-view .map-legend-shell>.globe-legend[open]{
+ position:static!important;flex:0 0 88px!important;width:88px!important;
+ min-width:88px!important;max-width:88px!important;height:44px!important;
+ margin:0!important;padding:0!important;overflow:visible!important;
+ border:0!important;box-shadow:none!important;background:none!important;
+}
+.globe-view .map-legend-shell .globe-legend-heading,
+.globe-view .map-legend-shell .globe-legend[open] .globe-legend-heading{
+ display:grid!important;grid-template-columns:44px 44px!important;place-items:center!important;
+ gap:0!important;justify-content:start!important;align-items:center!important;
+ width:88px!important;min-width:88px!important;height:44px!important;
+ padding:0!important;margin:0!important;overflow:visible!important;
+}
+.globe-view .map-legend-shell .globe-legend-heading svg{grid-column:1!important;margin:0!important}
+.globe-view .map-legend-shell .globe-legend-heading::after,
+.globe-view .map-legend-shell .globe-legend[open] .globe-legend-heading::after{
+ grid-column:2!important;justify-self:center!important;align-self:center!important;
+ margin:0!important;position:static!important;content:''!important;display:block!important;
+ border-right:2px solid currentColor!important;border-bottom:2px solid currentColor!important;
+ width:8px!important;height:8px!important;flex:none!important;
+ transform:rotate(-135deg)!important;
+}
+.globe-view .map-legend-shell .globe-legend[open] .globe-legend-heading::after{
+ transform:rotate(45deg)!important;
+}
+.globe-view .map-legend-shell .globe-legend[open]>.map-legend-content{
+ display:block!important;position:absolute!important;left:0!important;
+ bottom:calc(100% + 8px)!important;
+}
 </style></head><body>
 <header class="topbar"><div class="topbar-inner"><a class="brand" href="?view=world"><strong>IFIS</strong></a><nav class="topnav" aria-label="Bereiche"><a href="?view=ifis&amp;map=0" class="<?= $view==='ifis'?'active':'' ?>" data-subtitle-de="Nachrichten mit Veränderungspotenzial" data-subtitle-en="News with potential for change">Potenzial</a><button class="globe-toggle" id="globeToggle" type="button" aria-pressed="false" data-subtitle-de="Nachrichten geografisch entdecken" data-subtitle-en="Explore news geographically">Karte</button><a href="?view=world&amp;map=0" class="<?= $view==='world'?'active':'' ?>" data-subtitle-de="Nachrichten aus aller Welt" data-subtitle-en="News from around the world">Weltlage</a></nav><button type="button" id="gridToggle" class="grid-toggle" title="Spaltenzahl ändern" aria-label="Spaltenzahl ändern"><svg class="grid-toggle-symbol" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="2.5" y="13.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="13.5" width="8" height="8" rx="1.3"/></svg><span id="gridCount">1</span></button><div class="top-actions"><button type="button" id="mobileSearchToggle" class="mobile-search-toggle" aria-label="Suche öffnen" aria-expanded="false" title="Nachrichten suchen"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg></button><input class="search" id="search" type="search" placeholder="Nachrichten durchsuchen …" aria-label="Nachrichten durchsuchen"></div></div></header>
 <div id="savedShareOverlay" class="news-share-overlay" hidden><div class="news-share-dialog" role="dialog" aria-modal="true" aria-labelledby="savedShareHeading"><div class="news-share-header"><strong id="savedShareHeading">Gemerktliste teilen</strong><button id="savedShareClose" type="button" aria-label="Schließen">×</button></div><p>Die gemerkten Artikel als unveränderliche Sammlung teilen.</p><div class="news-share-grid"><button id="savedShareCopy" type="button">Link kopieren</button><button id="savedShareSystem" type="button">Teilen …</button><button id="savedShareEmail" type="button">E-Mail</button><button id="savedShareWhatsapp" type="button">WhatsApp</button></div><small id="savedShareFeedback" role="status"></small></div></div><div class="layout">
@@ -1600,6 +1643,15 @@ function fitMapLegendPanel(){
  const available=Math.max(90,Math.floor(shell.getBoundingClientRect().top-globe.getBoundingClientRect().top-20));
  panel.style.setProperty('max-height',available+'px','important');
 }
+// Explicitly handle the summary toggle so a mobile tap cannot be consumed
+// by the map's pointer handlers after native <details> changes its layout.
+const legendSummary=mapLegend.querySelector('summary');
+legendSummary.addEventListener('click',event=>{
+ event.preventDefault();
+ event.stopPropagation();
+ mapLegend.open=!mapLegend.open;
+ fitMapLegendPanel();
+});
 mapLegend.addEventListener('toggle',fitMapLegendPanel);
 window.addEventListener('resize',fitMapLegendPanel);
 requestAnimationFrame(fitMapLegendPanel);
@@ -1647,7 +1699,12 @@ function applyMapStyle(){
 mapBasemap.addEventListener('change',()=>{rememberMapPreference('type',mapBasemap.value);applyMapStyle()});
 mapBrightness.addEventListener('change',()=>{rememberMapPreference('brightness',mapBrightness.value);applyMapStyle()});
 if(prefersDark.addEventListener)prefersDark.addEventListener('change',()=>{if(mapBrightness.value==='auto')applyMapStyle()});
-document.addEventListener('pointerdown',event=>{if(mapLegend.open&&!mapLegend.contains(event.target))mapLegend.open=false});
+document.addEventListener('pointerdown',event=>{
+ if(!mapLegend.open)return;
+ const target=event.target;
+ if(target instanceof Node&&document.querySelector('.map-legend-shell').contains(target))return;
+ mapLegend.open=false;
+});
 document.addEventListener('keydown',event=>{if(event.key==='Escape')mapLegend.open=false});
 let rotationLast=0,rotationHoldUntil=0;
 function rotateMap(timestamp){
