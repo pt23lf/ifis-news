@@ -16,20 +16,20 @@ $ogImage='https://news.ifis.net/share-image.php'.($shareCollectionType!==''?'?'.
 
 $items = [];
 $sourceBatches=[];
-// USGS records are original factual observations, not republished news.
+// Only first-party IFIS article records are eligible for the primary article feed.
 
 $articleTotal=null;
 $dbPath = dirname(__DIR__) . '/storage/news.sqlite';
 if (is_file($dbPath) && extension_loaded('pdo_sqlite')) {
  try {
   $db = new PDO('sqlite:' . $dbPath);
-  $articleTotal=(int)$db->query("SELECT COUNT(*) FROM articles WHERE source IN ('IFIS · Artikel','USGS · Erdbeben')")->fetchColumn();
-  $query = $db->prepare("SELECT title,url,source,published_at,summary,image_url FROM articles WHERE section=:section AND source IN ('IFIS · Artikel','USGS · Erdbeben') ORDER BY published_at DESC LIMIT 400");
+  $articleTotal=(int)$db->query("SELECT COUNT(*) FROM articles WHERE source IN ('IFIS · Artikel')")->fetchColumn();
+  $query = $db->prepare("SELECT title,url,source,published_at,summary,image_url FROM articles WHERE section=:section AND source IN ('IFIS · Artikel') ORDER BY published_at DESC LIMIT 400");
   $query->execute(['section'=>$view]);
   $items = $query->fetchAll(PDO::FETCH_ASSOC);
   // Fail closed for historical rows: never publish government-feed headline, summary or images.
   foreach($items as &$record){
-   if(!in_array(($record['source']??''),['IFIS · Artikel','USGS · Erdbeben'],true)){
+   if(!in_array(($record['source']??''),['IFIS · Artikel'],true)){
     $record['title']=($record['source']??'Quelle').' · Originalmeldung';
     $record['summary']='';$record['image_url']='';
    }
@@ -51,7 +51,7 @@ if (is_file($dbPath) && extension_loaded('pdo_sqlite')) {
    usort($items,static fn($a,$b)=>strcmp((string)$b['published_at'],(string)$a['published_at']));
   }
   $cols=$db->query('PRAGMA table_info(articles)')->fetchAll(PDO::FETCH_ASSOC);
-  $recent=$db->prepare("SELECT source,published_at,COUNT(*) AS count FROM articles WHERE section=:section AND source IN ('IFIS · Artikel','USGS · Erdbeben') AND published_at >= :since AND published_at <= :until GROUP BY source, strftime('%Y-%m-%d %H:',published_at), CAST(CAST(strftime('%M',published_at) AS INTEGER)/30 AS INTEGER) ORDER BY published_at DESC");
+  $recent=$db->prepare("SELECT source,published_at,COUNT(*) AS count FROM articles WHERE section=:section AND source IN ('IFIS · Artikel') AND published_at >= :since AND published_at <= :until GROUP BY source, strftime('%Y-%m-%d %H:',published_at), CAST(CAST(strftime('%M',published_at) AS INTEGER)/30 AS INTEGER) ORDER BY published_at DESC");
   $recent->execute(['section'=>$view,'since'=>gmdate('Y-m-d H:i:s',time()-172800),'until'=>gmdate('Y-m-d H:i:s')]);
   $sourceBatches=$recent->fetchAll(PDO::FETCH_ASSOC);
 
@@ -1150,6 +1150,8 @@ body > .dock-time-panel input[type="range"]{
   <div class="map-legend-section-title">Anzeigen</div>
   <label class="map-legend-check"><input id="showEventMarkers" type="checkbox" checked><span class="map-legend-swatch map-legend-event" aria-hidden="true"></span><span>Ereignisorte</span></label>
   <label class="map-legend-check"><input id="showSourceMarkers" type="checkbox" checked><span class="map-legend-swatch map-legend-source" aria-hidden="true"></span><span>Quellenorte</span></label>
+  <label class="map-legend-check"><input id="showGdeltData" type="checkbox" checked><span class="map-legend-swatch" style="background:#d9822b" aria-hidden="true"></span><span>GDELT-Aktivität</span></label>
+  <label class="map-legend-check"><input id="showLinkedInData" type="checkbox" checked><span class="map-legend-swatch" style="background:#278963" aria-hidden="true"></span><span>LinkedIn-Quellen (freigegeben)</span></label>
   <label class="map-legend-check"><input id="showSourceLinks" type="checkbox"><span class="map-legend-swatch map-legend-connection" aria-hidden="true"></span><span>Verbindungslinien</span></label>
   <label class="map-legend-check"><input id="nightToggle" type="checkbox"><span class="map-legend-swatch map-legend-night" aria-hidden="true"></span><span>Tag/Nacht</span></label>
  </section>
@@ -2386,7 +2388,7 @@ function refreshGdeltActivity(){
   const dominant=cooperation+conflict<1?'unclassified':cooperation>conflict?'cooperation':conflict>cooperation?'conflict':'mixed';
   button.dataset.activityClass=dominant;
   button.style.backgroundColor=dominant==='cooperation'?'#268b68':dominant==='conflict'?'#d9822b':dominant==='mixed'?'#a78c68':'#87929b';
-  button.style.visibility=n>0?'visible':'hidden';
+  button.style.visibility=n>0&&document.getElementById('showGdeltData').checked?'visible':'hidden';
   button.style.pointerEvents=n>0?'auto':'none';
   button.setAttribute('aria-label',n+' GDELT-Beobachtungen im Zeitraum');
   button.title=n+' GDELT-Beobachtungen';
@@ -2402,7 +2404,7 @@ function gdeltOffice(domain){
 function showGdeltConnections(point){
  if(!map)return;
  const features=[],offices=[],used=new Set();
- for(const item of gdeltVisible(point).links){
+ for(const item of (document.getElementById('showGdeltData').checked?gdeltVisible(point).links:[])){
   const office=gdeltOffice(item.domain),host=String(item.domain||'').toLowerCase();
   if(!office||used.has(host))continue;
   used.add(host);
@@ -2480,11 +2482,47 @@ function loadGdeltActivity(){
   refreshGdeltActivity();
  }).catch(()=>{});
 }
+/* Only moderator-approved, explicitly geolocated voluntary LinkedIn submissions.
+   Never fetch or crawl LinkedIn. Coordinates must be manually verified in DB. */
+let linkedinMarkers=[];
+function refreshLinkedInVisibility(){
+ const show=document.getElementById('showLinkedInData')?.checked;
+ for(const m of linkedinMarkers)m.getElement().style.visibility=show?'visible':'hidden';
+}
+function loadLinkedInSources(){
+ fetch('linkedin-sources-data.php',{credentials:'omit'}).then(r=>r.ok?r.json():Promise.reject()).then(data=>{
+  linkedinMarkers.forEach(x=>x.remove());linkedinMarkers=[];
+  for(const item of data.sources||[]){
+   if(!Number.isFinite(item.lat)||!Number.isFinite(item.lon))continue;
+   const el=document.createElement('button');el.type='button';el.className='ifis-activity-pin';
+   el.style.cssText='background:#278963;border:2px solid #d8ffde;width:15px;height:15px';
+   el.title='Freigegebene LinkedIn-Quelle: '+item.title;
+   el.setAttribute('aria-label',el.title);
+   el.addEventListener('click',()=>{
+    const root=document.createElement('div');root.className='ifis-activity-source-list';
+    const title=document.createElement('strong');title.textContent=item.title;root.append(title);
+    const d=document.createElement('p');d.textContent=item.description;root.append(d);
+    const a=document.createElement('a');a.href=item.url;a.target='_blank';a.rel='noopener noreferrer';a.textContent='Original auf LinkedIn öffnen ↗';root.append(a);
+    new maplibregl.Popup({maxWidth:'310px'}).setLngLat([item.lon,item.lat]).setDOMContent(root).addTo(map);
+   });
+   linkedinMarkers.push(new maplibregl.Marker({element:el,anchor:'center'}).setLngLat([item.lon,item.lat]).addTo(map));
+  }
+  refreshLinkedInVisibility();
+ }).catch(()=>{});
+}
+for(const [id,cb] of [['showGdeltData',refreshGdeltActivity],['showLinkedInData',refreshLinkedInVisibility]]){
+ const el=document.getElementById(id);if(!el)continue;
+ try{const saved=localStorage.getItem('ifis-news-'+id);if(saved!==null)el.checked=saved==='true';}catch(e){}
+ el.addEventListener('change',()=>{
+  try{localStorage.setItem('ifis-news-'+id,String(el.checked));}catch(e){}
+  cb();
+ });
+}
 function openNewsMap(scrollToMap=true){panel.classList.add('open');btn.classList.add('active');btn.setAttribute('aria-pressed','true');updateHeaderUnderline();requestAnimationFrame(updateHeaderUnderline);if(scrollToMap)panel.scrollIntoView({behavior:'smooth',block:'start'});if(map){map.resize();return;}if(!window.maplibregl){info.textContent='Die Kartenbibliothek konnte nicht geladen werden.';return;}map=new maplibregl.Map({container:'newsGlobe',style:selectedMapStyle(),center:[10,20],zoom:1.15,attributionControl:true});
 map.getContainer().style.backgroundColor=isDarkMap()?'#111720':'#ffffff';
 map.getCanvas().addEventListener('pointerdown',()=>{rotationHoldUntil=performance.now()+4500});
 map.getCanvas().addEventListener('wheel',()=>{rotationHoldUntil=performance.now()+4500},{passive:true});
-map.on('dragstart',()=>{rotationHoldUntil=performance.now()+4500});map.on('load',()=>{try{map.setProjection({type:flatProjection?'mercator':'globe'});}catch(e){};addNightLayer();addSourceLinks();loadGdeltActivity();flightLayer=document.createElementNS('http://www.w3.org/2000/svg','g');connector.append(flightLayer);
+map.on('dragstart',()=>{rotationHoldUntil=performance.now()+4500});map.on('load',()=>{try{map.setProjection({type:flatProjection?'mercator':'globe'});}catch(e){};addNightLayer();addSourceLinks();loadGdeltActivity();loadLinkedInSources();flightLayer=document.createElementNS('http://www.w3.org/2000/svg','g');connector.append(flightLayer);
 // The flight-line SVG belongs inside MapLibre: above tiles but BELOW marker buttons.
 map.getContainer().append(connector);updateMapReadState();map.on('move',()=>{hideFarSide();updateConnector()});map.on('resize',()=>{updateConnector();renderFlightArcs();});hideFarSide();if(!groups.size)info.textContent='Noch keine eindeutigen Ereignisorte erkannt.';restoreSharedCollection();});}
 btn.addEventListener('click',()=>openNewsMap(true));
