@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "description": "Curated approximate editorial offices. An office coordinate is not the reporting location. Never infer geographical origin from TLD alone.",
+  "entries": [
+    {
+      "domains": [
+        "bbc.com",
+        "bbc.co.uk"
+      ],
+      "name": "BBC",
+      "city": "London",
+      "coordinates": [
+        -0.143,
+        51.518
+      ],
+      "status": "manual_review",
+      "kind": "editorial_office"
+    },
+    {
+      "domains": [
+        "theguardian.com"
+      ],
+      "name": "The Guardian",
+      "city": "London",
+      "coordinates": [
+        -0.122,
+        51.534
+      ],
+      "status": "manual_review",
+      "kind": "editorial_office"
+    },
+    {
+      "domains": [
+        "dw.com"
+      ],
+      "name": "Deutsche Welle",
+      "city": "Bonn",
+      "coordinates": [
+        7.098,
+        50.737
+      ],
+      "status": "manual_review",
+      "kind": "editorial_office"
+    },
+    {
+      "domains": [
+        "spiegel.de"
+      ],
+      "name": "DER SPIEGEL",
+      "city": "Hamburg",
+      "coordinates": [
+        10.001,
+        53.55
+      ],
+      "status": "manual_review",
+      "kind": "editorial_office"
+    },
+    {
+      "domains": [
+        "aljazeera.com"
+      ],
+      "name": "Al Jazeera",
+      "city": "Doha",
+      "coordinates": [
+        51.531,
+        25.285
+      ],
+      "status": "manual_review",
+      "kind": "editorial_office"
+    }
+  ]
+}
