@@ -27,9 +27,25 @@ if(!preg_match('~(?:https?://)?data\\.gdeltproject\\.org/gdeltv2/(\\d{14})\\.exp
  fwrite(STDERR,"GDELT index was received but did not contain an event export URL. Check GDELT pointer format.\\n");exit(1);
 }
 // Never use arbitrary locations supplied by the index, always build the official HTTPS endpoint.
-$feed='https://data.gdeltproject.org/gdeltv2/'.$m[1].'.export.CSV.zip';
-$archive=getGdelt($feed,16000000);
-if(!$archive){fwrite(STDERR,"GDELT event archive download failed; previous data preserved\\n");exit(1);}
+// The GDELT pointer can lead the actual published archive (404 / CDN delay).
+// Try the referenced quarter-hour, then up to 3 hours of older official exports.
+// Only use fixed-path HTTPS requests; never follow arbitrary source URLs from the index.
+$archive='';
+$selected='';
+$pointer=DateTimeImmutable::createFromFormat('!YmdHis',$m[1],new DateTimeZone('UTC'));
+if(!$pointer){fwrite(STDERR,"GDELT pointer timestamp malformed\\n");exit(1);}
+for($attempt=0;$attempt<=12;$attempt++){
+ $stamp=$pointer->sub(new DateInterval('PT'.($attempt*15).'M'))->format('YmdHis');
+ $candidate='https://data.gdeltproject.org/gdeltv2/'.$stamp.'.export.CSV.zip';
+ // Quiet individual 404s while seeking the latest actually published archive.
+ $ctx=stream_context_create(['http'=>['timeout'=>12,'follow_location'=>0,
+   'user_agent'=>'IFIS-News/1.0 (+https://news.ifis.net)']]);
+ $bytes=@file_get_contents($candidate,false,$ctx,0,16000001);
+ if(!is_string($bytes)||strlen($bytes)>16000000||substr($bytes,0,2)!=='PK')continue;
+ $archive=$bytes;$selected=$stamp;break;
+}
+if($archive===''){fwrite(STDERR,"No GDELT event archive accessible within 3 hours before index pointer; keeping old data\\n");exit(1);}
+echo "GDELT export selected: ".$selected."\\n";
 $tmp=tempnam(sys_get_temp_dir(),'ifis-gdelt-');
 if(!$tmp)exit(1);
 file_put_contents($tmp,$archive);
