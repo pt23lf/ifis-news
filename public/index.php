@@ -1212,6 +1212,9 @@ body > .dock-time-panel input[type="range"]{
 .globe-view #newsGlobe>.maplibregl-marker.ifis-positive-compass:hover,
 .globe-view #newsGlobe>.maplibregl-marker.ifis-positive-compass:focus-visible{z-index:26!important}
 .ifis-source-hover{z-index:10040!important}
+/* Mobile source icons have a larger invisible touch target without enlarging the symbol. */
+.globe-view #newsGlobe>.maplibregl-marker.ifis-positive-compass{overflow:visible!important;isolation:isolate}
+.globe-view #newsGlobe>.maplibregl-marker.ifis-positive-compass::before{content:"";position:absolute;inset:-13px;border-radius:50%;background:transparent;z-index:-1}
 /* Source submission as an accessible overlay; standalone page remains available. */
 #sourceSuggestOverlay[hidden]{display:none!important}
 #sourceSuggestOverlay{position:fixed;inset:0;z-index:99999;background:rgba(8,16,24,.72);display:grid;place-items:center;padding:12px}
@@ -2769,9 +2772,12 @@ function loadLinkedInSources(){
    const hideTip=()=>{tip.hidden=true;};
    el.addEventListener('pointerenter',showTip);
    el.addEventListener('pointerleave',hideTip);
+   el.addEventListener('touchstart',hideTip,{passive:true});
    el.addEventListener('focus',showTip);
    el.addEventListener('blur',hideTip);
-   el.addEventListener('click',()=>{
+   el.addEventListener('pointerdown',e=>{e.stopPropagation();});
+   el.addEventListener('click',e=>{
+    e.preventDefault();e.stopPropagation();
     tip.hidden=true;
     const root=document.createElement('div');root.className='ifis-activity-source-list';
     const title=document.createElement('strong');title.textContent=item.title+' · '+kind;root.append(title);
