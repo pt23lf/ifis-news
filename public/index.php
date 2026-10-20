@@ -1125,6 +1125,14 @@ body > .dock-time-panel input[type="range"]{
  touch-action:pan-x!important;-webkit-user-select:none;user-select:none;
  min-height:34px!important;cursor:pointer
 }
+
+/* Activity overlays use first-source links, never copied publisher text. */
+.ifis-activity-pin{width:28px;height:28px;border:1px solid #fafafa;border-radius:50%;background:#e69b36;color:#182126;font-size:10px;font-weight:700;cursor:pointer;box-shadow:0 1px 7px #0006;display:grid;place-items:center;z-index:2}
+.ifis-activity-hover{position:fixed;z-index:10020;max-width:min(300px,calc(100vw - 16px));background:var(--bg);color:var(--text);border:1px solid var(--line);padding:10px 12px;border-radius:10px;box-shadow:0 8px 22px #0005;font-size:12px;pointer-events:none}
+.ifis-activity-hover[hidden]{display:none!important}
+.ifis-activity-source-list{font-size:12px;line-height:1.5;color:#1d2b3b;max-height:320px;overflow:auto}
+.ifis-activity-source-list p{margin:7px 0}
+.ifis-activity-links{display:grid;gap:7px;margin:10px 0}.ifis-activity-links a{overflow-wrap:anywhere}
 </style></head><body>
 <header class="topbar"><div class="topbar-inner"><a class="brand" href="?view=world"><strong>IFIS</strong></a><nav class="topnav" aria-label="Bereiche"><a href="?view=world&amp;map=0#stories" class="<?= $view==='world'?'active':'' ?>" data-subtitle-de="Nachrichten als Linkübersicht" data-subtitle-en="News links in grid view">Links</a><button class="globe-toggle" id="globeToggle" type="button" aria-pressed="false" aria-label="Karte öffnen" title="Karte öffnen" data-subtitle-de="Nachrichten geografisch entdecken" data-subtitle-en="Explore news geographically">Karte</button><a href="?view=world&amp;map=0" class="world-view-link <?= $view==='world'?'active':'' ?>" data-subtitle-de="Nachrichten aus aller Welt" data-subtitle-en="News from around the world" aria-label="Nachrichtenübersicht">Weltlage</a></nav><button type="button" id="gridToggle" class="grid-toggle" title="Spaltenzahl ändern" aria-label="Spaltenzahl ändern"><svg class="grid-toggle-symbol" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="2.5" y="13.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="13.5" width="8" height="8" rx="1.3"/></svg><span id="gridCount">1</span></button><div class="top-actions"><button type="button" id="mobileSearchToggle" class="mobile-search-toggle" aria-label="Suche öffnen" aria-expanded="false" title="Nachrichten suchen"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg></button><input class="search" id="search" type="search" placeholder="Nachrichten durchsuchen …" aria-label="Nachrichten durchsuchen"></div></div></header>
 <div id="savedShareOverlay" class="news-share-overlay" hidden><div class="news-share-dialog" role="dialog" aria-modal="true" aria-labelledby="savedShareHeading"><div class="news-share-header"><strong id="savedShareHeading">Gemerktliste teilen</strong><button id="savedShareClose" type="button" aria-label="Schließen">×</button></div><p>Die gemerkten Artikel als unveränderliche Sammlung teilen.</p><div class="news-share-grid"><button id="savedShareCopy" type="button">Link kopieren</button><button id="savedShareSystem" type="button">Teilen …</button><button id="savedShareEmail" type="button">E-Mail</button><button id="savedShareWhatsapp" type="button">WhatsApp</button></div><small id="savedShareFeedback" role="status"></small></div></div><div class="layout">
@@ -2329,11 +2337,62 @@ function restoreSharedCollection(){
  map.jumpTo({center:marker.getLngLat(),zoom:Math.max(1.8,map.getZoom())});
  requestAnimationFrame(()=>button.click());
 }
+/* GDELT factual activity markers. No article text or thumbnails. */
+let gdeltMarkers=[];
+function loadGdeltActivity(){
+ if(!map)return;
+ fetch('activity-data.php',{credentials:'omit'}).then(res=>{if(!res.ok)throw Error('data');return res.json()}).then(data=>{
+  gdeltMarkers.forEach(m=>m.remove());gdeltMarkers=[];
+  if(!Array.isArray(data.points))return;
+  const popup=new maplibregl.Popup({closeButton:true,closeOnClick:false,maxWidth:'310px'});
+  for(const point of data.points){
+   if(!Number.isFinite(point.lat)||!Number.isFinite(point.lon)||!Array.isArray(point.links))continue;
+   const button=document.createElement('button');button.type='button';button.className='ifis-activity-pin';
+   button.setAttribute('aria-label','GDELT: '+point.observations+' Ereignisbeobachtungen; Quellen öffnen');
+   button.title='Aktivitätsquellen öffnen';button.textContent=String(point.observations);
+   const label=document.createElement('div');label.className='ifis-activity-hover';label.hidden=true;
+   const strong=document.createElement('strong');strong.textContent=point.observations+' Ereignisbeobachtungen';
+   const loc=document.createElement('div');loc.textContent='Ereignisorte: '+(point.places||[]).slice(0,5).join(' · ');
+   const sources=document.createElement('div');sources.textContent='Belegte Erstquellen: '+[...new Set(point.links.map(x=>x.domain))].slice(0,8).join(' · ');
+   label.append(strong,loc,sources);
+   document.body.append(label);
+   const reposition=()=>{
+    const rect=button.getBoundingClientRect();
+    label.style.left=Math.max(8,Math.min(innerWidth-label.offsetWidth-8,rect.left+18))+'px';
+    label.style.top=Math.max(8,Math.min(innerHeight-label.offsetHeight-8,rect.top+20))+'px';
+   };
+   button.addEventListener('pointerenter',e=>{if(e.pointerType==='touch')return;label.hidden=false;reposition()});
+   button.addEventListener('pointerleave',()=>{label.hidden=true});
+   button.addEventListener('focus',()=>{label.hidden=false;reposition()});
+   button.addEventListener('blur',()=>{label.hidden=true});
+   button.addEventListener('click',e=>{
+    e.stopPropagation();label.hidden=true;
+    const root=document.createElement('div');root.className='ifis-activity-source-list';
+    const heading=document.createElement('strong');heading.textContent=point.observations+' GDELT-Ereignisbeobachtungen';root.append(heading);
+    const note=document.createElement('p');note.textContent='Ungefähre Ortsgruppe. Die Verweise sind belegte Erstquellen einzelner Ereignisse, keine vollständige Berichterstattung. Keine kopierten Artikel.';root.append(note);
+    const places=document.createElement('p');places.textContent='Ereignisorte: '+(point.places||[]).slice(0,10).join(' · ');root.append(places);
+    const list=document.createElement('div');list.className='ifis-activity-links';
+    for(const x of point.links.slice(0,40)){
+     let url;try{url=new URL(x.url)}catch{continue}
+     if(url.protocol!=='https:')continue;
+     const a=document.createElement('a');a.href=url.href;a.target='_blank';a.rel='noopener noreferrer';
+     a.textContent=x.domain+' ↗';list.append(a);
+    }
+    root.append(list);
+    const credit=document.createElement('small');credit.textContent='Datengrundlage: GDELT Project · gdeltproject.org';root.append(credit);
+    popup.setLngLat([point.lon,point.lat]).setDOMContent(root).addTo(map);
+   });
+   const marker=new maplibregl.Marker({element:button,anchor:'center'}).setLngLat([point.lon,point.lat]).addTo(map);
+   const remove=marker.remove.bind(marker);marker.remove=()=>{label.remove();remove()};
+   gdeltMarkers.push(marker);
+  }
+ }).catch(()=>{});
+}
 function openNewsMap(scrollToMap=true){panel.classList.add('open');btn.classList.add('active');btn.setAttribute('aria-pressed','true');updateHeaderUnderline();requestAnimationFrame(updateHeaderUnderline);if(scrollToMap)panel.scrollIntoView({behavior:'smooth',block:'start'});if(map){map.resize();return;}if(!window.maplibregl){info.textContent='Die Kartenbibliothek konnte nicht geladen werden.';return;}map=new maplibregl.Map({container:'newsGlobe',style:selectedMapStyle(),center:[10,20],zoom:1.15,attributionControl:true});
 map.getContainer().style.backgroundColor=isDarkMap()?'#111720':'#ffffff';
 map.getCanvas().addEventListener('pointerdown',()=>{rotationHoldUntil=performance.now()+4500});
 map.getCanvas().addEventListener('wheel',()=>{rotationHoldUntil=performance.now()+4500},{passive:true});
-map.on('dragstart',()=>{rotationHoldUntil=performance.now()+4500});map.on('load',()=>{try{map.setProjection({type:flatProjection?'mercator':'globe'});}catch(e){};addNightLayer();addSourceLinks();flightLayer=document.createElementNS('http://www.w3.org/2000/svg','g');connector.append(flightLayer);
+map.on('dragstart',()=>{rotationHoldUntil=performance.now()+4500});map.on('load',()=>{try{map.setProjection({type:flatProjection?'mercator':'globe'});}catch(e){};addNightLayer();addSourceLinks();loadGdeltActivity();flightLayer=document.createElementNS('http://www.w3.org/2000/svg','g');connector.append(flightLayer);
 // The flight-line SVG belongs inside MapLibre: above tiles but BELOW marker buttons.
 map.getContainer().append(connector);updateMapReadState();map.on('move',()=>{hideFarSide();updateConnector()});map.on('resize',()=>{updateConnector();renderFlightArcs();});hideFarSide();if(!groups.size)info.textContent='Noch keine eindeutigen Ereignisorte erkannt.';restoreSharedCollection();});}
 btn.addEventListener('click',()=>openNewsMap(true));
