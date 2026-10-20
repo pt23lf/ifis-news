@@ -1164,6 +1164,11 @@ body > .dock-time-panel input[type="range"]{
 .ifis-positive-compass{width:23px!important;height:23px!important;border:2px solid #d7fce6!important;border-radius:50%!important;background:#16563e!important;display:grid!important;place-items:center!important;box-shadow:0 0 0 2px rgba(23,98,67,.24),0 2px 9px rgba(0,0,0,.28);cursor:pointer}
 .ifis-positive-compass .positive-compass-needle{display:block;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:12px solid #7cf2b3;transform:translateY(-1px);filter:drop-shadow(0 1px 1px #103a2d)}
 .ifis-positive-compass:hover,.ifis-positive-compass:focus-visible{box-shadow:0 0 0 5px rgba(70,193,133,.25),0 2px 9px rgba(0,0,0,.3)}
+/* Responsive timeline width for short and long history ranges. */
+#mapTimeRange{width:clamp(140px,32vw,360px);max-width:100%;min-width:0}
+#dockTimeRange{width:100%;min-width:0}
+#mapTimePopover{max-width:min(94vw,430px)}
+#ifisTimelineCoverageNote{max-width:360px;font-size:11px;line-height:1.35}
 /* 2026-10-20: streamline visible navigation; keep hidden filter elements available to existing JS until unified map filters are implemented. */
 .filter-toolbar [data-open-filter="direction"],
 .filter-toolbar [data-open-filter="topics"],
