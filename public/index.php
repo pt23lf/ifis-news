@@ -1290,9 +1290,10 @@ function ifisTimelineTicks(maxHours){
 let ifisTicks=ifisTimelineTicks(48);
 function ifisTimeHours(){return ifisTicks[Math.max(0,Math.min(ifisTicks.length-1,Number(document.getElementById('mapTimeRange').value)||0))]||24;}
 function ifisTimeLabel(hours){
- return hours<24?ifisTimeLabel(hours):hours<24*30?(hours/24).toLocaleString('de-DE',{maximumFractionDigits:1})+' Tage':hours<24*365?Math.round(hours/24)+' Tage':(hours/(24*365.25)).toLocaleString('de-DE',{maximumFractionDigits:1})+' Jahre';
+ return hours<24?hours.toLocaleString('de-DE')+' h':hours<24*30?(hours/24).toLocaleString('de-DE',{maximumFractionDigits:1})+' Tage':hours<24*365?Math.round(hours/24)+' Tage':(hours/(24*365.25)).toLocaleString('de-DE',{maximumFractionDigits:1})+' Jahre';
 }
 window.ifisTimeHours=ifisTimeHours;
+window.ifisTimeLabel=ifisTimeLabel;
 window.ifisTimelineUpdateMax=function(maxHours){
  ifisMaxHistoryHours=Math.max(48,Math.min(24*365*30,maxHours));
  const previous=ifisTimeHours();
@@ -1677,7 +1678,7 @@ function mapTimeStories(items){const hours=window.ifisTimeHours();return items.f
 window.ifisNewsMap={refreshMarkers:()=>updateMapReadState()};
 function updateMapReadState(){
  const hours=window.ifisTimeHours();
- document.getElementById('mapTimeValue').textContent=ifisTimeLabel(hours);
+ document.getElementById('mapTimeValue').textContent=window.ifisTimeLabel(hours);
  if(!map)return;
  markers.forEach(marker=>{
   const el=marker.getElement();
@@ -1688,7 +1689,7 @@ function updateMapReadState(){
   const events=new Set(matching.map(story=>story.dataset.place).filter(Boolean));
   const unread=matching.filter(story=>!seenUrls.has(story.dataset.url)).length;
   el.textContent='';
-  const description=(el._ifisLabel||'')+' · '+matching.length+' Artikel · '+(source?events.size+' Ereignisorte':new Set(matching.map(story=>story.dataset.source).filter(Boolean)).size+' Quellen')+' · '+ifisTimeLabel(hours)+(colorMode.value==='unseen'?' · '+unread+' ungesehen':'');
+  const description=(el._ifisLabel||'')+' · '+matching.length+' Artikel · '+(source?events.size+' Ereignisorte':new Set(matching.map(story=>story.dataset.source).filter(Boolean)).size+' Quellen')+' · '+window.ifisTimeLabel(hours)+(colorMode.value==='unseen'?' · '+unread+' ungesehen':'');
   el.setAttribute('aria-label',description);
   if(hoveredMarkerButton===el)showMarkerHover(el);
   el.style.backgroundColor=colorMode.value==='unseen'&&!unread?'#718096':'';
