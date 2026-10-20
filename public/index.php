@@ -2166,4 +2166,46 @@ btn.addEventListener('click',()=>openNewsMap(true));
 if(new URLSearchParams(location.search).get('map')!=='0')openNewsMap(false);
 requestAnimationFrame(updateHeaderUnderline);
 })();
+</script>
+<script>
+/* Anonymous feature counters: no cookies, identifiers, URLs or text inputs. */
+(()=>{
+ const allowed=new Set(['map_open','map_projection','map_settings','time_range','filter','saved_view','save_article','hide_article','share_collection','share_location','marker_open','marker_hover','source_links']);
+ const throttle=new Map();
+ function count(event,delay=0){
+  if(!allowed.has(event))return;
+  const now=Date.now();
+  if(delay&&now-(throttle.get(event)||0)<delay)return;
+  throttle.set(event,now);
+  try{fetch('feature-event.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event}),keepalive:true,credentials:'omit'}).catch(()=>{});}catch(e){}
+ }
+ document.addEventListener('click',e=>{
+  const target=e.target instanceof Element?e.target:null;if(!target)return;
+  const btn=target.closest('button,summary');if(!btn)return;
+  if(btn.matches('#globeToggle'))count('map_open',2000);
+  else if(btn.matches('#mapProjectionToggle'))count('map_projection');
+  else if(btn.matches('#mapLegend > summary'))count('map_settings');
+  else if(btn.matches('#mapTimeMenuToggle,#dockTimeToggle'))count('time_range',1500);
+  else if(btn.matches('.save'))count('save_article');
+  else if(btn.matches('.dismiss'))count('hide_article');
+  else if(btn.matches('#shareSaved'))count('share_collection');
+  else if(btn.matches('.marker-collection-share-actions button'))count('share_location');
+  else if(btn.matches('.globe-marker,.globe-source'))count('marker_open');
+  else if(btn.matches('[data-open-filter],[data-filter-section] button,#statsToggle'))count('filter',1500);
+ });
+ document.addEventListener('change',e=>{
+  const el=e.target;if(!(el instanceof Element))return;
+  if(el.matches('#mapTimeRange,#dockTimeRange'))count('time_range',1500);
+  else if(el.matches('#showSourceLinks'))count('source_links');
+  else if(el.matches('.map-legend-content select,.map-legend-content input,#language'))count('filter',1500);
+ });
+ document.addEventListener('pointerover',e=>{
+  const el=e.target instanceof Element?e.target.closest('.globe-marker,.globe-source'):null;
+  if(el&&!el.contains(e.relatedTarget))count('marker_hover',30000);
+ });
+ document.addEventListener('click',e=>{
+  const el=e.target instanceof Element?e.target.closest('[data-filter="saved"],[data-open-filter="saved"]'):null;
+  if(el)count('saved_view',1500);
+ });
+})();
 </script></body></html>
