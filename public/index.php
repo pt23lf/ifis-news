@@ -2796,6 +2796,12 @@ requestAnimationFrame(updateHeaderUnderline);
  const frame=document.getElementById('sourceSuggestFrame');
  if(!trigger||!overlay||!dialog||!close||!frame)return;
  let previousFocus=null;
+ document.addEventListener('ifis-language-change',e=>{
+  if(overlay.hidden)return;
+  const lang=e.detail?.language==='en'?'en':'de';
+  const target=frame.dataset.src+'?lang='+encodeURIComponent(lang);
+  if(frame.getAttribute('src')!==target)frame.src=target;
+ });
  const hide=()=>{
   overlay.hidden=true;
   document.body.classList.remove('source-suggest-open');
@@ -2810,7 +2816,9 @@ requestAnimationFrame(updateHeaderUnderline);
   if(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey)return;
   e.preventDefault();
   previousFocus=document.activeElement;
-  if(!frame.getAttribute('src'))frame.src=frame.dataset.src;
+  const lang=document.getElementById('language')?.value==='en'?'en':'de';
+  const target=frame.dataset.src+'?lang='+encodeURIComponent(lang);
+  if(frame.getAttribute('src')!==target)frame.src=target;
   overlay.hidden=false;document.body.classList.add('source-suggest-open');
   close.focus();document.addEventListener('keydown',keys);
  });
