@@ -50,8 +50,8 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
  try {
   $db=new PDO('sqlite:'.$dbPath,null,null,[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
   $placeholders=implode(',',array_fill(0,count($urls),'?'));
-  $q=$db->prepare('SELECT title,url,source,published_at,summary FROM articles WHERE section=? AND source='IFIS · Artikel' AND url IN ('.$placeholders.')');
-  $q->execute(array_merge([$section],$urls));
+  $q=$db->prepare('SELECT title,url,source,published_at,summary FROM articles WHERE section=? AND source=? AND url IN ('.$placeholders.')');
+  $q->execute(array_merge([$section,'IFIS · Artikel'],$urls));
   $records=[];
   foreach($q->fetchAll(PDO::FETCH_ASSOC) as $article)$records[$article['url']]=$article;
   // Do not silently convert an archival selection into a partial collection.
