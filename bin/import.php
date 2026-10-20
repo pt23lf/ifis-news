@@ -58,6 +58,8 @@ foreach(($rights['feeds']??[]) as $entry){
 foreach ($feeds as $feed) {
  $mode=$allowed[(string)($feed['name']??'').'|'.(string)($feed['url']??'')]??'blocked';
  if($mode==='blocked')continue;
+ // News RSS from any external source is disabled, regardless of JSON permissions.
+ if($mode!=='own'||($feed['name']??'')!=='IFIS · Artikel'||($feed['url']??'')!=='https://ifis.net/artikel.rss')continue;
  // Only NASA/NOAA and exact URLs documented in the rights register are permitted.
  if($mode==='links_activity' && !in_array(($feed['name']??'').'|'.($feed['url']??''),[
  'NASA · News|https://www.nasa.gov/feed/',
