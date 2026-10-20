@@ -1164,13 +1164,13 @@ body > .dock-time-panel input[type="range"]{
 .ifis-positive-compass{width:23px!important;height:23px!important;border:2px solid #d7fce6!important;border-radius:50%!important;background:#16563e!important;display:grid!important;place-items:center!important;box-shadow:0 0 0 2px rgba(23,98,67,.24),0 2px 9px rgba(0,0,0,.28);cursor:pointer}
 .ifis-positive-compass .positive-compass-needle{display:block;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:12px solid #7cf2b3;transform:translateY(-1px);filter:drop-shadow(0 1px 1px #103a2d)}
 .ifis-positive-compass:hover,.ifis-positive-compass:focus-visible{box-shadow:0 0 0 5px rgba(70,193,133,.25),0 2px 9px rgba(0,0,0,.3)}
-/* Sources: compact standalone green triangle, without surrounding disc.
+/* Sources: green triangle with thin white circular outline.
    Preserve the wider invisible marker hit area for mobile tap. */
 .ifis-positive-compass,
 .ifis-positive-compass:hover,
 .ifis-positive-compass:focus-visible{
  width:20px!important;height:20px!important;min-width:20px!important;
- border:0!important;border-radius:0!important;background:transparent!important;
+ border:1px solid #fff!important;border-radius:50%!important;background:transparent!important;
  box-shadow:none!important;outline:none!important;
  display:grid!important;place-items:center!important;
 }
