@@ -13,7 +13,7 @@
     {
       "name": "NASA · News",
       "url": "https://www.nasa.gov/feed/",
-      "section": "ifis",
+      "section": "world",
       "mode": "links_activity",
       "legal_basis": "https://www.nasa.gov/rss-feeds/ ; https://www.nasa.gov/nasa-brand-center/",
       "checked": "2026-10-20"
@@ -21,7 +21,7 @@
     {
       "name": "NOAA · Environment",
       "url": "https://www.noaa.gov/rss.xml",
-      "section": "ifis",
+      "section": "world",
       "mode": "links_activity",
       "legal_basis": "https://www.weather.gov/phi/rssfeed",
       "checked": "2026-10-20"
