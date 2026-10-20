@@ -2,6 +2,7 @@
 declare(strict_types=1);
 header('Content-Type: text/html; charset=utf-8');
 $page=(string)($_GET['page']??'about');
+$overlay=(($_GET['overlay']??'')==='1');
 $pages=['about'=>'Über IFIS News','method'=>'Quellen & Methodik','imprint'=>'Impressum','privacy'=>'Datenschutz'];
 if(!isset($pages[$page])){http_response_code(404);$page='about';}
 function h(string $s):string{return htmlspecialchars($s,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8');}
@@ -26,6 +27,10 @@ a.link{color:var(--accent);text-decoration:underline;text-underline-offset:3px}
 .site-footer{display:flex;flex-wrap:wrap;gap:10px 24px;max-width:1100px;margin:0 auto;padding:24px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
 .site-footer a.active{color:var(--accent);font-weight:650}
 @media(max-width:720px){.topbar{height:107px;align-items:flex-start}.topbar-inner{height:60px;padding:0 15px;justify-content:space-between;gap:8px}.brand{font-size:23px}.topnav{position:absolute;top:60px;left:0;right:0;height:47px;justify-content:center;gap:5px;border-bottom:1px solid var(--line);background:var(--bg)}.topnav a{font-size:12px;height:47px;padding:12px 12px 8px}main{padding:28px 16px 55px}.site-footer{padding:20px 16px}}
+<?php if($overlay): ?>
+.topbar,.site-footer{display:none!important}
+main{padding-top:24px;min-height:0}
+<?php endif; ?>
 </style></head><body><header class="topbar"><div class="topbar-inner"><a class="brand" href="/?view=ifis"><strong>IFIS</strong></a><nav class="topnav" aria-label="Bereiche"><a href="/?view=ifis&amp;map=0">Potenzial</a><a href="/?view=ifis#globeView">Karte</a><a href="/?view=world&amp;map=0">Weltlage</a></nav></div></header><main>
 <h1><?=h($pages[$page])?></h1>
 <?php if($page==='about'): ?>
@@ -55,4 +60,4 @@ a.link{color:var(--accent);text-decoration:underline;text-underline-offset:3px}
 <p>Wenn Sie auf einen Artikel klicken, verlassen Sie IFIS News; dann gelten die Datenschutzbestimmungen der jeweiligen Quelle.</p>
 <p><strong>Hinweis:</strong> Diese Angaben beschreiben die derzeit erkennbaren technischen Funktionen. Die Datenschutzhinweise müssen vor einer abschließenden rechtlichen Freigabe mit dem tatsächlichen Hosting, den externen Diensten und den Serverlogs abgeglichen werden.</p>
 <?php endif; ?>
-</main><footer class="site-footer"><a href="info.php?page=about" class="<?= $page==='about'?'active':'' ?>"Über IFIS News</a><a href="info.php?page=method" class="<?= $page==='method'?'active':'' ?>">Quellen & Methodik</a><a href="info.php?page=imprint" class="<?= $page==='imprint'?'active':'' ?>">Impressum</a><a href="info.php?page=privacy" class="<?= $page==='privacy'?'active':'' ?>">Datenschutz</a><a href="https://ifis.net/">IFIS.net</a></footer></body></html>
+</main><footer class="site-footer"><a href="info.php?page=about" class="<?= $page==='about'?'active':'' ?>"Über IFIS News</a><a href="info.php?page=method" class="<?= $page==='method'?'active':'' ?>">Quellen & Methodik</a><a href="info.php?page=imprint" class="<?= $page==='imprint'?'active':'' ?>">Impressum</a><a href="info.php?page=privacy" class="<?= $page==='privacy'?'active':'' ?>">Datenschutz</a><a href="https://ifis.net/">IFIS.net</a></footer><?php if($overlay): ?><script>document.querySelectorAll('a[href^="info.php?page="]').forEach(a=>{const u=new URL(a.href);u.searchParams.set('overlay','1');a.href=u.toString()});</script><?php endif; ?></body></html>
