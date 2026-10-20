@@ -81,7 +81,7 @@ try{
   if($count>=8000)break;
  }
  if($count===0)throw new RuntimeException('GDELT archive contained '.$rowsRead.' rows but none matched the expected 61-field event schema; existing observations preserved');
- $db->exec("DELETE FROM gdelt_observations WHERE time < datetime('now','-48 hours')");
+ // Keep factual observation metadata for the historical timeline; no article bodies are stored.
  $db->commit();
 }catch(Throwable $e){$db->rollBack();fwrite(STDERR,"GDELT import failure: ".$e->getMessage()."\n");exit(1);}
 finally{fclose($stream);$zip->close();@unlink($tmp);}
