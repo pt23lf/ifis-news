@@ -8,7 +8,9 @@
       "url": "https://ifis.net/artikel.rss",
       "section": "ifis",
       "mode": "own",
-      "legal_basis": "First-party"
+      "legal_basis": "First-party",
+      "image_display": true,
+      "image_legal_basis": "First-party IFIS content; confirm rights for individually licensed third-party imagery used within IFIS articles."
     }
   ],
   "event_sources": []
