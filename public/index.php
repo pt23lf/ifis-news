@@ -2469,6 +2469,27 @@ function gdeltVisible(point){
   })
  };
 }
+// HTML markers are not automatically occluded by MapLibre's globe surface.
+// Hide markers on the far hemisphere and outside the map canvas.
+function externalMarkerFacing(marker){
+ if(!map)return false;
+ const p=marker.getLngLat(),c=map.getCenter();
+ if(!flatProjection){
+  const rad=Math.PI/180;
+  const dot=Math.sin(c.lat*rad)*Math.sin(p.lat*rad)+Math.cos(c.lat*rad)*Math.cos(p.lat*rad)*Math.cos((p.lng-c.lng)*rad);
+  if(dot<=0.025)return false;
+ }
+ const q=map.project(p),box=map.getContainer();
+ return q.x>=0&&q.y>=0&&q.x<=box.clientWidth&&q.y<=box.clientHeight;
+}
+function refreshExternalMarkerFacing(){
+ for(const marker of gdeltMarkers){
+  const el=marker.getElement(),state=gdeltVisible(el._gdeltPoint);
+  const show=document.getElementById('showGdeltData')?.checked&&state.observations>0&&externalMarkerFacing(marker);
+  el.style.visibility=show?'visible':'hidden';el.style.pointerEvents=show?'auto':'none';
+ }
+ refreshLinkedInVisibility();
+}
 function refreshGdeltActivity(){
  for(const marker of gdeltMarkers){
   const button=marker.getElement(),state=gdeltVisible(button._gdeltPoint),n=state.observations;
@@ -2476,8 +2497,9 @@ function refreshGdeltActivity(){
   const dominant=cooperation+conflict<1?'unclassified':cooperation>conflict?'cooperation':conflict>cooperation?'conflict':'mixed';
   button.dataset.activityClass=dominant;
   button.style.backgroundColor=dominant==='cooperation'?'#268b68':dominant==='conflict'?'#d9822b':dominant==='mixed'?'#a78c68':'#87929b';
-  button.style.visibility=n>0&&document.getElementById('showGdeltData').checked?'visible':'hidden';
-  button.style.pointerEvents=n>0?'auto':'none';
+  const show=n>0&&document.getElementById('showGdeltData').checked&&externalMarkerFacing(marker);
+  button.style.visibility=show?'visible':'hidden';
+  button.style.pointerEvents=show?'auto':'none';
   button.setAttribute('aria-label',n+' GDELT-Beobachtungen im Zeitraum');
   button.title=n+' GDELT-Beobachtungen';
  }
@@ -2576,7 +2598,7 @@ function loadGdeltActivity(){
 let linkedinMarkers=[];
 function refreshLinkedInVisibility(){
  const show=document.getElementById('showLinkedInData')?.checked;
- for(const m of linkedinMarkers)m.getElement().style.visibility=show?'visible':'hidden';
+ for(const m of linkedinMarkers){const visible=show&&externalMarkerFacing(m);m.getElement().style.visibility=visible?'visible':'hidden';m.getElement().style.pointerEvents=visible?'auto':'none';}
 }
 function focusMapMarker(lon,lat){
  if(!map||!Number.isFinite(lon)||!Number.isFinite(lat))return;
@@ -2619,7 +2641,7 @@ map.getCanvas().addEventListener('pointerdown',()=>{rotationHoldUntil=performanc
 map.getCanvas().addEventListener('wheel',()=>{rotationHoldUntil=performance.now()+4500},{passive:true});
 map.on('dragstart',()=>{rotationHoldUntil=performance.now()+4500});map.on('load',()=>{try{map.setProjection({type:flatProjection?'mercator':'globe'});}catch(e){};addNightLayer();addSourceLinks();loadGdeltActivity();loadLinkedInSources();flightLayer=document.createElementNS('http://www.w3.org/2000/svg','g');connector.append(flightLayer);
 // The flight-line SVG belongs inside MapLibre: above tiles but BELOW marker buttons.
-map.getContainer().append(connector);updateMapReadState();map.on('move',()=>{hideFarSide();updateConnector()});map.on('resize',()=>{updateConnector();renderFlightArcs();});hideFarSide();if(!groups.size)info.textContent='Noch keine eindeutigen Ereignisorte erkannt.';restoreSharedCollection();});}
+map.getContainer().append(connector);updateMapReadState();map.on('move',()=>{hideFarSide();refreshExternalMarkerFacing();updateConnector()});map.on('resize',()=>{refreshExternalMarkerFacing();updateConnector();renderFlightArcs();});hideFarSide();if(!groups.size)info.textContent='Noch keine eindeutigen Ereignisorte erkannt.';restoreSharedCollection();});}
 btn.addEventListener('click',()=>openNewsMap(true));
 // Direct visits begin with the map; choosing Potential or World explicitly
 // requests an article-only view with ?map=0. Map then opens that same section.
