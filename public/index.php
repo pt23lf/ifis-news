@@ -2351,12 +2351,13 @@ let gdeltSelectedPoint=null;
 function gdeltVisible(point){
  const hours=Number(document.getElementById('mapTimeRange').value)||24;
  const cutoff=Date.now()-hours*3600000;
- const buckets=(point.hours||[]).filter(x=>{
-  const t=Date.parse(x.time.replace(' ','T')+'Z');
-  return Number.isFinite(t)&&t+3600000>cutoff&&t<=Date.now();
- });
+ const entries=Object.entries(point.time_bins||{});
+ const observations=entries.reduce((sum,[stamp,count])=>{
+  const t=Date.parse(stamp.replace(' ','T')+'Z');
+  return Number.isFinite(t)&&t>=cutoff&&t<=Date.now()?sum+Number(count||0):sum;
+ },0);
  return {
-  observations:buckets.reduce((n,x)=>n+Number(x.observations||0),0),
+  observations,
   links:(point.links||[]).filter(x=>{
    const t=Date.parse(x.time.replace(' ','T')+'Z');
    return Number.isFinite(t)&&t>=cutoff&&t<=Date.now();
@@ -2366,7 +2367,8 @@ function gdeltVisible(point){
 function refreshGdeltActivity(){
  for(const marker of gdeltMarkers){
   const button=marker.getElement(),n=gdeltVisible(button._gdeltPoint).observations;
-  button.style.display=n>0?'':'none';
+  button.style.visibility=n>0?'visible':'hidden';
+  button.style.pointerEvents=n>0?'auto':'none';
   button.setAttribute('aria-label',n+' GDELT-Beobachtungen im Zeitraum');
   button.title=n+' GDELT-Beobachtungen';
  }
