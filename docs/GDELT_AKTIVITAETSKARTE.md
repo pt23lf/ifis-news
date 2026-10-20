@@ -39,3 +39,9 @@ If the GDELT index, zip, PHP zip extension or database is unavailable, importer 
 - Die zurückgelieferten Ereignisorte sind 1°-Rasterzellen und die 250 Zellen werden vor der Slider-Filterung nach 48-Stunden-Gesamtaktivität ausgewählt. Der Filter ist daher keine vollständige weltweite Topliste für kürzere Zeitfenster.
 - Aktivitätspunkte selbst sind keine deduplizierten Ereignisse; Summen der GDELT NumSources-Werte sind keine Anzahl einzigartiger Verlage.
 - Deploy: `git pull origin main`. Vor produktiver Bewertung Browserkonsole, PHP-Ausgabe und Realzeitdaten überprüfen.
+
+## Quellensteuerung (2026-10-20)
+- USGS wurde aus Cron und Artikelanzeige entfernt. Alt-Daten einmalig nach Deployment mit `php bin/purge-usgs.php` aus `storage/news.sqlite` löschen; das historische Skript `bin/import-usgs.php` wird nicht mehr vom Cron aufgerufen.
+- Im Kartenmenü stehen zwei unabhängige Schalter `showGdeltData` und `showLinkedInData`, die per Browser-localStorage gespeichert werden.
+- LinkedIn-Karte: `public/linkedin-sources-data.php` veröffentlicht ausschließlich `status='approved'`-Einreichungen, die zusätzlich geprüfte `lat`/`lon`-Spalten besitzen. Solange diese Daten und eine Freigabeoberfläche fehlen, bleibt die Ebene leer. Keine öffentliche Anzeige ungeprüfter Beiträge, kein LinkedIn-Crawler.
+- Der Standort einer eingereichten Aktivität muss manuell verifiziert werden und ist **nicht** automatisch der Standort des LinkedIn-Profils.
