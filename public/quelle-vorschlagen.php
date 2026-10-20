@@ -11,7 +11,7 @@ function val(string $key,int $max):string {return mb_substr(trim((string)($_POST
 function approvedUrl(string $value):bool {
  $p=parse_url($value);if(!is_array($p)||($p['scheme']??'')!=='https'||empty($p['host']))return false;
  $host=strtolower($p['host']);
- return $host==='linkedin.com'||str_ends_with($host,'.linkedin.com')||$host==='www.linkedin.com';
+ return $host==='linkedin.com'||str_ends_with($host,'.linkedin.com')||$host==='lnkd.in';
 }
 if($_SERVER['REQUEST_METHOD']==='POST'){
  try{
@@ -19,7 +19,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   if(!empty($_POST['website']))throw new RuntimeException('Einreichung nicht möglich.');
   if(($_SESSION['ifis_source_last']??0)>time()-60)throw new RuntimeException('Bitte vor einer weiteren Einreichung kurz warten.');
   $type=val('type',20);$url=val('url',500);$title=val('title',120);$place=val('place',160);$description=val('description',800);
-  if(!in_array($type,['profile','post'],true)||!approvedUrl($url)||$title===''||$description==='')throw new RuntimeException('Bitte Titel, Beschreibung und eine gültige LinkedIn-URL angeben.');
+  if(!in_array($type,['profile','post'],true)||!approvedUrl($url)||$title===''||$description==='')throw new RuntimeException('Bitte Titel, Beschreibung und eine gültige LinkedIn-URL oder einen lnkd.in-Kurzlink angeben.');
   if(empty($_POST['permission']))throw new RuntimeException('Bitte bestätige, dass du diese Angaben übermitteln darfst.');
   $path=dirname(__DIR__).'/storage/source-submissions.sqlite';
   if(!extension_loaded('pdo_sqlite'))throw new RuntimeException('Einreichungen sind vorübergehend nicht möglich.');
