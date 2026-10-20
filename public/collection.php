@@ -50,7 +50,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
  try {
   $db=new PDO('sqlite:'.$dbPath,null,null,[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
   $placeholders=implode(',',array_fill(0,count($urls),'?'));
-  $q=$db->prepare('SELECT title,url,source,published_at,summary FROM articles WHERE section=? AND url IN ('.$placeholders.')');
+  $q=$db->prepare('SELECT title,url,source,published_at,summary FROM articles WHERE section=? AND source='IFIS · Artikel' AND url IN ('.$placeholders.')');
   $q->execute(array_merge([$section],$urls));
   $records=[];
   foreach($q->fetchAll(PDO::FETCH_ASSOC) as $article)$records[$article['url']]=$article;
@@ -126,7 +126,12 @@ $name=(string)($data['name']??'Sammlung');
 $kind=(string)($data['kind']??'event');
 $section=(string)($data['view']??'ifis');
 $created=(string)($data['created_at']??'');
-$articles=$data['articles'];
+$articles=array_values(array_filter($data['articles'],static function($item){
+ return is_array($item) && ($item['source']??'')==='IFIS · Artikel'
+  && str_starts_with((string)($item['url']??''),'https://ifis.net/artikel/');
+}));
+// Do not serve titles, snippets or other third-party material from legacy snapshots.
+if(!$articles){http_response_code(410);header('Content-Type: text/plain; charset=utf-8');echo 'Diese Sammlung enthält derzeit keine freigegebenen Artikel.';exit;}
 $appearance=is_array($data['appearance']??null)?$data['appearance']:[];
 $sharedBasemap=in_array($appearance['basemap']??null,['geographic','political','satellite'],true)?$appearance['basemap']:'geographic';
 $sharedBrightness=in_array($appearance['brightness']??null,['auto','light','dark'],true)?$appearance['brightness']:'auto';
