@@ -1381,8 +1381,49 @@ for(const {ref} of matches){
 });
 const language=document.getElementById('language');
 const dictionary={de:{world:'Weltlage',ifis:'Potenzial',all:'Alle',saved:'Gemerkt',hidden:'Ausgeblendet',search:'Nachrichten durchsuchen …',globe:'🌍 Globus',rating:'Eigene Einschätzung',unverified:'Ungeprüft',plausible:'Plausibel',questionable:'Fraglich'},en:{world:'World news',ifis:'Potential',all:'All',saved:'Saved',hidden:'Hidden',search:'Search news …',globe:'🌍 Globe',rating:'My assessment',unverified:'Not checked',plausible:'Plausible',questionable:'Questionable'}};
-function translate(lang){const d=dictionary[lang]||dictionary.de;document.documentElement.lang=lang;language.value=lang;try{localStorage.setItem(prefix+'lang',lang)}catch{}
-document.querySelector('.topnav a[href^="?view=ifis"]').textContent=lang==='en'?'Links':'Links';document.querySelector('.topnav a[href^="?view=world"]').textContent=lang==='en'?'World':'Weltlage';document.getElementById('globeToggle').textContent=lang==='en'?'Map':'Karte';search.placeholder=d.search;document.querySelector('.chips [data-cat="Alle"]').textContent=d.all;document.querySelectorAll('.trust-tools label').forEach(el=>{el.firstChild.textContent=d.rating+' ';const opts=el.querySelector('select').options;opts[0].textContent=d.unverified;opts[1].textContent=d.plausible;opts[2].textContent=d.questionable;});document.querySelector('[data-open-filter="saved"] span:not(.dock-symbol)').textContent=d.saved;}
+function translate(lang){
+ lang=lang==='en'?'en':'de';
+ const d=dictionary[lang]||dictionary.de;
+ document.documentElement.lang=lang;
+ language.value=lang;
+ try{localStorage.setItem(prefix+'lang',lang)}catch(e){}
+ const setText=(selector,de,en)=>{document.querySelectorAll(selector).forEach(el=>{el.textContent=lang==='en'?en:de})};
+ const setAttr=(selector,attr,de,en)=>{document.querySelectorAll(selector).forEach(el=>el.setAttribute(attr,lang==='en'?en:de))};
+ setText('.topnav a[href^="?view=ifis"]','Links','Links');
+ setText('.topnav a[href^="?view=world"]','Weltlage','World news');
+ setText('#globeToggle','Karte','Map');
+ setText('.topnav a[href="quelle-vorschlagen.php"]','Quelle melden','Suggest source');
+ setText('.chips [data-cat="Alle"]','Alle','All');
+ setText('[data-open-filter="saved"] span:not(.dock-symbol)','Gemerkt','Saved');
+ setText('[data-open-filter="hidden"] span:not(.dock-symbol)','Verborgen','Hidden');
+ setText('#dockTimeToggle span:not(.dock-symbol)','Zeitraum','Time range');
+ setText('#infoPagesToggle span:not(.dock-symbol)','Seiten','Pages');
+ setText('#feedTitle','Potenzial','Potential');
+ setText('label:has(#showGdeltData) span:last-child','GDELT-Aktivität','GDELT activity');
+ setText('label:has(#showLinkedInData) span:last-child','LinkedIn-Quellen (freigegeben)','LinkedIn sources (approved)');
+ setText('label:has(#showEventMarkers) span:last-child','Ereignisorte','Event locations');
+ setText('label:has(#showSourceMarkers) span:last-child','Quellenorte','Source locations');
+ setText('label:has(#showSourceLinks) span:last-child','Verbindungslinien','Connection lines');
+ setText('label:has(#nightToggle) span:last-child','Tag/Nacht','Day/night');
+ setText('#infoPagesPanel a[href="info.php?page=about"]','Über IFIS News','About IFIS News');
+ setText('#infoPagesPanel a[href="info.php?page=method"]','Quellen & Methodik','Sources & methodology');
+ setText('#infoPagesPanel a[href="info.php?page=imprint"]','Impressum','Legal notice');
+ setText('#infoPagesPanel a[href="info.php?page=privacy"]','Datenschutz','Privacy');
+ setAttr('#language','aria-label','Sprache auswählen','Select language');
+ setAttr('#globeToggle','aria-label','Karte öffnen','Open map');
+ setAttr('.topnav a[href="quelle-vorschlagen.php"]','title','Konstruktive Quelle zur Prüfung vorschlagen','Suggest a constructive source for review');
+ if(search)search.placeholder=d.search;
+ document.querySelectorAll('.trust-tools label').forEach(el=>{
+  if(el.firstChild?.nodeType===Node.TEXT_NODE)el.firstChild.textContent=d.rating+' ';
+  const select=el.querySelector('select');
+  if(select?.options.length>=3){
+   select.options[0].textContent=d.unverified;
+   select.options[1].textContent=d.plausible;
+   select.options[2].textContent=d.questionable;
+  }
+ });
+ document.dispatchEvent(new CustomEvent('ifis-language-change',{detail:{language:lang}}));
+}
 language.addEventListener('change',()=>translate(language.value));translate(localStorage.getItem(prefix+'lang')||'de');
 // Feed and map are separate closures: expose an explicit selection interface.
 window.ifisNewsFeed={
