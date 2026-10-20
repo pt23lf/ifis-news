@@ -2339,6 +2339,12 @@ function restoreSharedCollection(){
  requestAnimationFrame(()=>button.click());
 }
 /* GDELT factual activity markers. No article text or thumbnails. */
+// Event classification describes GDELT-coded actions, not media tone or positive impact.
+const compassLegend=document.createElement('div');
+compassLegend.className='ifis-gdelt-compass-legend';
+compassLegend.style.cssText='font-size:11px;line-height:1.5;margin:8px 0;color:var(--text)';
+compassLegend.textContent='GDELT-Ereignistypen: 🟢 Kooperation · 🟠 Konflikt · ⚪ unklar. Keine Bewertung der Nachrichtenqualität.';
+document.querySelector('#mapLegend .map-legend-content')?.append(compassLegend);
 let gdeltMarkers=[];
 let gdeltSourceOffices={};
 fetch('source-offices.json',{credentials:'omit'}).then(r=>r.ok?r.json():Promise.reject()).then(data=>{
@@ -2356,8 +2362,14 @@ function gdeltVisible(point){
   const t=Date.parse(stamp.replace(' ','T')+'Z');
   return Number.isFinite(t)&&t>=cutoff&&t<=Date.now()?sum+Number(count||0):sum;
  },0);
+ const classes=[0,0,0,0,0];
+ for(const [stamp,counts] of Object.entries(point.quad_bins||{})){
+  const t=Date.parse(stamp.replace(' ','T')+'Z');
+  if(!Number.isFinite(t)||t<cutoff||t>Date.now())continue;
+  counts.forEach((count,i)=>{if(i<5)classes[i]+=Number(count||0)});
+ }
  return {
-  observations,
+  observations,classes,
   links:(point.links||[]).filter(x=>{
    const t=Date.parse(x.time.replace(' ','T')+'Z');
    return Number.isFinite(t)&&t>=cutoff&&t<=Date.now();
@@ -2366,7 +2378,11 @@ function gdeltVisible(point){
 }
 function refreshGdeltActivity(){
  for(const marker of gdeltMarkers){
-  const button=marker.getElement(),n=gdeltVisible(button._gdeltPoint).observations;
+  const button=marker.getElement(),state=gdeltVisible(button._gdeltPoint),n=state.observations;
+  const cooperation=state.classes[1]+state.classes[2],conflict=state.classes[3]+state.classes[4];
+  const dominant=cooperation+conflict<1?'unclassified':cooperation>conflict?'cooperation':conflict>cooperation?'conflict':'mixed';
+  button.dataset.activityClass=dominant;
+  button.style.backgroundColor=dominant==='cooperation'?'#268b68':dominant==='conflict'?'#d9822b':dominant==='mixed'?'#a78c68':'#87929b';
   button.style.visibility=n>0?'visible':'hidden';
   button.style.pointerEvents=n>0?'auto':'none';
   button.setAttribute('aria-label',n+' GDELT-Beobachtungen im Zeitraum');
@@ -2412,14 +2428,19 @@ function loadGdeltActivity(){
    const strong=document.createElement('strong');strong.textContent=gdeltVisible(point).observations+' Ereignisbeobachtungen';
    const loc=document.createElement('div');loc.textContent='Ereignisorte: '+(point.places||[]).slice(0,5).join(' · ');
    const sources=document.createElement('div');sources.textContent='Belegte Erstquellen: '+[...new Set(point.links.map(x=>x.domain))].slice(0,8).join(' · ');
-   label.append(strong,loc,sources);
+   const classification=document.createElement('div');
+   const renderClass=()=>{
+    const c=gdeltVisible(point).classes;
+    classification.textContent='Kooperation: '+(c[1]+c[2])+' · Konflikt: '+(c[3]+c[4])+' · unklassifiziert: '+c[0];
+   };
+   renderClass();label.append(strong,loc,classification,sources);
    document.body.append(label);
    const reposition=()=>{
     const rect=button.getBoundingClientRect();
     label.style.left=Math.max(8,Math.min(innerWidth-label.offsetWidth-8,rect.left+18))+'px';
     label.style.top=Math.max(8,Math.min(innerHeight-label.offsetHeight-8,rect.top+20))+'px';
    };
-   button.addEventListener('pointerenter',e=>{if(e.pointerType==='touch')return;strong.textContent=gdeltVisible(point).observations+' Ereignisbeobachtungen';label.hidden=false;reposition()});
+   button.addEventListener('pointerenter',e=>{if(e.pointerType==='touch')return;strong.textContent=gdeltVisible(point).observations+' Ereignisbeobachtungen';renderClass();label.hidden=false;reposition()});
    button.addEventListener('pointerleave',()=>{label.hidden=true});
    button.addEventListener('focus',()=>{label.hidden=false;reposition()});
    button.addEventListener('blur',()=>{label.hidden=true});
@@ -2429,6 +2450,7 @@ function loadGdeltActivity(){
     const current=gdeltVisible(point);
     const root=document.createElement('div');root.className='ifis-activity-source-list';
     const heading=document.createElement('strong');heading.textContent=current.observations+' GDELT-Ereignisbeobachtungen';root.append(heading);
+    const types=document.createElement('p');types.textContent='CAMEO-Ereignistypen – Kooperation: '+(current.classes[1]+current.classes[2])+' · Konflikt: '+(current.classes[3]+current.classes[4])+' · unbekannt: '+current.classes[0];root.append(types);
     const note=document.createElement('p');note.textContent='Ungefähre Ortsgruppe. Die Verweise sind belegte Erstquellen einzelner Ereignisse, keine vollständige Berichterstattung. Keine kopierten Artikel.';root.append(note);
     const methodology=document.createElement('p');methodology.textContent='Gestrichelte Verbindungen erscheinen nur für ausdrücklich zugeordnete Redaktionsstandorte. Domainendungen sind kein verlässlicher Herkunftsnachweis; Linien zeigen Erstquellen-Zuordnungen, keine Nachrichtenwege.';root.append(methodology);
     const places=document.createElement('p');places.textContent='Ereignisorte: '+(point.places||[]).slice(0,10).join(' · ');root.append(places);
