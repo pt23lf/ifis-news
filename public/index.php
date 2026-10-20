@@ -2600,29 +2600,8 @@ function externalMarkerFacing(marker){
  const dot=Math.sin(c.lat*rad)*Math.sin(p.lat*rad)+Math.cos(c.lat*rad)*Math.cos(p.lat*rad)*Math.cos((p.lng-c.lng)*rad);
  return dot>0.05;
 }
-function refreshExternalMarkerFacing(){
- for(const marker of gdeltMarkers){
-  const el=marker.getElement(),state=gdeltVisible(el._gdeltPoint);
-  const show=document.getElementById('showGdeltData')?.checked&&state.observations>0&&externalMarkerFacing(marker);
-  el.style.visibility=show?'visible':'hidden';el.style.pointerEvents=show?'auto':'none';
- }
- refreshLinkedInVisibility();
-}
-function refreshGdeltActivity(){
- for(const marker of gdeltMarkers){
-  const button=marker.getElement(),state=gdeltVisible(button._gdeltPoint),n=state.observations;
-  const cooperation=state.classes[1]+state.classes[2],conflict=state.classes[3]+state.classes[4];
-  const dominant=cooperation+conflict<1?'unclassified':cooperation>conflict?'cooperation':conflict>cooperation?'conflict':'mixed';
-  button.dataset.activityClass=dominant;
-  button.style.backgroundColor=dominant==='cooperation'?'#268b68':dominant==='conflict'?'#d9822b':dominant==='mixed'?'#a78c68':'#87929b';
-  const show=n>0&&document.getElementById('showGdeltData').checked&&externalMarkerFacing(marker);
-  button.style.visibility=show?'visible':'hidden';
-  button.style.pointerEvents=show?'auto':'none';
-  button.setAttribute('aria-label',n+' GDELT-Beobachtungen im Zeitraum');
-  button.title=n+' GDELT-Beobachtungen';
- }
- if(gdeltSelectedPoint)showGdeltConnections(gdeltSelectedPoint);
-}
+function refreshExternalMarkerFacing(){ refreshLinkedInVisibility(); }
+function refreshGdeltActivity(){ updateGdeltLayer(); if(gdeltSelectedPoint)showGdeltConnections(gdeltSelectedPoint); }
 // These are manually assigned approximate editorial-office locations,
 // NOT inferred from TLDs. Lines mean first-source citation, not causation.
 function gdeltOffice(domain){
@@ -2653,47 +2632,50 @@ function showGdeltConnections(point){
 }
 let gdeltRequestSerial=0;
 window.ifisReloadGdelt=()=>loadGdeltActivity();
-function loadGdeltActivity(){
- if(!map)return;
- const serial=++gdeltRequestSerial;
- fetch('activity-data.php?hours='+encodeURIComponent(window.ifisTimeHours()),{credentials:'omit'}).then(res=>{if(!res.ok)throw Error('data');return res.json()}).then(data=>{
-  if(serial!==gdeltRequestSerial)return;
-  if(Number.isFinite(data.oldest_hours))window.ifisTimelineUpdateMax(data.oldest_hours);
-  const rangeNote=document.getElementById('ifisTimelineCoverageNote');
-  if(rangeNote){
-   rangeNote.hidden=!data.sample_truncated;
-   rangeNote.textContent=data.sample_truncated?'Historische Auswahl ist groß: Darstellung auf 50.000 neueste Datensätze und 250 Ortsgruppen begrenzt. Die Auswertung ist nicht vollständig.':'';
-  }
-  gdeltMarkers.forEach(m=>m.remove());gdeltMarkers=[];
-  if(!Array.isArray(data.points))return;
-  const popup=new maplibregl.Popup({closeButton:true,closeOnClick:false,maxWidth:'310px',anchor:'top',offset:18});
-  for(const point of data.points){
-   if(!Number.isFinite(point.lat)||!Number.isFinite(point.lon)||!Array.isArray(point.links))continue;
-   const button=document.createElement('button');button.type='button';button.className='ifis-activity-pin';button._gdeltPoint=point;
-   button.setAttribute('aria-label','GDELT: '+point.observations+' Ereignisbeobachtungen; Quellen öffnen');
-   button.title=point.observations+' GDELT-Beobachtungen';
-   const label=document.createElement('div');label.className='ifis-activity-hover';label.hidden=true;
-   const strong=document.createElement('strong');strong.textContent=gdeltVisible(point).observations+' Ereignisbeobachtungen';
-   const loc=document.createElement('div');loc.textContent='Ereignisorte: '+(point.places||[]).slice(0,5).join(' · ');
-   const sources=document.createElement('div');sources.textContent='Belegte Erstquellen: '+[...new Set(point.links.map(x=>x.domain))].slice(0,8).join(' · ');
-   const classification=document.createElement('div');
-   const renderClass=()=>{
-    const c=gdeltVisible(point).classes;
-    classification.textContent='Kooperation: '+(c[1]+c[2])+' · Konflikt: '+(c[3]+c[4])+' · unklassifiziert: '+c[0];
-   };
-   renderClass();label.append(strong,loc,classification,sources);
-   document.body.append(label);
-   const reposition=()=>{
-    const rect=button.getBoundingClientRect();
-    label.style.left=Math.max(8,Math.min(innerWidth-label.offsetWidth-8,rect.left+18))+'px';
-    label.style.top=Math.max(8,Math.min(innerHeight-label.offsetHeight-8,rect.top+20))+'px';
-   };
-   button.addEventListener('pointerenter',e=>{if(e.pointerType==='touch')return;strong.textContent=gdeltVisible(point).observations+' Ereignisbeobachtungen';renderClass();label.hidden=false;reposition()});
-   button.addEventListener('pointerleave',()=>{label.hidden=true});
-   button.addEventListener('focus',()=>{label.hidden=false;reposition()});
-   button.addEventListener('blur',()=>{label.hidden=true});
-   button.addEventListener('click',e=>{
-    e.stopPropagation();label.hidden=true;
+// GDELT observations are MapLibre circles, rendered on the globe surface.
+// Unlike HTML markers, map layers are correctly occluded by the horizon.
+const GDELT_LAYER='ifis-gdelt-event-circles',GDELT_SOURCE='ifis-gdelt-event-points';
+let gdeltPoints=[],gdeltHoverTip=null,gdeltHandlersBound=false;
+function updateGdeltLayer(){
+ if(!map||!map.isStyleLoaded())return;
+ const features=[];
+ if(document.getElementById('showGdeltData')?.checked){
+  gdeltPoints.forEach((point,i)=>{
+   const state=gdeltVisible(point);
+   if(state.observations<1)return;
+   const cooperation=state.classes[1]+state.classes[2],conflict=state.classes[3]+state.classes[4];
+   const color=cooperation+conflict<1?'#87929b':cooperation>conflict?'#268b68':conflict>cooperation?'#d9822b':'#a78c68';
+   features.push({type:'Feature',geometry:{type:'Point',coordinates:[point.lon,point.lat]},properties:{i,color,observations:state.observations}});
+  });
+ }
+ const fc={type:'FeatureCollection',features};
+ if(!map.getSource(GDELT_SOURCE))map.addSource(GDELT_SOURCE,{type:'geojson',data:fc});
+ else map.getSource(GDELT_SOURCE).setData(fc);
+ if(!map.getLayer(GDELT_LAYER))map.addLayer({id:GDELT_LAYER,type:'circle',source:GDELT_SOURCE,
+  paint:{'circle-radius':6,'circle-color':['get','color'],'circle-stroke-color':'#fff','circle-stroke-width':1.5,'circle-opacity':1}});
+ if(!gdeltHandlersBound){
+  gdeltHandlersBound=true;
+  gdeltHoverTip=document.createElement('div');gdeltHoverTip.className='ifis-activity-hover';gdeltHoverTip.hidden=true;document.body.append(gdeltHoverTip);
+  const hide=()=>{gdeltHoverTip.hidden=true;map.getCanvas().style.cursor='';};
+  map.on('mousemove',GDELT_LAYER,e=>{
+   if(!e.features?.length)return;
+   const point=gdeltPoints[Number(e.features[0].properties.i)];if(!point)return;
+   const state=gdeltVisible(point);
+   gdeltHoverTip.replaceChildren();
+   const strong=document.createElement('strong');strong.textContent=state.observations+' GDELT-Ereignisbeobachtungen';
+   const places=document.createElement('div');places.textContent='Ereignisorte: '+(point.places||[]).slice(0,5).join(' · ');
+   const types=document.createElement('div');types.textContent='Kooperation: '+(state.classes[1]+state.classes[2])+' · Konflikt: '+(state.classes[3]+state.classes[4]);
+   gdeltHoverTip.append(strong,places,types);gdeltHoverTip.hidden=false;
+   const rect=map.getCanvas().getBoundingClientRect();
+   const x=rect.left+e.point.x+16,y=rect.top+e.point.y+16;
+   gdeltHoverTip.style.left=Math.max(8,Math.min(innerWidth-gdeltHoverTip.offsetWidth-8,x))+'px';
+   gdeltHoverTip.style.top=Math.max(8,Math.min(innerHeight-gdeltHoverTip.offsetHeight-8,y))+'px';
+   map.getCanvas().style.cursor='pointer';
+  });
+  map.on('mouseleave',GDELT_LAYER,hide);
+  map.on('click',GDELT_LAYER,e=>{
+   const point=gdeltPoints[Number(e.features?.[0]?.properties?.i)];if(!point)return;
+   e.originalEvent?.stopPropagation();hide();
     gdeltSelectedPoint=point;showGdeltConnections(point);
     const current=gdeltVisible(point);
     const root=document.createElement('div');root.className='ifis-activity-source-list';
@@ -2711,15 +2693,29 @@ function loadGdeltActivity(){
     }
     root.append(list);
     const credit=document.createElement('small');credit.textContent='Datengrundlage: GDELT Project · gdeltproject.org · Standorte vorläufig, nicht einzeln verifiziert';root.append(credit);
+    const popup=new maplibregl.Popup({closeButton:true,closeOnClick:false,maxWidth:'310px',anchor:'top',offset:18});
     popup.setLngLat([point.lon,point.lat]).setDOMContent(root).addTo(map);
     popup.getElement()._ifisPopup=popup;
     focusMapMarker(point.lon,point.lat,popup.getElement());
-   });
-   const marker=new maplibregl.Marker({element:button,anchor:'center',occludedOpacity:0}).setLngLat([point.lon,point.lat]).addTo(map);
-   const remove=marker.remove.bind(marker);marker.remove=()=>{label.remove();remove()};
-   gdeltMarkers.push(marker);
+
+  });
+ }
+}
+map.on('style.load',()=>{updateGdeltLayer()});
+function loadGdeltActivity(){
+ if(!map)return;
+ const serial=++gdeltRequestSerial;
+ fetch('activity-data.php?hours='+encodeURIComponent(window.ifisTimeHours()),{credentials:'omit'}).then(res=>{if(!res.ok)throw Error('data');return res.json()}).then(data=>{
+  if(serial!==gdeltRequestSerial)return;
+  if(Number.isFinite(data.oldest_hours))window.ifisTimelineUpdateMax(data.oldest_hours);
+  const rangeNote=document.getElementById('ifisTimelineCoverageNote');
+  if(rangeNote){
+   rangeNote.hidden=!data.sample_truncated;
+   rangeNote.textContent=data.sample_truncated?'Historische Auswahl ist groß: Darstellung auf 50.000 neueste Datensätze und 250 Ortsgruppen begrenzt. Die Auswertung ist nicht vollständig.':'';
   }
-  refreshGdeltActivity();
+  gdeltMarkers.forEach(m=>m.remove());gdeltMarkers=[];
+  gdeltPoints=(Array.isArray(data.points)?data.points:[]).filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lon)&&Array.isArray(p.links));
+  updateGdeltLayer();
  }).catch(()=>{});
 }
 /* Only moderator-approved, explicitly geolocated voluntary submissions.
