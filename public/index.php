@@ -1831,8 +1831,10 @@ function showMarkerArticles(coordinates,title,articles,routePoints=[],descriptio
   if(!popupEl)return;
   const mapBox=mapContainer.getBoundingClientRect();
   // On mobile, align against the actually visible part of the map.
-  const visibleTop=Math.max(10,Math.min(mapHeight-95,Math.max(0,65-mapBox.top)));
-  const visibleBottom=Math.min(mapHeight-10,Math.max(visibleTop+95,window.innerHeight-mapBox.top-12));
+  // Use the actual visible viewport intersection, not an assumed fixed header.
+  // This also works if the map has been partly scrolled out of view.
+  const visibleTop=Math.max(12,-mapBox.top+12);
+  const visibleBottom=Math.min(mapHeight-12,window.innerHeight-mapBox.top-12);
   const freeHeight=Math.max(95,visibleBottom-visibleTop);
   const availableCardHeight=Math.max(85,Math.floor(freeHeight-gap-28));
   const popupContent=popupEl.querySelector('.maplibregl-popup-content');
@@ -1845,7 +1847,9 @@ function showMarkerArticles(coordinates,title,articles,routePoints=[],descriptio
   wrapper.style.setProperty('max-height',Math.max(65,availableCardHeight-18)+'px','important');
   const popupHeight=Math.min(popupEl.getBoundingClientRect().height,availableCardHeight);
   const visibleCenterY=visibleTop+freeHeight/2;
-  const desiredMarkerY=visibleCenterY+(popupHeight+gap)/2;
+  // Prefer fitting the entire card near the top edge, with the marker below it.
+  // The card remains scrollable when the available viewport is too short.
+  const desiredMarkerY=Math.min(visibleBottom-16,visibleTop+popupHeight+gap+20);
   // Bound the marker to the earth's disk in globe mode. All longitudes,
   // including points at the limb, are centered via the camera instead of
   // attempting to pan an offscreen projected point.
