@@ -1164,20 +1164,19 @@ body > .dock-time-panel input[type="range"]{
 .ifis-positive-compass{width:23px!important;height:23px!important;border:2px solid #d7fce6!important;border-radius:50%!important;background:#16563e!important;display:grid!important;place-items:center!important;box-shadow:0 0 0 2px rgba(23,98,67,.24),0 2px 9px rgba(0,0,0,.28);cursor:pointer}
 .ifis-positive-compass .positive-compass-needle{display:block;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:12px solid #7cf2b3;transform:translateY(-1px);filter:drop-shadow(0 1px 1px #103a2d)}
 .ifis-positive-compass:hover,.ifis-positive-compass:focus-visible{box-shadow:0 0 0 5px rgba(70,193,133,.25),0 2px 9px rgba(0,0,0,.3)}
-/* Sources: green triangle with thin white circular outline.
+/* Sources: green triangle with a fine white triangular outline.
    Preserve the wider invisible marker hit area for mobile tap. */
 .ifis-positive-compass,
 .ifis-positive-compass:hover,
 .ifis-positive-compass:focus-visible{
  width:20px!important;height:20px!important;min-width:20px!important;
- border:1px solid #fff!important;border-radius:50%!important;background:transparent!important;
+ border:0!important;border-radius:0!important;background:transparent!important;
  box-shadow:none!important;outline:none!important;
  display:grid!important;place-items:center!important;
 }
 .ifis-positive-compass .positive-compass-needle{
- border-left:6px solid transparent!important;
- border-right:6px solid transparent!important;
- border-bottom:13px solid #22935a!important;
+ width:16px!important;height:17px!important;
+ border:0!important;background:transparent!important;
  transform:none!important;filter:drop-shadow(0 1px 1px #0007)!important;
 }
 .ifis-positive-compass:hover .positive-compass-needle,
@@ -2770,7 +2769,7 @@ function loadLinkedInSources(){
    if(!Number.isFinite(item.lat)||!Number.isFinite(item.lon))continue;
    const el=document.createElement('button');el.type='button';el.className='ifis-activity-pin';
    el.classList.add('ifis-positive-compass');
-   el.innerHTML='<span aria-hidden="true" class="positive-compass-needle"></span>';
+   el.innerHTML='<svg aria-hidden="true" class="positive-compass-needle" width="16" height="17" viewBox="0 0 16 17"><path d="M8 1.3 L15 15.7 L1 15.7 Z" fill="#22935a" stroke="#fff" stroke-width="1.1" stroke-linejoin="round"/></svg>';
    const kind={feed:'RSS/Atom',website:'Webseite',linkedin:'LinkedIn',network:'Netzwerk',ifis:'IFIS',post:'LinkedIn',profile:'LinkedIn'}[item.type]||'Quelle';
    el.removeAttribute('title');
    el.setAttribute('aria-label',item.title+' · '+kind+'; klicken für Artikel');
