@@ -2708,7 +2708,7 @@ function updateGdeltLayer(){
      let url;try{url=new URL(x.url)}catch{continue}
      if(url.protocol!=='https:')continue;
      const a=document.createElement('a');a.href=url.href;a.target='_blank';a.rel='noopener noreferrer';
-     a.textContent=x.domain+' ↗';list.append(a);
+     a.textContent=url.href;a.style.overflowWrap='anywhere';a.style.wordBreak='break-word';list.append(a);
     }
     root.append(list);
     const credit=document.createElement('small');credit.textContent='Datengrundlage: GDELT Project · gdeltproject.org · Standorte vorläufig, nicht einzeln verifiziert';root.append(credit);
