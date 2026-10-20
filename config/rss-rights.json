@@ -1,30 +1,28 @@
 {
-  "version": 1,
+  "version": 2,
   "default_mode": "blocked",
-  "notes": "Only listed feed URLs may be fetched. A: manual links; B: automated URL/date/source only; C: activity counts from those B records. No RSS headlines, abstracts or images are persisted.",
+  "policy": "External news RSS disabled pending specific license review. Dedicated open-data APIs have separate documented contracts.",
   "feeds": [
     {
       "name": "IFIS · Artikel",
       "url": "https://ifis.net/artikel.rss",
       "section": "ifis",
       "mode": "own",
-      "legal_basis": "First party"
-    },
+      "legal_basis": "First-party"
+    }
+  ],
+  "event_sources": [
     {
-      "name": "NASA · News",
-      "url": "https://www.nasa.gov/feed/",
-      "section": "world",
-      "mode": "links_activity",
-      "legal_basis": "https://www.nasa.gov/rss-feeds/ ; https://www.nasa.gov/nasa-brand-center/",
-      "checked": "2026-10-20"
-    },
-    {
-      "name": "NOAA · Environment",
-      "url": "https://www.noaa.gov/rss.xml",
-      "section": "world",
-      "mode": "links_activity",
-      "legal_basis": "https://www.weather.gov/phi/rssfeed",
-      "checked": "2026-10-20"
+      "id": "usgs-earthquakes",
+      "mode": "public_event_data",
+      "endpoint": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson",
+      "attribution": "U.S. Geological Survey (USGS)",
+      "rights": "USGS-authored government data; no third-party images or text",
+      "sources": [
+        "https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php",
+        "https://www.usgs.gov/information-policies-and-instructions/acknowledging-or-crediting-usgs"
+      ],
+      "reviewed": "2026-10-20"
     }
   ]
 }
