@@ -7,11 +7,11 @@
   {
     "name": "NASA · News",
     "url": "https://www.nasa.gov/feed/",
-    "section": "ifis"
+    "section": "world"
   },
   {
     "name": "NOAA · Environment",
     "url": "https://www.noaa.gov/rss.xml",
-    "section": "ifis"
+    "section": "world"
   }
 ]
