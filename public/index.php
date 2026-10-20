@@ -2584,27 +2584,21 @@ function gdeltVisible(point){
 function externalMarkerFacing(marker){
  if(!map)return false;
  const p=marker.getLngLat(),c=map.getCenter();
- if(!flatProjection){
-  const rad=Math.PI/180;
-  const dot=Math.sin(c.lat*rad)*Math.sin(p.lat*rad)+Math.cos(c.lat*rad)*Math.cos(p.lat*rad)*Math.cos((p.lng-c.lng)*rad);
-  if(dot<=0.16)return false; // Hide markers before the visible globe horizon.
- }
  const q=map.project(p),box=map.getContainer();
- if(!Number.isFinite(q.x)||!Number.isFinite(q.y))return false;
- // On globe projection, the visible Earth is a disc, not the entire map canvas.
- // Use MapLibre's pixels-per-meter radius at the current zoom via a projected
- // horizon point, rather than showing markers in the white corners.
- if(!flatProjection){
-  const center=map.project(c);
-  // Point on the great-circle horizon (90 degrees from map center).
-  const horizon=map.project([c.lng+90,0]);
-  const radius=Math.hypot(horizon.x-center.x,horizon.y-center.y);
-  if(Number.isFinite(radius)&&radius>0){
-   const distance=Math.hypot(q.x-center.x,q.y-center.y);
-   if(distance>radius*0.975)return false;
-  }
- }
- return q.x>=0&&q.y>=0&&q.x<=box.clientWidth&&q.y<=box.clientHeight;
+ if(!Number.isFinite(q.x)||!Number.isFinite(q.y)||q.x<0||q.y<0||q.x>box.clientWidth||q.y>box.clientHeight)return false;
+ if(flatProjection)return true;
+ // MapLibre's visible globe is a sphere with circumference transform.worldSize.
+ // Previous tests used a projected horizon point, which MapLibre can place far
+ // outside the globe. Use the actual sphere radius in screen pixels instead.
+ const worldSize=map.transform?.worldSize;
+ if(!Number.isFinite(worldSize)||worldSize<=0)return false;
+ const radius=worldSize/(2*Math.PI);
+ const center=map.project(c);
+ const margin=12; // Hide entire circular marker before it crosses the horizon.
+ if(Math.hypot(q.x-center.x,q.y-center.y)>radius-margin)return false;
+ const rad=Math.PI/180;
+ const dot=Math.sin(c.lat*rad)*Math.sin(p.lat*rad)+Math.cos(c.lat*rad)*Math.cos(p.lat*rad)*Math.cos((p.lng-c.lng)*rad);
+ return dot>0.05;
 }
 function refreshExternalMarkerFacing(){
  for(const marker of gdeltMarkers){
@@ -2841,7 +2835,7 @@ map.getCanvas().addEventListener('pointerdown',()=>{rotationHoldUntil=performanc
 map.getCanvas().addEventListener('wheel',()=>{rotationHoldUntil=performance.now()+4500},{passive:true});
 map.on('dragstart',()=>{rotationHoldUntil=performance.now()+4500});map.on('load',()=>{try{map.setProjection({type:flatProjection?'mercator':'globe'});}catch(e){};addNightLayer();addSourceLinks();loadGdeltActivity();loadLinkedInSources();flightLayer=document.createElementNS('http://www.w3.org/2000/svg','g');connector.append(flightLayer);
 // The flight-line SVG belongs inside MapLibre: above tiles but BELOW marker buttons.
-map.getContainer().append(connector);updateMapReadState();map.on('move',()=>{hideFarSide();refreshExternalMarkerFacing();updateConnector()});map.on('resize',()=>{refreshExternalMarkerFacing();updateConnector();renderFlightArcs();});hideFarSide();if(!groups.size)info.textContent='Noch keine eindeutigen Ereignisorte erkannt.';restoreSharedCollection();});}
+map.getContainer().append(connector);updateMapReadState();map.on('move',()=>{hideFarSide();refreshExternalMarkerFacing();updateConnector()});map.on('render',refreshExternalMarkerFacing);map.on('resize',()=>{refreshExternalMarkerFacing();updateConnector();renderFlightArcs();});hideFarSide();if(!groups.size)info.textContent='Noch keine eindeutigen Ereignisorte erkannt.';restoreSharedCollection();});}
 btn.addEventListener('click',()=>openNewsMap(true));
 // Direct visits begin with the map; choosing Potential or World explicitly
 // requests an article-only view with ?map=0. Map then opens that same section.
