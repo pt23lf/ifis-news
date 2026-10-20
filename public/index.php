@@ -2786,7 +2786,7 @@ function loadLinkedInSources(){
     const list=document.createElement('div');list.className='ifis-source-article-list';root.append(list);
     const addLink=(name,url)=>{
      if(typeof url!=='string'||!/^https:\/\//i.test(url))return;
-     const a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener noreferrer';a.textContent=name+' ↗';list.append(a);
+     const a=document.createElement('a');a.href=url;if(new URL(url,location.href).origin!==location.origin){a.target='_blank';a.rel='noopener noreferrer';}a.textContent=name+' ↗';list.append(a);
     };
     if(item.type==='ifis'){
      const articles=[...document.querySelectorAll('.story')].filter(story=>{
@@ -2795,7 +2795,7 @@ function loadLinkedInSources(){
      const seen=new Set();
      for(const story of articles){
       if(seen.has(story.dataset.url))continue;seen.add(story.dataset.url);
-      addLink(story.querySelector('h2')?.textContent?.trim()||'IFIS-Artikel',story.dataset.url);
+      addLink(story.querySelector('h2')?.textContent?.trim()||'IFIS-Artikel',location.origin+location.pathname+'?view=ifis&map=0#'+encodeURIComponent(story.id));
      }
     }else if(Array.isArray(item.articles)){
      for(const article of item.articles)addLink(article.title||'Beitrag',article.url);
