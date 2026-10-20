@@ -8,6 +8,13 @@ header('Cache-Control: no-store');
 if(empty($_SESSION['ifis_source_csrf']))$_SESSION['ifis_source_csrf']=bin2hex(random_bytes(24));
 $success=false;$error='';
 function val(string $key,int $max):string {return mb_substr(trim((string)($_POST[$key]??'')),0,$max,'UTF-8');}
+function feedUrlValid(string $value):bool {
+ $p=parse_url($value);
+ if(!is_array($p)||strtolower((string)($p['scheme']??''))!=='https'||empty($p['host'])||isset($p['user'])||isset($p['pass']))return false;
+ $host=strtolower((string)$p['host']);
+ if($host==='localhost'||str_ends_with($host,'.localhost')||filter_var($host,FILTER_VALIDATE_IP))return false;
+ return (bool)preg_match('/^[a-z0-9.-]+\\.[a-z]{2,}$/i',$host);
+}
 function approvedUrl(string $value):bool {
  $p=parse_url($value);if(!is_array($p)||($p['scheme']??'')!=='https'||empty($p['host']))return false;
  $host=strtolower($p['host']);
@@ -18,15 +25,19 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   if(!hash_equals($_SESSION['ifis_source_csrf'],(string)($_POST['csrf']??'')))throw new RuntimeException('Sitzung abgelaufen. Bitte erneut laden.');
   if(!empty($_POST['website']))throw new RuntimeException('Einreichung nicht möglich.');
   if(($_SESSION['ifis_source_last']??0)>time()-60)throw new RuntimeException('Bitte vor einer weiteren Einreichung kurz warten.');
-  $type=val('type',20);$url=val('url',500);$title=val('title',120);$place=val('place',160);$description=val('description',800);
+  $type=val('type',20);$url=val('url',500);$title=val('title',120);$place=val('place',160);$description=val('description',800);$feed=val('feed_url',500);
   if(!in_array($type,['profile','post'],true)||!approvedUrl($url)||$title===''||$description==='')throw new RuntimeException('Bitte Titel, Beschreibung und eine gültige LinkedIn-URL oder einen lnkd.in-Kurzlink angeben.');
+  if($feed!==''&&!feedUrlValid($feed))throw new RuntimeException('Bitte eine gültige öffentliche HTTPS-Feedadresse eingeben.');
+  if($feed!==''&&empty($_POST['feed_permission']))throw new RuntimeException('Bitte bestätige, dass du diesen Feed selbst betreibst oder zur Einreichung berechtigt bist.');
   if(empty($_POST['permission']))throw new RuntimeException('Bitte bestätige, dass du diese Angaben übermitteln darfst.');
   $path=dirname(__DIR__).'/storage/source-submissions.sqlite';
   if(!extension_loaded('pdo_sqlite'))throw new RuntimeException('Einreichungen sind vorübergehend nicht möglich.');
   $db=new PDO('sqlite:'.$path,null,null,[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION, PDO::ATTR_TIMEOUT=>5]);
   $db->exec('CREATE TABLE IF NOT EXISTS submissions (id INTEGER PRIMARY KEY AUTOINCREMENT, created_at TEXT NOT NULL, type TEXT NOT NULL, url TEXT NOT NULL, title TEXT NOT NULL, place TEXT NOT NULL, description TEXT NOT NULL, status TEXT NOT NULL DEFAULT "pending")');
-  $stmt=$db->prepare('INSERT INTO submissions(created_at,type,url,title,place,description,status) VALUES(?,?,?,?,?,?,"pending")');
-  $stmt->execute([gmdate('c'),$type,$url,$title,$place,$description]);
+  $columns=array_column($db->query('PRAGMA table_info(submissions)')->fetchAll(PDO::FETCH_ASSOC),'name');
+  if(!in_array('feed_url',$columns,true))$db->exec("ALTER TABLE submissions ADD COLUMN feed_url TEXT NOT NULL DEFAULT ''");
+  $stmt=$db->prepare('INSERT INTO submissions(created_at,type,url,title,place,description,feed_url,status) VALUES(?,?,?,?,?,?,?,"pending")');
+  $stmt->execute([gmdate('c'),$type,$url,$title,$place,$description,$feed]);
   $_SESSION['ifis_source_last']=time();$_SESSION['ifis_source_csrf']=bin2hex(random_bytes(24));$success=true;
  }catch(Throwable $e){$error=$e instanceof RuntimeException?$e->getMessage():'Speichern derzeit nicht möglich.';}
 }
@@ -43,6 +54,8 @@ function out(string $s):string{return htmlspecialchars($s,ENT_QUOTES|ENT_SUBSTIT
 <label>Eigener Titel oder Name des Projekts<input name="title" maxlength="120" required></label>
 <label>Ereignisort / Region (optional)<input name="place" maxlength="160" placeholder="z. B. Lübeck"></label>
 <label>Eigene Beschreibung: Was ist konstruktiv daran?<textarea name="description" maxlength="800" required></textarea></label>
+<label>Eigener RSS-/Atom-Feed (optional)<input type="url" name="feed_url" maxlength="500" placeholder="https://beispiel.de/feed.xml"><small>Für selbst betriebene oder ausdrücklich freigegebene Feeds. Wird zunächst nur geprüft, nicht automatisch abgerufen.</small></label>
+<label><span><input type="checkbox" name="feed_permission" value="1"> Ich betreibe den angegebenen Feed selbst oder bin berechtigt, ihn für IFIS News vorzuschlagen.</span></label>
 <label><span><input type="checkbox" name="permission" value="1" required> Ich darf diese selbst formulierten Angaben übermitteln und bin mit ihrer Prüfung und Speicherung einverstanden.</span></label>
 <button type="submit">Zur Prüfung einreichen</button></form>
 <?php endif;?>
