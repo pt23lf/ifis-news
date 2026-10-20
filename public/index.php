@@ -21,10 +21,17 @@ $dbPath = dirname(__DIR__) . '/storage/news.sqlite';
 if (is_file($dbPath) && extension_loaded('pdo_sqlite')) {
  try {
   $db = new PDO('sqlite:' . $dbPath);
-  $articleTotal=(int)$db->query("SELECT COUNT(*) FROM articles WHERE source='IFIS · Artikel'")->fetchColumn();
-  $query = $db->prepare('SELECT title,url,source,published_at,summary,image_url FROM articles WHERE section=:section AND source=:allowed_source ORDER BY published_at DESC LIMIT 400');
-  $query->execute(['section'=>$view,'allowed_source'=>'IFIS · Artikel']);
+  $articleTotal=(int)$db->query("SELECT COUNT(*) FROM articles WHERE source IN ('IFIS · Artikel','NASA · News','NOAA · Environment')")->fetchColumn();
+  $query = $db->prepare('SELECT title,url,source,published_at,summary,image_url FROM articles WHERE section=:section AND source IN ('IFIS · Artikel','NASA · News','NOAA · Environment') ORDER BY published_at DESC LIMIT 400');
+  $query->execute(['section'=>$view]);
   $items = $query->fetchAll(PDO::FETCH_ASSOC);
+  // Fail closed for historical rows: never publish government-feed headline, summary or images.
+  foreach($items as &$record){
+   if(($record['source']??'')!=='IFIS · Artikel'){
+    $record['title']=($record['source']??'Quelle').' · Originalmeldung';
+    $record['summary']='';$record['image_url']='';
+   }
+  }unset($record);
   // Keep IFIS articles selectable even if the general 400-item news window moves on.
   if(true){
    $ifisQuery=$db->prepare("SELECT title,url,source,published_at,summary,image_url FROM articles WHERE section='ifis' AND source=:source ORDER BY published_at DESC LIMIT 250");
@@ -33,11 +40,17 @@ if (is_file($dbPath) && extension_loaded('pdo_sqlite')) {
    $byUrl=[];
    foreach(array_merge($items,$extra) as $article)$byUrl[$article['url']]=$article;
    $items=array_values($byUrl);
+   foreach($items as &$record){
+    if(($record['source']??'')!=='IFIS · Artikel'){
+     $record['title']=($record['source']??'Quelle').' · Originalmeldung';
+     $record['summary']='';$record['image_url']='';
+    }
+   }unset($record);
    usort($items,static fn($a,$b)=>strcmp((string)$b['published_at'],(string)$a['published_at']));
   }
   $cols=$db->query('PRAGMA table_info(articles)')->fetchAll(PDO::FETCH_ASSOC);
-  $recent=$db->prepare("SELECT source,published_at,COUNT(*) AS count FROM articles WHERE section=:section AND source=:allowed_source AND published_at >= :since AND published_at <= :until GROUP BY source, strftime('%Y-%m-%d %H:',published_at), CAST(CAST(strftime('%M',published_at) AS INTEGER)/30 AS INTEGER) ORDER BY published_at DESC");
-  $recent->execute(['section'=>$view,'allowed_source'=>'IFIS · Artikel','since'=>gmdate('Y-m-d H:i:s',time()-172800),'until'=>gmdate('Y-m-d H:i:s')]);
+  $recent=$db->prepare("SELECT source,published_at,COUNT(*) AS count FROM articles WHERE section=:section AND source IN ('IFIS · Artikel','NASA · News','NOAA · Environment') AND published_at >= :since AND published_at <= :until GROUP BY source, strftime('%Y-%m-%d %H:',published_at), CAST(CAST(strftime('%M',published_at) AS INTEGER)/30 AS INTEGER) ORDER BY published_at DESC");
+  $recent->execute(['section'=>$view,'since'=>gmdate('Y-m-d H:i:s',time()-172800),'until'=>gmdate('Y-m-d H:i:s')]);
   $sourceBatches=$recent->fetchAll(PDO::FETCH_ASSOC);
 
  } catch (Throwable $e) { error_log($e->getMessage()); }
