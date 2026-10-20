@@ -22,7 +22,7 @@ if (is_file($dbPath) && extension_loaded('pdo_sqlite')) {
  try {
   $db = new PDO('sqlite:' . $dbPath);
   $articleTotal=(int)$db->query("SELECT COUNT(*) FROM articles WHERE source IN ('IFIS · Artikel','NASA · News','NOAA · Environment')")->fetchColumn();
-  $query = $db->prepare('SELECT title,url,source,published_at,summary,image_url FROM articles WHERE section=:section AND source IN ('IFIS · Artikel','NASA · News','NOAA · Environment') ORDER BY published_at DESC LIMIT 400');
+  $query = $db->prepare("SELECT title,url,source,published_at,summary,image_url FROM articles WHERE section=:section AND source IN ('IFIS · Artikel','NASA · News','NOAA · Environment') ORDER BY published_at DESC LIMIT 400");
   $query->execute(['section'=>$view]);
   $items = $query->fetchAll(PDO::FETCH_ASSOC);
   // Fail closed for historical rows: never publish government-feed headline, summary or images.
