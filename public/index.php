@@ -2596,10 +2596,8 @@ function externalMarkerFacing(marker){
  // horizon point, rather than showing markers in the white corners.
  if(!flatProjection){
   const center=map.project(c);
-  const rad=Math.PI/180;
-  const bearing=map.getBearing()*rad;
-  // 90° angular separation corresponds to the globe horizon.
-  const horizon=map.project([c.lng+90,c.lat]);
+  // Point on the great-circle horizon (90 degrees from map center).
+  const horizon=map.project([c.lng+90,0]);
   const radius=Math.hypot(horizon.x-center.x,horizon.y-center.y);
   if(Number.isFinite(radius)&&radius>0){
    const distance=Math.hypot(q.x-center.x,q.y-center.y);
