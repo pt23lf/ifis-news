@@ -29,3 +29,13 @@ If the GDELT index, zip, PHP zip extension or database is unavailable, importer 
 - Validate actual GDELT export schema columns (ActionGeo FullName 51, Latitude 55, Longitude 56, NumMentions 31, NumSources 32, NumArticles 33, DATEADDED 58, SOURCEURL 59) against a live downloaded file.
 - Apply map time slider to GDELT markers and permit user toggles/zoom-dependent aggregation after first live verification.
 - Ensure caching, permissions, retention, and operational reliability meet production policies. A legal review is still recommended.
+
+## Phase 2 — Zeitfilter und Quellenstandorte (2026-10-20)
+- `public/activity-data.php` liefert zusätzlich stündliche Aktivitäts-Buckets je 1°-Zelle (bis zu 48 Stunden); die stündliche Zuordnung ist an den Rändern des gewählten Zeitraums maximal um eine Stunde unscharf.
+- Der bereits bestehende `mapTimeRange`-Slider filtert GDELT-Marker, stündliche Beobachtungszahlen und die verfügbaren Erstquellen-URLs. Bei einer Auswahl wird auch die Verbindungsanzeige neu gefiltert.
+- `public/source-offices.json` verwaltet manuell zu prüfende Redaktionsorte separat. Die Liste ist eine Positivliste, keine automatische TLD-Geolokalisierung. `manual_review` stellt **keine** abschließende rechtliche oder geografische Verifikation dar.
+- Linien zeigen die ausgewählte GDELT-Erstquelle zu einer angenäherten Ereigniszelle. Sie zeigen weder den tatsächlichen Rechercheort, einen Nachrichtenfluss noch sämtliche berichtenden Medien.
+- Ein bereits geöffneter Popup-Inhalt ist ein Schnappschuss zum Klickzeitpunkt; für die neue Auswahl erneut klicken.
+- Die zurückgelieferten Ereignisorte sind 1°-Rasterzellen und die 250 Zellen werden vor der Slider-Filterung nach 48-Stunden-Gesamtaktivität ausgewählt. Der Filter ist daher keine vollständige weltweite Topliste für kürzere Zeitfenster.
+- Aktivitätspunkte selbst sind keine deduplizierten Ereignisse; Summen der GDELT NumSources-Werte sind keine Anzahl einzigartiger Verlage.
+- Deploy: `git pull origin main`. Vor produktiver Bewertung Browserkonsole, PHP-Ausgabe und Realzeitdaten überprüfen.
