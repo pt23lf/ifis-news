@@ -14,7 +14,12 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   if(!hash_equals($_SESSION['ifis_admin_token'],(string)($_POST['csrf']??'')))throw new RuntimeException('Sitzung abgelaufen.');
   $action=(string)($_POST['action']??'');
   if($action==='login'){
-   if($hash===''||!password_verify((string)($_POST['password']??''),$hash))throw new RuntimeException('Anmeldung fehlgeschlagen.');
+   if(($_SESSION['ifis_admin_tries']??0)>=5&&time()-($_SESSION['ifis_admin_last']??0)<900)throw new RuntimeException('Zu viele Versuche. Später erneut versuchen.');
+   if($hash===''||!password_verify((string)($_POST['password']??''),$hash)){
+    $_SESSION['ifis_admin_tries']=($_SESSION['ifis_admin_tries']??0)+1;$_SESSION['ifis_admin_last']=time();
+    throw new RuntimeException('Anmeldung fehlgeschlagen.');
+   }
+   $_SESSION['ifis_admin_tries']=0;
    session_regenerate_id(true);$_SESSION['ifis_admin_ok']=true;
   }elseif($action==='logout'){unset($_SESSION['ifis_admin_ok']);header('Location: admin-quellen.php');exit;}
   elseif($action==='save'&&!empty($_SESSION['ifis_admin_ok'])&&$hash!==''){
@@ -24,6 +29,8 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
    if(!$id||!in_array($status,['pending','approved','rejected'],true))throw new RuntimeException('Ungültige Auswahl.');
    if(($lat==='')!==($lon==='')||($lat!==''&&(!is_numeric($lat)||!is_numeric($lon)||abs((float)$lat)>90||abs((float)$lon)>180)))throw new RuntimeException('Koordinaten ungültig.');
    if($status==='approved'&&$lat==='')throw new RuntimeException('Vor Freigabe Koordinaten prüfen und eintragen.');
+   $cols=array_column($db->query('PRAGMA table_info(submissions)')->fetchAll(PDO::FETCH_ASSOC),'name');
+   foreach(['lat','lon'] as $col)if(!in_array($col,$cols,true))$db->exec("ALTER TABLE submissions ADD COLUMN $col REAL");
    $stmt=$db->prepare('UPDATE submissions SET status=?,lat=?,lon=? WHERE id=?');
    $stmt->execute([$status,$lat===''?null:(float)$lat,$lon===''?null:(float)$lon,$id]);
    $notice='Gespeichert.';
