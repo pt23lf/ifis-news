@@ -3,5 +3,15 @@
     "name": "IFIS · Artikel",
     "url": "https://ifis.net/artikel.rss",
     "section": "ifis"
+  },
+  {
+    "name": "NASA · News",
+    "url": "https://www.nasa.gov/feed/",
+    "section": "ifis"
+  },
+  {
+    "name": "NOAA · Environment",
+    "url": "https://www.noaa.gov/rss.xml",
+    "section": "ifis"
   }
 ]
