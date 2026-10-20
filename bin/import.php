@@ -44,7 +44,11 @@ $queue=$db->prepare("INSERT INTO article_analysis(article_id,input_hash,status,u
 $articleId=$db->prepare("SELECT id,title,summary FROM articles WHERE url=?");
 $feeds = json_decode(file_get_contents($base . '/config/feeds.json'), true, 512, JSON_THROW_ON_ERROR);
 $articlesBeforeImport=(int)$db->query('SELECT COUNT(*) FROM articles')->fetchColumn();
-$stmt = $db->prepare("INSERT INTO articles(url,title,source,section,published_at,summary,image_url,first_seen_at) VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(url) DO UPDATE SET image_url=CASE WHEN excluded.image_url != '' THEN excluded.image_url ELSE articles.image_url END");
+$stmt = $db->prepare("INSERT INTO articles(url,title,source,section,published_at,summary,image_url,first_seen_at) VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(url) DO UPDATE SET
+ section=excluded.section,
+ title=CASE WHEN excluded.source IN ('NASA · News','NOAA · Environment') THEN excluded.title ELSE articles.title END,
+ summary=CASE WHEN excluded.source IN ('NASA · News','NOAA · Environment') THEN '' ELSE articles.summary END,
+ image_url=CASE WHEN excluded.source IN ('NASA · News','NOAA · Environment') THEN '' WHEN excluded.image_url != '' THEN excluded.image_url ELSE articles.image_url END");
 $rights=json_decode((string)file_get_contents($base.'/config/rss-rights.json'),true,512,JSON_THROW_ON_ERROR);
 $allowed=[];
 foreach(($rights['feeds']??[]) as $entry){
