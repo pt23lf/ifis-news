@@ -1215,7 +1215,7 @@ body.ifis-info-open{overflow:hidden}
   <label class="map-legend-check"><input id="showEventMarkers" type="checkbox" checked><span class="map-legend-swatch map-legend-event" aria-hidden="true"></span><span>Ereignisorte</span></label>
   <label class="map-legend-check"><input id="showSourceMarkers" type="checkbox" checked><span class="map-legend-swatch map-legend-source" aria-hidden="true"></span><span>Quellenorte</span></label>
   <label class="map-legend-check"><input id="showGdeltData" type="checkbox" checked><span class="map-legend-swatch" style="background:#d9822b" aria-hidden="true"></span><span>GDELT-Aktivität</span></label>
-  <label class="map-legend-check"><input id="showLinkedInData" type="checkbox" checked><span class="map-legend-swatch" style="background:#278963" aria-hidden="true"></span><span>LinkedIn-Quellen (freigegeben)</span></label>
+  <label class="map-legend-check"><input id="showLinkedInData" type="checkbox" checked><span class="map-legend-swatch" style="background:#278963" aria-hidden="true"></span><span>Quellen (freigegeben)</span></label>
   <label class="map-legend-check"><input id="showSourceLinks" type="checkbox"><span class="map-legend-swatch map-legend-connection" aria-hidden="true"></span><span>Verbindungslinien</span></label>
   <label class="map-legend-check"><input id="nightToggle" type="checkbox"><span class="map-legend-swatch map-legend-night" aria-hidden="true"></span><span>Tag/Nacht</span></label>
  </section>
@@ -1502,7 +1502,7 @@ function translate(lang){
  setText('#infoPagesToggle span:not(.dock-symbol)','Seiten','Pages');
  // Feed title is controlled by refresh(); never overwrite it from the language switch.
  setText('label:has(#showGdeltData) span:last-child','GDELT-Aktivität','GDELT activity');
- setText('label:has(#showLinkedInData) span:last-child','LinkedIn-Quellen (freigegeben)','LinkedIn sources (approved)');
+ setText('label:has(#showLinkedInData) span:last-child','Quellen (freigegeben)','Sources (approved)');
  setText('label:has(#showEventMarkers) span:last-child','Ereignisorte','Event locations');
  setText('label:has(#showSourceMarkers) span:last-child','Quellenorte','Source locations');
  setText('label:has(#showSourceLinks) span:last-child','Verbindungslinien','Connection lines');
@@ -2681,7 +2681,7 @@ function loadGdeltActivity(){
   refreshGdeltActivity();
  }).catch(()=>{});
 }
-/* Only moderator-approved, explicitly geolocated voluntary LinkedIn submissions.
+/* Only moderator-approved, explicitly geolocated voluntary submissions.
    Never fetch or crawl LinkedIn. Coordinates must be manually verified in DB. */
 let linkedinMarkers=[];
 function refreshLinkedInVisibility(){
@@ -2715,13 +2715,14 @@ function loadLinkedInSources(){
    const el=document.createElement('button');el.type='button';el.className='ifis-activity-pin';
    el.classList.add('ifis-positive-compass');
    el.innerHTML='<span aria-hidden="true" class="positive-compass-needle"></span>';
-   el.title='Freigegebene LinkedIn-Quelle: '+item.title;
+   const kind={feed:'RSS/Atom',website:'Webseite',linkedin:'LinkedIn',network:'Netzwerk',post:'LinkedIn',profile:'LinkedIn'}[item.type]||'Quelle';
+   el.title='Freigegebene '+kind+'-Quelle: '+item.title;
    el.setAttribute('aria-label',el.title);
    el.addEventListener('click',()=>{
     const root=document.createElement('div');root.className='ifis-activity-source-list';
-    const title=document.createElement('strong');title.textContent=item.title;root.append(title);
+    const title=document.createElement('strong');title.textContent=item.title+' · '+kind;root.append(title);
     const d=document.createElement('p');d.textContent=item.description;root.append(d);
-    const a=document.createElement('a');a.href=item.url;a.target='_blank';a.rel='noopener noreferrer';a.textContent='Original auf LinkedIn öffnen ↗';root.append(a);
+    const a=document.createElement('a');a.href=item.url;a.target='_blank';a.rel='noopener noreferrer';a.textContent='Quelle öffnen ↗';root.append(a);
     const popup=new maplibregl.Popup({maxWidth:'310px',anchor:'top',offset:18}).setLngLat([item.lon,item.lat]).setDOMContent(root).addTo(map);
     popup.getElement()._ifisPopup=popup;
     focusMapMarker(item.lon,item.lat,popup.getElement());
