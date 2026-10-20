@@ -2747,7 +2747,7 @@ function loadLinkedInSources(){
    el.innerHTML='<span aria-hidden="true" class="positive-compass-needle"></span>';
    const kind={feed:'RSS/Atom',website:'Webseite',linkedin:'LinkedIn',network:'Netzwerk',ifis:'IFIS',post:'LinkedIn',profile:'LinkedIn'}[item.type]||'Quelle';
    el.removeAttribute('title');
-   el.setAttribute('aria-label',el.title+'; klicken für Artikel');
+   el.setAttribute('aria-label',item.title+' · '+kind+'; klicken für Artikel');
    const tip=document.createElement('div');
    tip.className='ifis-source-hover';tip.hidden=true;
    const tipName=document.createElement('strong');tipName.textContent=item.title;tip.append(tipName);
