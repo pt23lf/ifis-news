@@ -987,8 +987,37 @@ html[lang="en"] .topnav [data-subtitle-de]::after{content:attr(data-subtitle-en)
 .globe-view .map-view-switch{grid-column:1;grid-row:1;width:44px;height:44px;display:grid;place-items:center;cursor:pointer;border-radius:9px}
 .globe-view .map-view-switch:hover,.globe-view .map-view-switch:focus-visible{background:var(--line);outline-offset:-2px}
 .globe-view .map-legend-shell .map-view-switch svg{width:21px!important;height:21px!important;transform:none!important;margin:0!important}
+
+/* IFIS.net-style mobile header: wordmark left, globe and search right. */
+@media (max-width:720px){
+ .topbar,.topbar .topbar-inner{height:72px!important;min-height:72px!important}
+ .topbar .topbar-inner{padding:0 20px!important;gap:0!important;max-width:none!important}
+ .topbar .brand{font-size:22px!important;letter-spacing:.16em!important;font-weight:400!important;margin:0 auto 0 0!important}
+ .topbar-inner .topnav{width:44px!important;min-width:44px!important;flex:0 0 44px!important;height:44px!important;align-self:center!important;position:static!important;margin:0 14px 0 0!important}
+ .topbar-inner .topnav>a{display:none!important}
+ .topbar-inner .topnav::after{display:none!important}
+ .topbar-inner .topnav .globe-toggle{
+  display:grid!important;place-items:center!important;align-self:center!important;
+  width:44px!important;height:44px!important;min-height:44px!important;
+  margin:0!important;padding:0!important;border:0!important;background:transparent!important;
+  box-shadow:none!important;border-radius:50%!important;font-size:0!important;color:var(--muted)!important;
+ }
+ .topbar-inner .topnav .globe-toggle::before{
+  content:'';display:block;width:26px;height:26px;border:2px solid currentColor;border-radius:50%;
+  box-sizing:border-box;background:
+    linear-gradient(to right,transparent 46%,currentColor 46%,currentColor 53%,transparent 53%),
+    linear-gradient(to bottom,transparent 46%,currentColor 46%,currentColor 53%,transparent 53%);
+  clip-path:circle(50%);
+ }
+ .topbar-inner .topnav .globe-toggle::after{display:none!important}
+ .topbar-inner .grid-toggle{display:none!important}
+ .topbar-inner .top-actions{margin:0!important;width:44px!important;flex:0 0 44px!important;align-self:center!important}
+ .topbar-inner .mobile-search-toggle{display:grid!important;place-items:center!important;width:44px!important;height:44px!important;padding:0!important;color:var(--muted)!important}
+ .topbar-inner .mobile-search-toggle svg{width:27px!important;height:27px!important}
+ .topbar-inner .search{top:72px!important}
+}
 </style></head><body>
-<header class="topbar"><div class="topbar-inner"><a class="brand" href="?view=world"><strong>IFIS</strong></a><nav class="topnav" aria-label="Bereiche"><a href="?view=ifis&amp;map=0" class="<?= $view==='ifis'?'active':'' ?>" data-subtitle-de="Nachrichten mit Veränderungspotenzial" data-subtitle-en="News with potential for change">Potenzial</a><button class="globe-toggle" id="globeToggle" type="button" aria-pressed="false" data-subtitle-de="Nachrichten geografisch entdecken" data-subtitle-en="Explore news geographically">Karte</button><a href="?view=world&amp;map=0" class="<?= $view==='world'?'active':'' ?>" data-subtitle-de="Nachrichten aus aller Welt" data-subtitle-en="News from around the world">Weltlage</a></nav><button type="button" id="gridToggle" class="grid-toggle" title="Spaltenzahl ändern" aria-label="Spaltenzahl ändern"><svg class="grid-toggle-symbol" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="2.5" y="13.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="13.5" width="8" height="8" rx="1.3"/></svg><span id="gridCount">1</span></button><div class="top-actions"><button type="button" id="mobileSearchToggle" class="mobile-search-toggle" aria-label="Suche öffnen" aria-expanded="false" title="Nachrichten suchen"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg></button><input class="search" id="search" type="search" placeholder="Nachrichten durchsuchen …" aria-label="Nachrichten durchsuchen"></div></div></header>
+<header class="topbar"><div class="topbar-inner"><a class="brand" href="?view=world"><strong>IFIS</strong></a><nav class="topnav" aria-label="Bereiche"><a href="?view=ifis&amp;map=0" class="<?= $view==='ifis'?'active':'' ?>" data-subtitle-de="Nachrichten mit Veränderungspotenzial" data-subtitle-en="News with potential for change">Potenzial</a><button class="globe-toggle" id="globeToggle" type="button" aria-pressed="false" aria-label="Karte öffnen" title="Karte öffnen" data-subtitle-de="Nachrichten geografisch entdecken" data-subtitle-en="Explore news geographically">Karte</button><a href="?view=world&amp;map=0" class="<?= $view==='world'?'active':'' ?>" data-subtitle-de="Nachrichten aus aller Welt" data-subtitle-en="News from around the world">Weltlage</a></nav><button type="button" id="gridToggle" class="grid-toggle" title="Spaltenzahl ändern" aria-label="Spaltenzahl ändern"><svg class="grid-toggle-symbol" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="2.5" y="13.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="13.5" width="8" height="8" rx="1.3"/></svg><span id="gridCount">1</span></button><div class="top-actions"><button type="button" id="mobileSearchToggle" class="mobile-search-toggle" aria-label="Suche öffnen" aria-expanded="false" title="Nachrichten suchen"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg></button><input class="search" id="search" type="search" placeholder="Nachrichten durchsuchen …" aria-label="Nachrichten durchsuchen"></div></div></header>
 <div id="savedShareOverlay" class="news-share-overlay" hidden><div class="news-share-dialog" role="dialog" aria-modal="true" aria-labelledby="savedShareHeading"><div class="news-share-header"><strong id="savedShareHeading">Gemerktliste teilen</strong><button id="savedShareClose" type="button" aria-label="Schließen">×</button></div><p>Die gemerkten Artikel als unveränderliche Sammlung teilen.</p><div class="news-share-grid"><button id="savedShareCopy" type="button">Link kopieren</button><button id="savedShareSystem" type="button">Teilen …</button><button id="savedShareEmail" type="button">E-Mail</button><button id="savedShareWhatsapp" type="button">WhatsApp</button></div><small id="savedShareFeedback" role="status"></small></div></div><div class="layout">
 
 <main id="main"><div class="news-import-strip" role="status" aria-label="Nachrichtenbestand und Aktualisierung">
