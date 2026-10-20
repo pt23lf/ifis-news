@@ -1196,6 +1196,11 @@ body > .dock-time-panel input[type="range"]{
 .story .story-menu>.save{font-size:19px;line-height:1;width:29px;height:29px;color:var(--text)!important}
 .story .story-menu>.save.saved{color:var(--text)!important}
 .story .story-menu>.save:hover,.story .story-menu>.save:focus-visible{color:var(--text)!important}
+/* Save star stays bottom-right, aligned with the location flags row. */
+#stories .story{position:relative}
+#stories .story .story-menu{position:absolute!important;right:0;bottom:15px;top:auto;grid-column:auto!important;grid-row:auto!important;justify-self:auto!important;align-self:auto!important}
+#stories .story>div:not(.story-menu){min-width:0}
+#stories .story .story-menu>.save{width:29px;height:29px}
 /* Source submission as an accessible overlay; standalone page remains available. */
 #sourceSuggestOverlay[hidden]{display:none!important}
 #sourceSuggestOverlay{position:fixed;inset:0;z-index:99999;background:rgba(8,16,24,.72);display:grid;place-items:center;padding:12px}
