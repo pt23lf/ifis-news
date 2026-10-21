@@ -116,9 +116,9 @@ $geo=array_values(array_map(static fn($r)=>['id'=>(int)$r['id'],'name'=>$r['name
 <input type="hidden" name="csrf" value="<?=h($_SESSION['ifis_admin_token'])?>"><input type="hidden" name="action" value="save"><input type="hidden" name="id" id="contactId">
 <label>Name oder Organisation<input name="name" id="name" maxlength="140" required></label>
 <label>LinkedIn-Profil oder Beitragslink (optional)<input type="url" name="linkedin_url" id="linkedin_url" placeholder="https://www.linkedin.com/..." maxlength="500"></label>
-<label>Öffentlich angegebener Profilstandort<input name="place" id="place" maxlength="160" placeholder="z. B. Nairobi, Kenia"></label>
-<div class="two"><label>Breitengrad<input name="lat" id="lat" type="number" step="any" min="-90" max="90"></label><label>Längengrad<input name="lon" id="lon" type="number" step="any" min="-180" max="180"></label></div>
-<button type="button" id="locate">Ort auf Karte finden</button><small class="muted">Nur bei Klick wird die eingegebene Ortsangabe an OpenStreetMap/Nominatim gesendet. Bitte Ergebnis prüfen; ungefähre Stadt- oder Regionsmitte.</small>
+<div class="two"><label>Stadt / Region<input id="city" maxlength="100" placeholder="z. B. Nairobi"></label><label>Land<input id="country" maxlength="100" placeholder="z. B. Kenia"></label></div>
+<input type="hidden" name="place" id="place"><input type="hidden" name="lat" id="lat"><input type="hidden" name="lon" id="lon">
+<small class="muted" id="geoStatus">Beim Speichern wird die ungefähre Position automatisch aus Stadt und Land ermittelt. Kein exakter Wohnort.</small>
 <label>Thema / Schlagwörter<input name="topic" id="topic" maxlength="220" placeholder="z. B. Biodiversität, Wasser"></label>
 <label>Unsere Verbindung<select name="relation" id="relation"><option value="commented">Ich habe kommentiert</option><option value="contact">LinkedIn-Kontakt</option><option value="interesting">Interessantes Profil</option></select></label>
 <label>Private Notiz<textarea name="note" id="note" maxlength="1200"></textarea></label>
@@ -131,8 +131,10 @@ $geo=array_values(array_map(static fn($r)=>['id'=>(int)$r['id'],'name'=>$r['name
 const contacts=<?=json_encode($rows,JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_INVALID_UTF8_SUBSTITUTE|JSON_UNESCAPED_UNICODE)?>;
 const geo=<?=json_encode($geo,JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_INVALID_UTF8_SUBSTITUTE|JSON_UNESCAPED_UNICODE)?>;
 const form=document.getElementById('contactForm');
-const ids=['name','linkedin_url','place','lat','lon','topic','relation','note'];
-function edit(id){const c=contacts.find(x=>Number(x.id)===Number(id));if(!c)return;document.getElementById('contactId').value=c.id;ids.forEach(k=>document.getElementById(k).value=c[k]??'');form.scrollIntoView({behavior:'smooth'});}
+const ids=['name','linkedin_url','topic','relation','note'];
+function edit(id){const c=contacts.find(x=>Number(x.id)===Number(id));if(!c)return;document.getElementById('contactId').value=c.id;ids.forEach(k=>document.getElementById(k).value=c[k]??'');
+ const parts=(c.place||'').split(',').map(x=>x.trim());document.getElementById('city').value=parts.slice(0,-1).join(', ')|| (parts.length===1?parts[0]:'');document.getElementById('country').value=parts.length>1?parts[parts.length-1]:'';
+ document.getElementById('place').value=c.place||'';document.getElementById('lat').value=c.lat??'';document.getElementById('lon').value=c.lon??'';form.scrollIntoView({behavior:'smooth'});}
 document.querySelectorAll('.edit').forEach(b=>b.addEventListener('click',()=>edit(b.dataset.id)));
 document.getElementById('reset').addEventListener('click',()=>{form.reset();document.getElementById('contactId').value='';});
 document.getElementById('filter').addEventListener('input',e=>{const q=e.target.value.toLocaleLowerCase('de');document.querySelectorAll('.contact').forEach(c=>c.hidden=!c.dataset.search.includes(q));});
@@ -149,18 +151,36 @@ if(window.maplibregl){
   new maplibregl.Marker({element:el,occludedOpacity:0}).setLngLat([c.lon,c.lat]).setPopup(new maplibregl.Popup({offset:18}).setDOMContent(box)).addTo(map);
  });
 }
-document.getElementById('locate').addEventListener('click',async()=>{
- const place=document.getElementById('place').value.trim();if(!place){alert('Bitte zuerst einen Ort eintragen.');return;}
- const btn=document.getElementById('locate');btn.disabled=true;btn.textContent='Suche …';
+let lastGeocode=0;
+form.addEventListener('submit',async e=>{
+ e.preventDefault();
+ const city=document.getElementById('city').value.trim(),country=document.getElementById('country').value.trim();
+ const place=[city,country].filter(Boolean).join(', ');
+ document.getElementById('place').value=place;
+ const lat=document.getElementById('lat'),lon=document.getElementById('lon');
+ const status=document.getElementById('geoStatus'),submit=form.querySelector('button[type="submit"]');
+ if(!place){lat.value='';lon.value='';form.submit();return;}
+ // Keep existing coordinates when editing a contact without changing its location.
+ const old=contacts.find(x=>String(x.id)===document.getElementById('contactId').value);
+ if(old&&old.place===place&&old.lat!==null&&old.lon!==null){form.submit();return;}
+ submit.disabled=true;status.textContent='Stadt und Land werden zugeordnet …';
  try{
-  const res=await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=3&q='+encodeURIComponent(place),{headers:{'Accept':'application/json'}});
-  if(!res.ok)throw Error('Dienst nicht erreichbar');
-  const items=await res.json();if(!items.length)throw Error('Ort nicht gefunden');
-  const p=items[0];if(!confirm('Ort übernehmen?\n'+p.display_name))return;
-  document.getElementById('lat').value=Number(p.lat).toFixed(5);
-  document.getElementById('lon').value=Number(p.lon).toFixed(5);
-  map?.flyTo({center:[Number(p.lon),Number(p.lat)],zoom:5});
- }catch(e){alert('Ortsuche nicht verfügbar: '+e.message+'. Koordinaten können manuell ergänzt werden.');}
- finally{btn.disabled=false;btn.textContent='Ort auf Karte finden';}
+  // Single, user-triggered lookup. No autocomplete or bulk requests.
+  const delay=Math.max(0,1100-(Date.now()-lastGeocode));if(delay)await new Promise(resolve=>setTimeout(resolve,delay));
+  lastGeocode=Date.now();
+  const endpoint='https://nominatim.openstreetmap.org/search?format=json&limit=1&q='+encodeURIComponent(place);
+  const res=await fetch(endpoint,{headers:{'Accept':'application/json'}});
+  if(!res.ok)throw Error('Geodienst derzeit nicht erreichbar');
+  const items=await res.json();
+  if(!items.length)throw Error('Ort nicht gefunden');
+  lat.value=Number(items[0].lat).toFixed(5);lon.value=Number(items[0].lon).toFixed(5);
+  status.textContent='Ort zugeordnet: '+items[0].display_name;
+  form.submit();
+ }catch(err){
+  lat.value='';lon.value='';
+  status.textContent='Ort konnte nicht zugeordnet werden.';
+  if(confirm('Die Ortsangabe konnte nicht automatisch auf der Karte platziert werden. Kontakt trotzdem ohne Kartenpunkt speichern?'))form.submit();
+  else submit.disabled=false;
+ }
 });
 </script></body></html>
