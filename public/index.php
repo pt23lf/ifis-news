@@ -1267,6 +1267,7 @@ body.ifis-info-open{overflow:hidden}
   <label class="map-legend-check"><input id="showEventMarkers" type="checkbox" checked><span class="map-legend-swatch map-legend-event" aria-hidden="true"></span><span>Ereignisorte</span></label>
   <label class="map-legend-check"><input id="showSourceMarkers" type="checkbox" checked><span class="map-legend-swatch map-legend-source" aria-hidden="true"></span><span>Quellenorte</span></label>
   <label class="map-legend-check"><input id="showGdeltData" type="checkbox" checked><span class="map-legend-swatch" style="background:#d9822b" aria-hidden="true"></span><span>GDELT-Aktivität</span></label>
+  <label class="map-legend-select">GDELT-Ereignistyp <select id="gdeltCameoFilter" aria-label="GDELT CAMEO-Ereignistyp"><option value="">Alle Ereignistypen</option><option value="01">01 · Öffentliche Aussagen</option><option value="02">02 · Appelle</option><option value="03">03 · Kooperationsabsicht</option><option value="04">04 · Konsultation</option><option value="05">05 · Diplomatische Zusammenarbeit</option><option value="06">06 · Materielle Zusammenarbeit</option><option value="07">07 · Hilfe leisten</option><option value="08">08 · Nachgeben</option><option value="09">09 · Untersuchung</option><option value="10">10 · Forderungen</option><option value="11">11 · Missbilligung</option><option value="12">12 · Ablehnung</option><option value="13">13 · Drohungen</option><option value="14">14 · Protest</option><option value="15">15 · Machtdemonstration</option><option value="16">16 · Beziehungen reduzieren</option><option value="17">17 · Zwang</option><option value="18">18 · Übergriffe</option><option value="19">19 · Kampfhandlungen</option><option value="20">20 · Unkonventionelle Gewalt</option></select></label>
   <label class="map-legend-check"><input id="showLinkedInData" type="checkbox" checked><span class="map-legend-swatch" style="background:#278963" aria-hidden="true"></span><span>Quellen (freigegeben)</span></label>
   <label class="map-legend-check"><input id="showSourceLinks" type="checkbox"><span class="map-legend-swatch map-legend-connection" aria-hidden="true"></span><span>Verbindungslinien</span></label>
   <label class="map-legend-check"><input id="nightToggle" type="checkbox"><span class="map-legend-swatch map-legend-night" aria-hidden="true"></span><span>Tag/Nacht</span></label>
@@ -2658,6 +2659,8 @@ window.ifisReloadGdelt=()=>loadGdeltActivity();
 // Unlike HTML markers, map layers are correctly occluded by the horizon.
 const GDELT_LAYER='ifis-gdelt-event-circles',GDELT_SOURCE='ifis-gdelt-event-points';
 let gdeltPoints=[],gdeltHoverTip=null,gdeltHandlersBound=false;
+const gdeltCameoFilter=document.getElementById('gdeltCameoFilter');
+gdeltCameoFilter?.addEventListener('change',()=>{loadGdeltActivity();});
 function updateGdeltLayer(){
  if(!map||!map.getStyle())return;
  const features=[];
@@ -2703,6 +2706,10 @@ function updateGdeltLayer(){
     const root=document.createElement('div');root.className='ifis-activity-source-list';
     const heading=document.createElement('strong');heading.textContent=current.observations+' GDELT-Ereignisbeobachtungen';root.append(heading);
     const types=document.createElement('p');types.textContent='CAMEO-Ereignistypen – Kooperation: '+(current.classes[1]+current.classes[2])+' · Konflikt: '+(current.classes[3]+current.classes[4])+' · unbekannt: '+current.classes[0];root.append(types);
+    const codes=Object.entries(point.cameo_codes||{});
+    if(codes.length){const detail=document.createElement('p');detail.textContent='Häufige CAMEO-Codes: '+codes.slice(0,8).map(([code,n])=>code+' ('+n+')').join(' · ');root.append(detail);}
+    const actors=Object.keys(point.actors||{});
+    if(actors.length){const detail=document.createElement('p');detail.textContent='Erfasste Akteure (GDELT): '+actors.slice(0,5).join(' · ');root.append(detail);}
     const note=document.createElement('p');note.textContent='Ungefähre Ortsgruppe. Die Verweise sind belegte Erstquellen einzelner Ereignisse, keine vollständige Berichterstattung. Keine kopierten Artikel.';root.append(note);
     const methodology=document.createElement('p');methodology.textContent='Gestrichelte Verbindungen: '+gdeltVisible(point).links.filter(x=>gdeltOffice(x.url)).length+' passende Erstquellen in der kuratierten Standortliste. '+(!gdeltSourceRegistryLoaded?'Standortliste noch nicht geladen. ':'')+'Fehlende Linien bedeuten fehlende Standortzuordnung, nicht fehlende Berichterstattung. Linien zeigen keine Nachrichtenwege.';root.append(methodology);
     const places=document.createElement('p');places.textContent='Ereignisorte: '+(point.places||[]).slice(0,10).join(' · ');root.append(places);
@@ -2726,7 +2733,7 @@ function updateGdeltLayer(){
 function loadGdeltActivity(){
  if(!map)return;
  const serial=++gdeltRequestSerial;
- fetch('activity-data.php?hours='+encodeURIComponent(window.ifisTimeHours()),{credentials:'omit'}).then(res=>{if(!res.ok)throw Error('data');return res.json()}).then(data=>{
+ fetch('activity-data.php?hours='+encodeURIComponent(window.ifisTimeHours())+'&cameo='+encodeURIComponent(gdeltCameoFilter?.value||''),{credentials:'omit'}).then(res=>{if(!res.ok)throw Error('data');return res.json()}).then(data=>{
   if(serial!==gdeltRequestSerial)return;
   if(Number.isFinite(data.oldest_hours))window.ifisTimelineUpdateMax(data.oldest_hours);
   const rangeNote=document.getElementById('ifisTimelineCoverageNote');
