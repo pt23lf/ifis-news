@@ -60,6 +60,18 @@ function saveContact(PDO $db,array $row,?int $id=null):void{
   $stmt->execute([...$values,gmdate('c')]);
  }
 }
+if($_SERVER['REQUEST_METHOD']==='POST'&&($_POST['action']??'')==='geocode'){
+ header('Content-Type: application/json; charset=utf-8');
+ if(!hash_equals((string)$_SESSION['ifis_admin_token'],(string)($_POST['csrf']??''))){http_response_code(403);echo '{"error":"Sitzung abgelaufen"}';exit;}
+ $id=filter_var($_POST['id']??null,FILTER_VALIDATE_INT);
+ $lat=filter_var($_POST['lat']??null,FILTER_VALIDATE_FLOAT);
+ $lon=filter_var($_POST['lon']??null,FILTER_VALIDATE_FLOAT);
+ $original=trim((string)($_POST['place']??''));
+ if(!$id||$lat===false||$lon===false||abs($lat)>90||abs($lon)>180||strlen($original)>160){http_response_code(400);echo '{"error":"Koordinaten ungültig"}';exit;}
+ $stmt=$db->prepare('UPDATE contacts SET lat=?,lon=?,updated_at=? WHERE id=? AND place=? AND lat IS NULL AND lon IS NULL');
+ $stmt->execute([$lat,$lon,gmdate('c'),$id,$original]);
+ echo json_encode(['ok'=>$stmt->rowCount()===1]);exit;
+}
 if($_SERVER['REQUEST_METHOD']==='POST'&&($_POST['action']??'')!=='login'){
  try{
   if(!hash_equals((string)$_SESSION['ifis_admin_token'],(string)($_POST['csrf']??'')))throw new RuntimeException('Sitzung abgelaufen; neu laden.');
@@ -103,12 +115,15 @@ if($_SERVER['REQUEST_METHOD']==='POST'&&($_POST['action']??'')!=='login'){
   }
  }catch(Throwable $e){$error=$e instanceof PDOException?'Speichern fehlgeschlagen (möglicherweise doppelter LinkedIn-Link).':$e->getMessage();}
 }
-$rows=$db->query('SELECT * FROM contacts ORDER BY updated_at DESC,id DESC LIMIT 1000')->fetchAll(PDO::FETCH_ASSOC);
-$geo=array_values(array_map(static fn($r)=>['id'=>(int)$r['id'],'name'=>$r['name'],'url'=>$r['linkedin_url'],'place'=>$r['place'],'lat'=>(float)$r['lat'],'lon'=>(float)$r['lon'],'topic'=>$r['topic'],'relation'=>$r['relation']],array_filter($rows,static fn($r)=>$r['lat']!==null&&$r['lon']!==null)));
+$hasComments=(bool)$db->query("SELECT 1 FROM sqlite_master WHERE type='table' AND name='linkedin_comments'")->fetchColumn();
+$rows=$db->query($hasComments?
+ 'SELECT c.*, (SELECT COUNT(*) FROM linkedin_comments k WHERE k.contact_id=c.id) AS comments_count FROM contacts c ORDER BY c.updated_at DESC,c.id DESC LIMIT 1000':
+ 'SELECT c.*, 0 AS comments_count FROM contacts c ORDER BY c.updated_at DESC,c.id DESC LIMIT 1000')->fetchAll(PDO::FETCH_ASSOC);
+$geo=array_values(array_map(static fn($r)=>['id'=>(int)$r['id'],'name'=>$r['name'],'url'=>$r['linkedin_url'],'place'=>$r['place'],'lat'=>(float)$r['lat'],'lon'=>(float)$r['lon'],'topic'=>$r['topic'],'relation'=>$r['relation'],'comments_count'=>(int)$r['comments_count']],array_filter($rows,static fn($r)=>$r['lat']!==null&&$r['lon']!==null)));
 ?><!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mein Netzwerk · IFIS News</title>
 <link href="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.css" rel="stylesheet">
 <style>
-:root{font:15px system-ui,-apple-system,sans-serif;color-scheme:light dark}*{box-sizing:border-box}body{margin:0;background:Canvas;color:CanvasText}header{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid #aaa5}header a{color:inherit}header form{margin:0}main{max-width:1300px;margin:auto;padding:18px;display:grid;grid-template-columns:minmax(330px,430px) minmax(0,1fr);gap:20px}.panel{border:1px solid #aaa6;border-radius:12px;padding:16px}h1{font-size:1.4rem;margin:0}h2{font-size:1.1rem;margin:0 0 12px}label{display:grid;gap:4px;font-size:.9rem}input,select,textarea,button{font:inherit;padding:9px;border:1px solid #9998;border-radius:7px;max-width:100%}textarea{min-height:65px}button{cursor:pointer;background:transparent;color:inherit}.primary{background:#258457;color:#fff;border:0}.fields{display:grid;gap:11px}.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.muted{opacity:.7;font-size:.86rem}.message{background:#27896318;border-radius:8px;padding:9px}#map{height:580px;border-radius:12px;overflow:hidden;background:#e8eced}.contact{border-top:1px solid #aaa5;padding:13px 0;overflow-wrap:anywhere}.contact a{color:inherit}.contact strong{display:block}.actions{display:flex;gap:8px;margin-top:7px}.maplibregl-popup-content{color:#222;border-radius:12px}.compass{width:19px;height:19px;border-radius:50%;background:#fff;border:2px solid #277b63;display:grid;place-items:center;cursor:pointer}.compass::after{content:'';border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:9px solid #26895e}#list{max-height:550px;overflow-y:auto}#list:empty::after{content:'Noch keine Kontakte.'}.row{display:flex;justify-content:space-between;gap:12px;align-items:center}.small{font-size:.83rem}@media(max-width:850px){main{grid-template-columns:1fr}#map{height:360px}}
+:root{font:15px system-ui,-apple-system,sans-serif;color-scheme:light dark}*{box-sizing:border-box}body{margin:0;background:Canvas;color:CanvasText}header{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid #aaa5}header a{color:inherit}header form{margin:0}main{max-width:1300px;margin:auto;padding:18px;display:grid;grid-template-columns:minmax(330px,430px) minmax(0,1fr);gap:20px}.panel{border:1px solid #aaa6;border-radius:12px;padding:16px}h1{font-size:1.4rem;margin:0}h2{font-size:1.1rem;margin:0 0 12px}label{display:grid;gap:4px;font-size:.9rem}input,select,textarea,button{font:inherit;padding:9px;border:1px solid #9998;border-radius:7px;max-width:100%}textarea{min-height:65px}button{cursor:pointer;background:transparent;color:inherit}.primary{background:#258457;color:#fff;border:0}.fields{display:grid;gap:11px}.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.muted{opacity:.7;font-size:.86rem}.message{background:#27896318;border-radius:8px;padding:9px}#map{height:580px;border-radius:12px;overflow:hidden;background:#e8eced}.contact{border-top:1px solid #aaa5;padding:13px 0;overflow-wrap:anywhere}.contact a{color:inherit}.contact strong{display:block}.actions{display:flex;gap:8px;margin-top:7px}.maplibregl-popup-content{color:#222;border-radius:12px}.compass{width:19px;height:19px;border-radius:50%;background:#fff;border:2px solid #277b63;display:grid;place-items:center;cursor:pointer}.homepin{width:22px;height:22px;background:#2d557e;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 2px #2d557e}.map-tools{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:10px 0}.map-tools label{display:flex;align-items:center;gap:6px}.map-tools input{width:auto}.compass::after{content:'';border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:9px solid #26895e}#list{max-height:550px;overflow-y:auto}#list:empty::after{content:'Noch keine Kontakte.'}.row{display:flex;justify-content:space-between;gap:12px;align-items:center}.small{font-size:.83rem}@media(max-width:850px){main{grid-template-columns:1fr}#map{height:360px}}
 </style></head><body>
 <header><div><a href="/">← IFIS News</a> · <strong>Mein Netzwerk</strong> <span class="muted">privat</span></div><form method="post"><input type="hidden" name="csrf" value="<?=h($_SESSION['ifis_admin_token'])?>"><input type="hidden" name="action" value="logout"><button>Abmelden</button></form></header>
 <main><section class="panel"><h1>LinkedIn-Kontakte</h1><p><a href="admin-kommentare.php"><strong>→ LinkedIn-Kommentare importieren und ansehen</strong></a></p><p class="muted">Manuell erfassen oder CSV importieren. Diese Daten sind nicht öffentlich; keine LinkedIn-Abfragen.</p>
@@ -125,8 +140,8 @@ $geo=array_values(array_map(static fn($r)=>['id'=>(int)$r['id'],'name'=>$r['name
 <label>Private Notiz<textarea name="note" id="note" maxlength="1200"></textarea></label>
 <div class="row"><button class="primary" type="submit">Kontakt speichern</button><button type="button" id="reset">Neuer Kontakt</button></div>
 </form><hr><details><summary>CSV-Datei importieren</summary><p class="muted">Bis 500 Kontakte und 1 MB pro Import. Erste Zeile: <code>name,linkedin_url,city,country,topic,relation,note</code> (alternativ <code>place,lat,lon</code>). Kommagetrennte UTF-8-CSV. Doppelte LinkedIn-Links werden übersprungen. Ohne Koordinaten bleibt der Kontakt in der Liste.</p><form method="post" enctype="multipart/form-data"><input type="hidden" name="csrf" value="<?=h($_SESSION['ifis_admin_token'])?>"><input type="hidden" name="action" value="csv"><input type="file" name="csv" accept=".csv,text/csv" required><button>Privat importieren</button></form></details></section>
-<section><div class="panel"><div class="row"><h2>Deine Weltkarte</h2><small class="muted"><?=count($geo)?> Orte · <?=count($rows)?> Kontakte</small></div><div id="map" aria-label="Private Netzwerk-Weltkarte"></div><p class="muted">Die Punkte zeigen ungefähre Profilstandorte, nicht zwingend Wohnorte oder Orte der besprochenen Projekte.</p></div>
-<div class="panel" style="margin-top:16px"><h2>Kontakte</h2><label>Kontakt suchen<input id="filter" type="search" placeholder="Name, Ort, Thema …"></label><div id="list"><?php foreach($rows as $r):?><div class="contact" data-search="<?=h(mb_strtolower($r['name'].' '.$r['place'].' '.$r['topic'],'UTF-8'))?>"><strong><?=h($r['name'])?></strong><span class="muted"><?=h($r['place'])?> · <?=h($r['topic'])?></span><?php if($r['linkedin_url']):?><p class="small"><a href="<?=h($r['linkedin_url'])?>" target="_blank" rel="noopener noreferrer">LinkedIn öffnen ↗</a></p><?php endif;?><div class="actions"><button type="button" class="edit" data-id="<?=h($r['id'])?>">Bearbeiten</button><form method="post" onsubmit="return confirm('Diesen Kontakt wirklich löschen?')"><input type="hidden" name="csrf" value="<?=h($_SESSION['ifis_admin_token'])?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="confirm" value="yes"><input type="hidden" name="id" value="<?=h($r['id'])?>"><button>Löschen</button></form></div></div><?php endforeach;?></div></div>
+<section><div class="panel"><div class="row"><h2>Deine Weltkarte</h2><small class="muted"><?=count($geo)?> Orte · <?=count($rows)?> Kontakte</small></div><div class="map-tools"><label><input type="checkbox" id="showLines" checked> Verbindungslinien ab Lübeck</label><button id="geocodeMissing" type="button">Fehlende Orte zuordnen</button></div><p id="geoProgress" class="muted" role="status"></p><div id="map" aria-label="Private Netzwerk-Weltkarte"></div><p class="muted">Die Punkte zeigen ungefähre Profilstandorte, nicht zwingend Wohnorte oder Orte der besprochenen Projekte.</p></div>
+<div class="panel" style="margin-top:16px"><h2>Kontakte</h2><label>Kontakt suchen<input id="filter" type="search" placeholder="Name, Ort, Thema …"></label><div id="list"><?php foreach($rows as $r):?><div class="contact" data-search="<?=h(mb_strtolower($r['name'].' '.$r['place'].' '.$r['topic'],'UTF-8'))?>"><strong><?=h($r['name'])?></strong><span class="muted"><?=h($r['place'])?> · <?=h($r['topic'])?> · <?=h($r['comments_count'])?> Kommentare</span><?php if($r['linkedin_url']):?><p class="small"><a href="<?=h($r['linkedin_url'])?>" target="_blank" rel="noopener noreferrer">LinkedIn öffnen ↗</a></p><?php endif;?><div class="actions"><button type="button" class="edit" data-id="<?=h($r['id'])?>">Bearbeiten</button><form method="post" onsubmit="return confirm('Diesen Kontakt wirklich löschen?')"><input type="hidden" name="csrf" value="<?=h($_SESSION['ifis_admin_token'])?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="confirm" value="yes"><input type="hidden" name="id" value="<?=h($r['id'])?>"><button>Löschen</button></form></div></div><?php endforeach;?></div></div>
 </section></main>
 <script src="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.js"></script><script>
 const contacts=<?=json_encode($rows,JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_INVALID_UTF8_SUBSTITUTE|JSON_UNESCAPED_UNICODE)?>;
@@ -143,15 +158,74 @@ let map=null;
 if(window.maplibregl){
  map=new maplibregl.Map({container:'map',style:'https://demotiles.maplibre.org/style.json',projection:'globe',center:[12,23],zoom:1.2});
  map.addControl(new maplibregl.NavigationControl(),'top-right');
+ const home=[10.686,53.866];
+ const sourcePin=document.createElement('div');sourcePin.className='homepin';sourcePin.title='Lübeck – Startpunkt deines Netzwerks';
+ new maplibregl.Marker({element:sourcePin,occludedOpacity:0}).setLngLat(home).setPopup(new maplibregl.Popup({offset:15}).setText('Mein Netzwerk · Lübeck')).addTo(map);
+ const degrees=Math.PI/180;
+ const toVector=([lon,lat])=>[Math.cos(lat*degrees)*Math.cos(lon*degrees),Math.cos(lat*degrees)*Math.sin(lon*degrees),Math.sin(lat*degrees)];
+ function arc(target){
+  const a=toVector(home),b=toVector(target);const dot=Math.min(1,Math.max(-1,a.reduce((sum,v,i)=>sum+v*b[i],0)));const angle=Math.acos(dot);
+  if(angle<1e-7)return [home,target];
+  const positions=[];const sin=Math.sin(angle);
+  for(let i=0;i<=48;i++){
+   const t=i/48,x=Math.sin((1-t)*angle)/sin,y=Math.sin(t*angle)/sin;
+   const v=a.map((val,k)=>val*x+b[k]*y);
+   positions.push([Math.atan2(v[1],v[0])/degrees,Math.atan2(v[2],Math.hypot(v[0],v[1]))/degrees]);
+  }
+  return positions;
+ }
+ function drawLines(){
+  const features=geo.map(c=>({type:'Feature',geometry:{type:'LineString',coordinates:arc([c.lon,c.lat])},properties:{name:c.name}}));
+  const data={type:'FeatureCollection',features};
+  if(!map.getSource('network-connections'))map.addSource('network-connections',{type:'geojson',data});
+  else map.getSource('network-connections').setData(data);
+  if(!map.getLayer('network-connections'))map.addLayer({id:'network-connections',type:'line',source:'network-connections',paint:{'line-color':'#2c8a67','line-opacity':0.58,'line-width':1.5}});
+  map.setLayoutProperty('network-connections','visibility',document.getElementById('showLines').checked?'visible':'none');
+ }
+ map.on('style.load',drawLines);
+ document.getElementById('showLines').addEventListener('change',()=>{if(map.getLayer('network-connections'))map.setLayoutProperty('network-connections','visibility',document.getElementById('showLines').checked?'visible':'none');});
+
  geo.forEach(c=>{
   const el=document.createElement('button');el.className='compass';el.type='button';el.setAttribute('aria-label',c.name);
   const box=document.createElement('div');const title=document.createElement('strong');title.textContent=c.name;box.append(title);
   const place=document.createElement('p');place.textContent=c.place||'Ungefährer Profilstandort';box.append(place);
   if(c.topic){const t=document.createElement('p');t.textContent=c.topic;box.append(t);}
+  const interactions=document.createElement('p');interactions.textContent=(c.comments_count||0)+' erfasste Kommentare';box.append(interactions);
   if(c.url){const link=document.createElement('a');link.href=c.url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='LinkedIn öffnen ↗';box.append(link);}
   new maplibregl.Marker({element:el,occludedOpacity:0}).setLngLat([c.lon,c.lat]).setPopup(new maplibregl.Popup({offset:18}).setDOMContent(box)).addTo(map);
  });
 }
+document.getElementById('geocodeMissing').addEventListener('click',async()=>{
+ const pending=contacts.filter(c=>c.place&& (c.lat===null||c.lon===null));
+ const status=document.getElementById('geoProgress'),button=document.getElementById('geocodeMissing');
+ if(!pending.length){status.textContent='Alle bekannten Orte sind bereits zugeordnet.';return;}
+ // Limit each manually initiated operation to 15 locations and respect Nominatim rate limits.
+ const batch=pending.slice(0,15);const cache=new Map();let success=0,failed=0;
+ button.disabled=true;
+ for(const [i,c] of batch.entries()){
+  status.textContent='Orte zuordnen: '+(i+1)+'/'+batch.length+' · '+c.place;
+  try{
+   let loc=cache.get(c.place.toLocaleLowerCase('de'));
+   if(!loc){
+    const response=await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q='+encodeURIComponent(c.place),{headers:{Accept:'application/json'}});
+    if(!response.ok)throw Error('Suche fehlgeschlagen');
+    const data=await response.json();
+    if(!data.length)throw Error('Kein Ort gefunden');
+    loc=[Number(data[0].lat),Number(data[0].lon)];
+    cache.set(c.place.toLocaleLowerCase('de'),loc);
+   }
+   const body=new URLSearchParams({action:'geocode',csrf:<?=json_encode($_SESSION['ifis_admin_token'])?>,id:String(c.id),place:c.place,lat:String(loc[0]),lon:String(loc[1])});
+   const saved=await fetch('admin-netzwerk.php',{method:'POST',credentials:'same-origin',body});
+   const result=await saved.json();
+   if(!result.ok)throw Error('Nicht gespeichert');
+   success++;
+  }catch(e){failed++;console.warn('Ortszuordnung',c.place,e);}
+  // Never exceed 1 request/second to public Nominatim.
+  if(i<batch.length-1)await new Promise(resolve=>setTimeout(resolve,1300));
+ }
+ status.textContent=success+' Orte zugeordnet, '+failed+' offen. Karte wird neu geladen …';
+ location.reload();
+});
 let lastGeocode=0;
 form.addEventListener('submit',async e=>{
  e.preventDefault();
