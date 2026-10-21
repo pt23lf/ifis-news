@@ -60,8 +60,14 @@ $db->exec('PRAGMA busy_timeout=15000');
 $db->exec('CREATE TABLE IF NOT EXISTS gdelt_observations(id TEXT PRIMARY KEY, time TEXT NOT NULL, place TEXT NOT NULL, lat REAL NOT NULL, lon REAL NOT NULL, source_domain TEXT NOT NULL, source_url TEXT NOT NULL, mentions INTEGER NOT NULL, sources INTEGER NOT NULL, articles INTEGER NOT NULL)');
 $cols=$db->query('PRAGMA table_info(gdelt_observations)')->fetchAll(PDO::FETCH_ASSOC);
 if(!in_array('quad_class',array_column($cols,'name'),true))$db->exec('ALTER TABLE gdelt_observations ADD COLUMN quad_class INTEGER NOT NULL DEFAULT 0');
-$db->exec('CREATE INDEX IF NOT EXISTS idx_gdelt_time ON gdelt_observations(time)');
-$put=$db->prepare('INSERT OR REPLACE INTO gdelt_observations(id,time,place,lat,lon,source_domain,source_url,mentions,sources,articles,quad_class) VALUES(?,?,?,?,?,?,?,?,?,?,?)');
+// GDELT 2.0 column mappings: Actor1Name=7, Actor2Name=17,
+ // EventCode=27, EventBaseCode=28, EventRootCode=29 (1-based).
+ foreach(['event_code'=>'TEXT','event_base_code'=>'TEXT','event_root_code'=>'TEXT','actor1_name'=>'TEXT','actor2_name'=>'TEXT'] as $col=>$type){
+  if(!in_array($col,array_column($cols,'name'),true))$db->exec('ALTER TABLE gdelt_observations ADD COLUMN '.$col.' '.$type);
+ }
+ $db->exec('CREATE INDEX IF NOT EXISTS idx_gdelt_time ON gdelt_observations(time)');
+ $db->exec('CREATE INDEX IF NOT EXISTS idx_gdelt_root_time ON gdelt_observations(event_root_code,time)');
+$put=$db->prepare('INSERT OR REPLACE INTO gdelt_observations(id,time,place,lat,lon,source_domain,source_url,mentions,sources,articles,quad_class,event_code,event_base_code,event_root_code,actor1_name,actor2_name) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
 $count=0;$rowsRead=0;$db->beginTransaction();
 try{
  while(($line=fgets($stream))!==false){
@@ -77,7 +83,12 @@ try{
   $domain=strtolower((string)parse_url($url,PHP_URL_HOST));
   if(!$domain||strlen($domain)>180)continue;
   $when=substr($date,0,4).'-'.substr($date,4,2).'-'.substr($date,6,2).' '.substr($date,8,2).':'.substr($date,10,2).':'.substr($date,12,2);
-  $put->execute([$id,$when,$place,(float)$lat,(float)$lon,$domain,$url,max(0,(int)$row[31]),max(0,(int)$row[32]),max(0,(int)$row[33]),in_array((int)$row[29],[1,2,3,4],true)?(int)$row[29]:0]);$count++;
+  $eventCode=trim($row[26]);$baseCode=trim($row[27]);$rootCode=trim($row[28]);
+  $codeOk=static fn(string $value,int $min,int $max): ?string =>
+   preg_match('/^[0-9]{'.$min.','.$max.'}$/',$value)?$value:null;
+  $actor1=trim($row[6]);$actor2=trim($row[16]);
+  $put->execute([$id,$when,$place,(float)$lat,(float)$lon,$domain,$url,max(0,(int)$row[31]),max(0,(int)$row[32]),max(0,(int)$row[33]),in_array((int)$row[29],[1,2,3,4],true)?(int)$row[29]:0,
+   $codeOk($eventCode,2,4),$codeOk($baseCode,2,3),$codeOk($rootCode,2,2),$actor1!==''?substr($actor1,0,180):null,$actor2!==''?substr($actor2,0,180):null]);$count++;
   if($count>=8000)break;
  }
  if($count===0)throw new RuntimeException('GDELT archive contained '.$rowsRead.' rows but none matched the expected 61-field event schema; existing observations preserved');
