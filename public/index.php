@@ -1292,6 +1292,18 @@ body > .dock-time-panel input[type="range"]{
 @media(max-width:720px){
  #stories .story>.story-content{grid-column:1/-1}
 }
+/* Fourth article layout: full-width text list, including cards that have images. */
+#stories.grid-4{display:block}
+#stories.grid-4 .story,
+#stories.grid-4 .story.feature,
+#stories.grid-4 .story:not(.feature):not(:has(.thumb)){
+ display:block;grid-template-columns:none;padding:16px 0;border:0;border-bottom:1px solid var(--line);border-radius:0;background:transparent;
+}
+#stories.grid-4 .story .thumb{display:none!important}
+#stories.grid-4 .story>.story-content{padding:0;width:100%}
+#stories.grid-4 .story h2,#stories.grid-4 .story.feature h2{font-size:18px;line-height:1.35;margin:0 0 6px}
+#stories.grid-4 .story .summary{display:-webkit-box!important;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;font-size:14px;line-height:1.45;margin:4px 0 9px}
+@media(max-width:720px){#stories.grid-4 .story h2,#stories.grid-4 .story.feature h2{font-size:17px}}
 /* Two-stage source markers: summary on hover, article links on click. */
 .ifis-activity-pin{position:relative}
 .ifis-source-hover{position:absolute;left:50%;bottom:calc(100% + 12px);transform:translateX(-50%);width:max-content;max-width:min(280px,80vw);min-width:170px;background:var(--bg);color:var(--text);text-align:left;white-space:normal;border:1px solid var(--line);box-shadow:0 4px 18px #0003;border-radius:9px;padding:10px;pointer-events:none;font:12px/1.4 system-ui,sans-serif;z-index:40}
@@ -1364,7 +1376,7 @@ body.ifis-info-open{overflow:hidden}
  $imageScheme=strtolower((string)parse_url($imageCandidate,PHP_URL_SCHEME));
  $imageRights=$feedImageRights[(string)($item['source']??'')]??false;
  $showImage=$imageScheme==='https'&&$imageHost!==''&&($item['source']==='IFIS · Artikel'||$imageRights);
- ?><?php if($showImage): ?><img class="thumb" src="<?=esc($imageCandidate)?>" loading="lazy" decoding="async" referrerpolicy="no-referrer" alt="" onerror="this.style.display='none'"><?php endif; ?><div class="story-content"><div class="cat"><?=esc($item['category'])?></div><h2><a href="<?=esc($item['url'])?>" target="_blank" rel="noopener noreferrer"><?=esc($item['title'])?></a></h2><?php if(!empty($item['summary'])): ?><p class="summary"><?=esc($item['summary'])?></p><?php endif; ?><div class="meta"><?=esc($item['source'])?><?php if(($item['source']??'')==='USGS · Erdbeben'): ?> · Daten: U.S. Geological Survey<?php endif; ?><?php if($item['agency']): ?> · Agentur: <?=esc($item['agency'])?><?php endif; ?> · <time datetime="<?=esc(str_replace(' ','T',$item['published_at']))?>"><?=esc($item['published_at'])?></time> ↗</div><?php if(!empty($item['other_versions'])): ?><details class="news-duplicates"><summary><?=count($item['other_versions'])?> weitere Veröffentlichung<?=count($item['other_versions'])===1?'':'en'?> anzeigen</summary><?php foreach($item['other_versions'] as $other): ?><a href="<?=esc($other['url'])?>" target="_blank" rel="noopener noreferrer"><?=esc($other['source'])?> ↗</a><?php endforeach; ?></details><?php endif; ?><?php
+ ?><?php if($showImage): ?><img class="thumb" src="<?=esc($imageCandidate)?>" loading="lazy" decoding="async" referrerpolicy="no-referrer" alt="" onerror="this.style.display='none'"><?php endif; ?><div class="story-content"><h2><a href="<?=esc($item['url'])?>" target="_blank" rel="noopener noreferrer"><?=esc($item['title'])?></a></h2><?php if(!empty($item['summary'])): ?><p class="summary"><?=esc($item['summary'])?></p><?php endif; ?><div class="meta"><?=esc($item['source'])?><?php if(($item['source']??'')==='USGS · Erdbeben'): ?> · Daten: U.S. Geological Survey<?php endif; ?><?php if($item['agency']): ?> · Agentur: <?=esc($item['agency'])?><?php endif; ?> · <time datetime="<?=esc(str_replace(' ','T',$item['published_at']))?>"><?=esc($item['published_at'])?></time> ↗</div><?php if(!empty($item['other_versions'])): ?><details class="news-duplicates"><summary><?=count($item['other_versions'])?> weitere Veröffentlichung<?=count($item['other_versions'])===1?'':'en'?> anzeigen</summary><?php foreach($item['other_versions'] as $other): ?><a href="<?=esc($other['url'])?>" target="_blank" rel="noopener noreferrer"><?=esc($other['source'])?> ↗</a><?php endforeach; ?></details><?php endif; ?><?php
  $ifisDiscussionUrl='';
  if(($item['source']??'')==='IFIS · Artikel'){
   $parts=parse_url((string)($item['url']??''));
@@ -1387,7 +1399,7 @@ const prefix='ifis-news-v1-',load=(k)=>{try{return JSON.parse(localStorage.getIt
 let saved=load('saved'),hidden=load('hidden'),mode='all',cat='Alle';
 const stories=[...document.querySelectorAll('.story')],search=document.getElementById('search'),empty=document.getElementById('empty'),noMatches=document.getElementById('noMatches'),title=document.getElementById('feedTitle');
 const base='Links';
-const gridToggle=document.getElementById('gridToggle'),gridCount=document.getElementById('gridCount'),storyContainer=document.getElementById('stories');let gridCols=Number(localStorage.getItem(prefix+'grid-cols'))||1;if(![1,2,3].includes(gridCols))gridCols=1;function setGrid(n){gridCols=n;storyContainer.classList.remove('grid-1','grid-2','grid-3');storyContainer.classList.add('grid-'+n);gridCount.textContent=String(n);gridToggle.setAttribute('aria-label',n+' Spalten, zur nächsten Ansicht wechseln');localStorage.setItem(prefix+'grid-cols',String(n))}gridToggle.addEventListener('click',()=>setGrid(gridCols===3?1:gridCols+1));setGrid(gridCols);
+const gridToggle=document.getElementById('gridToggle'),gridCount=document.getElementById('gridCount'),storyContainer=document.getElementById('stories');let gridCols=Number(localStorage.getItem(prefix+'grid-cols'))||1;if(![1,2,3,4].includes(gridCols))gridCols=1;function setGrid(n){gridCols=n;storyContainer.classList.remove('grid-1','grid-2','grid-3','grid-4');storyContainer.classList.add('grid-'+n);gridCount.textContent=n===4?'Liste':String(n);const label=n===4?'Liste ohne Bilder, zur nächsten Ansicht wechseln':n+' Spalten, zur nächsten Ansicht wechseln';gridToggle.setAttribute('aria-label',label);gridToggle.title=label;localStorage.setItem(prefix+'grid-cols',String(n))}gridToggle.addEventListener('click',()=>setGrid(gridCols===4?1:gridCols+1));setGrid(gridCols);
 
 let mapSelectedStoryIds=null;let direction='all';const constructive=['restoration','restores','restored','regenerat','reforestation','reforest','clean energy','renewable energy','conservation','cooperation','peace agreement','recovery','reduces emissions','protects biodiversity','recycling','renaturier','wiederaufforst','erneuerbare energie','entsiegel','kooperation','friedensabkommen','emissionen senken','nachhaltig'];
 const harmful=['deforestation','pollution','habitat loss','mass extinction','war crimes','oil spill','toxic waste','biodiversity loss','environmental destruction','illegal logging','entwald','verschmutzung','artensterben','lebensraumverlust','kriegsverbrechen','ölkatastrophe','umweltzerstörung'];
