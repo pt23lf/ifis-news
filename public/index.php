@@ -117,13 +117,16 @@ $submittedDb=dirname(__DIR__).'/storage/source-submissions.sqlite';
 if(is_file($submittedDb)&&extension_loaded('pdo_sqlite')){
  try{
   $linked=new PDO('sqlite:'.$submittedDb,null,null,[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
-  $q=$linked->query("SELECT title,url,description,created_at FROM submissions WHERE status='approved' ORDER BY id DESC LIMIT 150");
+  $q=$linked->query("SELECT type,title,url,description,created_at FROM submissions WHERE status='approved' ORDER BY id DESC LIMIT 150");
   foreach($q as $record){
    $url=(string)$record['url'];$host=strtolower((string)parse_url($url,PHP_URL_HOST));
-   if(!($host==='lnkd.in'||$host==='linkedin.com'||str_ends_with($host,'.linkedin.com')))continue;
-   $items[]=['title'=>(string)$record['title'],'url'=>$url,'source'=>'LinkedIn · Freigegeben',
+   $parts=parse_url($url);
+   if(!is_array($parts)||strtolower((string)($parts['scheme']??''))!=='https'||$host===''||isset($parts['user'])||isset($parts['pass']))continue;
+   $isLinkedIn=$host==='lnkd.in'||$host==='linkedin.com'||str_ends_with($host,'.linkedin.com');
+   $items[]=['title'=>(string)$record['title'],'url'=>$url,'source'=>$isLinkedIn?'LinkedIn · Freigegeben':'Quelle · Freigegeben',
     'section'=>'world','published_at'=>str_replace('T',' ',substr((string)$record['created_at'],0,19)),
-    'summary'=>(string)$record['description'],'image_url'=>''];
+    'summary'=>(string)$record['description'],'image_url'=>'',
+    'category'=>category(['title'=>(string)$record['title'],'summary'=>(string)$record['description']])];
   }
  }catch(Throwable $e){error_log('LinkedIn submissions: '.$e->getMessage());}
 }
@@ -151,6 +154,7 @@ foreach($items as $item){
  if(!$matched)$deduplicated[]=$item;
 }
 $items=$deduplicated;
+usort($items,static fn($a,$b)=>strcmp((string)$b['published_at'],(string)$a['published_at']));
 
 // The CLI source-audit stores reviewable hints only; it never overrides editorial coordinates.
 $sourceImprintAudit=[];
@@ -1413,6 +1417,17 @@ function renderSources(){sourceList.replaceChildren();sourceNames.forEach(name=>
 document.getElementById('sourcesToggle').addEventListener('click',()=>{sourcePanel.hidden=!sourcePanel.hidden;renderSources()});
 document.getElementById('sourcesAll').addEventListener('click',()=>{enabledSources=[...sourceNames];localStorage.setItem(sourceKey,JSON.stringify(enabledSources));renderSources();refresh()});
 document.getElementById('sourcesNone').addEventListener('click',()=>{enabledSources=[];localStorage.setItem(sourceKey,JSON.stringify(enabledSources));renderSources();refresh()});
+// Make approved submissions visible for existing visitors once; later source choices persist.
+const submissionsMigrationKey=sourceKey+'-approved-submissions-v1';
+if(!localStorage.getItem(submissionsMigrationKey)){
+ for(const name of ['LinkedIn · Freigegeben','Quelle · Freigegeben']){
+  if(sourceNames.includes(name)&&!enabledSources.includes(name))enabledSources.push(name);
+ }
+ try{
+  localStorage.setItem(sourceKey,JSON.stringify(enabledSources));
+  localStorage.setItem(submissionsMigrationKey,'1');
+ }catch{}
+}
 renderSources();
 const toneFilter=document.getElementById('toneFilter'),baitFilter=document.getElementById('filterClickbait'),baitButton=document.getElementById('showFiltered');let showBait=false;
 const positive=['breakthrough','improve','success','recovery','restored','solution','progress','benefit','hope','reverses','reduces','erfolg','fortschritt','verbessert','lösung','hilft'];
@@ -1502,7 +1517,7 @@ function closeDockOverlays(){
 statsToggle.addEventListener('click',()=>{const opening=statsPanel.hidden;closeDockOverlays();statsPanel.hidden=!opening;statsToggle.setAttribute('aria-expanded',String(!statsPanel.hidden));renderNewsStats();if(!statsPanel.hidden)positionDockPanel(statsPanel,statsToggle)});
 document.getElementById('statsClose').addEventListener('click',()=>{statsPanel.hidden=true;statsToggle.setAttribute('aria-expanded','false')});
 function renderNewsStats(){if(statsPanel.hidden)return;const available=stories.filter(el=>enabledSources.includes(el.dataset.source));const visible=available.filter(el=>!el.classList.contains('hide'));document.getElementById('statsScope').textContent=available.length+' Meldungen aus aktivierten Quellen · '+visible.length+' aktuell angezeigt';const categories=[['Clickbait-Verdacht','bait',[['Verdacht','yes'],['Kein Treffer','no']]],['Tonlage','tone',[['Hoffnungsvoll','positive'],['Sachlich / gemischt','balanced'],['Belastend','negative'],['Nicht bestimmbar','unknown']]],['Entwicklungsrichtung','direction',[['Konstruktiv','constructive'],['Problemverstärkend','harmful'],['Gemischt','mixed'],['Nicht bestimmbar','unknown']]]];const root=document.getElementById('statsContent');root.replaceChildren();for(const [name,key,groups] of categories){const section=document.createElement('div');section.className='stats-group';const heading=document.createElement('strong');heading.textContent=name;section.append(heading);for(const [label,value] of groups){const n=available.filter(el=>el.dataset[key]===value).length;const row=document.createElement('div');row.className='stats-row';const caption=document.createElement('span');caption.textContent=label+' · '+n+' ('+(available.length?Math.round(n/available.length*100):0)+' %)';const bar=document.createElement('div');bar.className='stats-track';const fill=document.createElement('div');fill.className='stats-fill';fill.style.width=(available.length?n/available.length*100:0)+'%';bar.append(fill);row.append(caption,bar);section.append(row)}root.append(section)}}
-function refresh(){let count=0;const timeHours=Number(document.getElementById('mapTimeRange')?.value)||24;const now=Date.now();for(const el of stories){const url=el.dataset.url;const published=Date.parse(el.querySelector('time')?.getAttribute('datetime')||'');const withinTime=['IFIS · Artikel','LinkedIn · Freigegeben'].includes(el.dataset.source)||!Number.isFinite(published)||(now-published>=-3600000&&now-published<=timeHours*3600000);const show=mapSelectedStoryIds?mapSelectedStoryIds.has(el.id):(mode==='saved'?saved.includes(url):mode==='hidden'?hidden.includes(url):!hidden.includes(url))&&(cat==='Alle'||el.dataset.cat===cat)&&(direction==='all'||el.dataset.direction===direction)&&enabledSources.includes(el.dataset.source)&&withinTime&&el.dataset.search.includes(search.value.trim().toLocaleLowerCase())&&(toneFilter.value==='all'||el.dataset.tone===toneFilter.value)&&(showBait?el.dataset.bait==='yes':(!baitFilter.checked||el.dataset.bait!=='yes'));el.classList.toggle('hide',!show);el.querySelector('.save').textContent=saved.includes(url)?'★':'☆';el.querySelector('.save').classList.toggle('saved',saved.includes(url));el.querySelector('.save').setAttribute('aria-pressed',String(saved.includes(url)));el.querySelector('.save').setAttribute('aria-label',saved.includes(url)?'Nicht mehr merken':'Meldung merken');el.querySelector('.save').title=saved.includes(url)?'Nicht mehr merken':'Merken';el.querySelector('.dismiss').textContent=mode==='hidden'?'↶':'×';el.querySelector('.dismiss').title=mode==='hidden'?'Wieder anzeigen':'Ausblenden';if(show)count++}
+function refresh(){let count=0;const timeHours=Number(document.getElementById('mapTimeRange')?.value)||24;const now=Date.now();for(const el of stories){const url=el.dataset.url;const published=Date.parse(el.querySelector('time')?.getAttribute('datetime')||'');const withinTime=['IFIS · Artikel','LinkedIn · Freigegeben','Quelle · Freigegeben'].includes(el.dataset.source)||!Number.isFinite(published)||(now-published>=-3600000&&now-published<=timeHours*3600000);const show=mapSelectedStoryIds?mapSelectedStoryIds.has(el.id):(mode==='saved'?saved.includes(url):mode==='hidden'?hidden.includes(url):!hidden.includes(url))&&(cat==='Alle'||el.dataset.cat===cat)&&(direction==='all'||el.dataset.direction===direction)&&enabledSources.includes(el.dataset.source)&&withinTime&&el.dataset.search.includes(search.value.trim().toLocaleLowerCase())&&(toneFilter.value==='all'||el.dataset.tone===toneFilter.value)&&(showBait?el.dataset.bait==='yes':(!baitFilter.checked||el.dataset.bait!=='yes'));el.classList.toggle('hide',!show);el.querySelector('.save').textContent=saved.includes(url)?'★':'☆';el.querySelector('.save').classList.toggle('saved',saved.includes(url));el.querySelector('.save').setAttribute('aria-pressed',String(saved.includes(url)));el.querySelector('.save').setAttribute('aria-label',saved.includes(url)?'Nicht mehr merken':'Meldung merken');el.querySelector('.save').title=saved.includes(url)?'Nicht mehr merken':'Merken';el.querySelector('.dismiss').textContent=mode==='hidden'?'↶':'×';el.querySelector('.dismiss').title=mode==='hidden'?'Wieder anzeigen':'Ausblenden';if(show)count++}
 empty.classList.toggle('hide',stories.length>0||mode!=='all'||cat!=='Alle'||!!search.value);
 noMatches.classList.toggle('hide',count>0||(!stories.length&&mode==='all'&&cat==='Alle'&&!search.value));
 title.textContent=mode==='saved'?'☆':mode==='hidden'?'Ausgeblendet':cat==='Alle'?base:cat;
