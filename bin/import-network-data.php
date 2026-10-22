@@ -31,7 +31,7 @@ try{
   $q=$db->prepare('INSERT INTO capture_import_batches(path,digest,imported_at) VALUES(?,?,?)');
   $q->execute([$name,$digest,gmdate('c')]);
   $saved++;
-  echo $name.': '.$result['profiles'].' Profile, '.$result['posts'].' Beiträge, '.$result['comments'].' Kommentare neu; '.$result['existing']." bestehend.\n";
+  echo $name.': '.$result['profiles'].' Profile, '.$result['posts'].' Beiträge, '.$result['comments'].' Kommentare neu; '.($result['updated']??0).' Texte ergänzt; '.$result['existing']." bestehend.\n";
  }
  echo "$saved Pakete übernommen, $skipped unverändert übersprungen.\n";
 }catch(Throwable $e){

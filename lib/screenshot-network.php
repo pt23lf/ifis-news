@@ -63,7 +63,7 @@ function captureProfileId(PDO $db,string $key):?int {
  return (int)$r['id'];
 }
 function captureImport(PDO $db,array $b,bool $save):array {
- $counts=['profiles'=>0,'posts'=>0,'comments'=>0,'existing'=>0];
+ $counts=['profiles'=>0,'posts'=>0,'comments'=>0,'existing'=>0,'updated'=>0];
  $db->beginTransaction();
  try {
   foreach($b['profiles'] as $r){
@@ -129,9 +129,16 @@ function captureImport(PDO $db,array $b,bool $save):array {
    $url=captureUrl(captureText($r,'url',600));$evidence=captureText($r,'evidence',1000,true);
    $old=captureFind($db,'SELECT * FROM capture_comments WHERE source_key=?',[$key]);
    if($old){
-    if((int)$old['post_id']!==(int)$post['id']||(int)$old['author_id']!==$author||$old['text']!==$text)throw new RuntimeException('Kommentar-Schlüssel bereits mit anderen Daten belegt: '.$key);
-    $counts['existing']++;continue;
+    if((int)$old['post_id']!==(int)$post['id']||(int)$old['author_id']!==$author)throw new RuntimeException('Kommentar-Zuordnung weicht ab: '.$key);
+    if($old['text']!==$text||$old['text_status']!==$status){
+     $previous=captureText($r,'previous_text_sha256',64);
+     if(!preg_match('/^[a-f0-9]{64}$/',$previous)||!hash_equals(hash('sha256',$old['text']),$previous))throw new RuntimeException('Textänderung benötigt den passenden bisherigen Text-Hash: '.$key);
+     $q=$db->prepare('UPDATE capture_comments SET text=?,text_status=?,url=CASE WHEN ?<>"" THEN ? ELSE url END,evidence=? WHERE id=?');
+     $q->execute([$text,$status,$url,$url,$evidence,$old['id']]);$counts['updated']++;
+    }else{$counts['existing']++;}
+    continue;
    }
+   if(captureText($r,'previous_text_sha256',64)!=='')throw new RuntimeException('Zu ergänzender Kommentar fehlt: '.$key);
    $q=$db->prepare('INSERT INTO capture_comments(source_key,post_id,author_id,text,text_status,url,evidence) VALUES(?,?,?,?,?,?,?)');$q->execute([$key,$post['id'],$author,$text,$status,$url,$evidence]);$counts['comments']++;
   }
   if($save)$db->commit();else $db->rollBack();
