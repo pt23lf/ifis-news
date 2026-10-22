@@ -1511,7 +1511,24 @@ document.querySelectorAll('[data-cat]').forEach(b=>b.addEventListener('click',()
 document.querySelectorAll('.assess-open').forEach(b=>b.addEventListener('click',()=>{const story=b.closest('.story');story.querySelector('.assessment').open=true;story.querySelector('.story-menu').open=false;story.querySelector('.assessment').scrollIntoView({block:'nearest',behavior:'smooth'})}));
 document.querySelectorAll('.story-menu button').forEach(b=>b.addEventListener('click',()=>{const menu=b.closest('.story-menu');if(menu)menu.open=false}));
 document.querySelectorAll('.story time').forEach(t=>{const dt=new Date(t.dateTime);if(!Number.isFinite(dt.getTime()))return;const delta=Math.max(0,Date.now()-dt.getTime()),hours=Math.floor(delta/3600000),days=Math.floor(hours/24);t.textContent=days?days+' T':hours?hours+' h':Math.max(1,Math.floor(delta/60000))+' min'});
-document.querySelectorAll('.save').forEach(b=>b.addEventListener('click',()=>{const u=b.closest('.story').dataset.url;saved=saved.includes(u)?saved.filter(x=>x!==u):[...saved,u];store('saved',saved);refresh()}));
+// Article stars only change membership; the dock star alone switches views.
+// Keep even an unstarred card in place until the next explicit filter action.
+document.querySelectorAll('.save').forEach(b=>b.addEventListener('click',event=>{
+ event.preventDefault();event.stopPropagation();
+ const u=b.closest('.story').dataset.url;
+ const selected=!saved.includes(u);
+ saved=selected?[...saved,u]:saved.filter(x=>x!==u);
+ store('saved',saved);
+ for(const story of stories){
+  if(story.dataset.url!==u)continue;
+  const star=story.querySelector('.save');
+  star.textContent=selected?'★':'☆';
+  star.classList.toggle('saved',selected);
+  star.setAttribute('aria-pressed',String(selected));
+  star.setAttribute('aria-label',selected?'Nicht mehr merken':'Meldung merken');
+  star.title=selected?'Nicht mehr merken':'Merken';
+ }
+}));
 document.querySelectorAll('.dismiss').forEach(b=>b.addEventListener('click',()=>{const u=b.closest('.story').dataset.url;hidden=hidden.includes(u)?hidden.filter(x=>x!==u):[...hidden,u];store('hidden',hidden);refresh()}));
 
 const shareSavedOverlay=document.getElementById('savedShareOverlay');
