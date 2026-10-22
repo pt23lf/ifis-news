@@ -62,6 +62,11 @@ if($logged){
 <p><a href="<?=e($row['url'])?>" target="_blank" rel="noopener noreferrer"><?=e($row['url'])?></a></p>
 <?php if(!empty($row['feed_url'])):?><p>Feed: <?=e($row['feed_url'])?></p><?php endif;?>
 <p><?=e($row['place'])?> · <?=e($row['description'])?></p>
+<?php if(!empty($row['kind'])):?><p><?=e(['idea'=>'Idee / Projekt','offer'=>'Angebot / Lösungsansatz','challenge'=>'Anfrage / Herausforderung'][$row['kind']]??'Idee / Projekt')?></p><?php endif;?>
+<?php if(!empty($row['topics'])):?><p>Themen: <?=e($row['topics'])?></p><?php endif;?>
+<?php if(!empty($row['creator'])):?><p>Urheber: <?=e($row['creator'])?></p><?php endif;?>
+<?php if(!empty($row['private_note'])):?><details><summary>Persönliche Notiz · nur Admin</summary><p style="white-space:pre-wrap"><?=e($row['private_note'])?></p></details><?php endif;?>
+
 <form method="post"><input type="hidden" name="csrf" value="<?=e($_SESSION['ifis_admin_token'])?>"><input type="hidden" name="action" value="save"><input type="hidden" name="id" value="<?=e($row['id'])?>">
 <label>Status <select name="status"><?php foreach(['pending'=>'Offen','approved'=>'Freigeben','rejected'=>'Ablehnen'] as $value=>$label):?><option value="<?=e($value)?>" <?=$row['status']===$value?'selected':''?>><?=e($label)?></option><?php endforeach;?></select></label>
 <?php
