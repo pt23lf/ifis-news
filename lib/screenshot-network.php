@@ -98,8 +98,11 @@ function captureImport(PDO $db,array $b,bool $save):array {
    }else{
     $id=(int)$old['id'];$counts['existing']++;
     // Enrich missing fields only; never replace a manually verified location.
-    $q=$db->prepare('UPDATE contacts SET linkedin_url=CASE WHEN linkedin_url="" THEN ? ELSE linkedin_url END,place=CASE WHEN place="" THEN ? ELSE place END,topic=CASE WHEN topic="" THEN ? ELSE topic END,updated_at=? WHERE id=?');
-    $q->execute([$url,$place,$tags,gmdate('c'),$id]);
+    // A country-only location may be refined by a newly supplied city.
+    // Discard its previous country-centre coordinates so geocoding uses the city.
+    $refine=captureText($r,'city',75)!==''&&captureText($r,'country',75)!==''&&mb_strtolower(trim((string)$old['place']),'UTF-8')===mb_strtolower(captureText($r,'country',75),'UTF-8')?1:0;
+    $q=$db->prepare('UPDATE contacts SET linkedin_url=CASE WHEN linkedin_url="" THEN ? ELSE linkedin_url END,place=CASE WHEN place="" OR ?=1 THEN ? ELSE place END,lat=CASE WHEN ?=1 THEN NULL ELSE lat END,lon=CASE WHEN ?=1 THEN NULL ELSE lon END,topic=CASE WHEN topic="" THEN ? ELSE topic END,updated_at=? WHERE id=?');
+    $q->execute([$url,$refine,$place,$refine,$refine,$tags,gmdate('c'),$id]);
    }
    $q=$db->prepare('INSERT INTO capture_profiles(source_key,contact_id,homepage_url,headline,evidence) VALUES(?,?,?,?,?) ON CONFLICT(source_key) DO UPDATE SET homepage_url=CASE WHEN excluded.homepage_url<>"" THEN excluded.homepage_url ELSE capture_profiles.homepage_url END,headline=CASE WHEN excluded.headline<>"" THEN excluded.headline ELSE capture_profiles.headline END');
    $q->execute([$key,$id,$homepage,$headline,$evidence]);
