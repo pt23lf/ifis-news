@@ -1223,9 +1223,9 @@ body > .dock-time-panel input[type="range"]{
 .story .story-menu>.save{font-size:16px;line-height:1;width:26px;height:26px;color:var(--text)!important}
 .story .story-menu>.save.saved{color:var(--text)!important}
 .story .story-menu>.save:hover,.story .story-menu>.save:focus-visible{color:var(--text)!important}
-/* Save star stays bottom-right, aligned with the location flags row. */
+/* Article actions are positioned by the shared footer below. */
 #stories .story{position:relative}
-#stories .story .story-menu{position:absolute!important;right:0;bottom:15px;top:auto;grid-column:auto!important;grid-row:auto!important;justify-self:auto!important;align-self:auto!important}
+
 #stories .story>div:not(.story-menu){min-width:0}
 #stories .story .story-menu>.save{width:26px;height:26px}
 /* Unified floating menu: arrow below actions, compact globe language switch. */
@@ -1235,7 +1235,9 @@ body > .dock-time-panel input[type="range"]{
 #filterDock #filterDockToggle svg{display:block;transition:transform .18s ease}
 #filterDock.expanded #filterDockToggle svg{transform:rotate(180deg)}
 #filterDock .dock-language{display:flex;justify-content:center;align-items:center;margin:0;padding:0}
-#filterDock #language{display:none!important}
+#language[hidden]{display:none!important}
+#language:not([hidden]){display:block!important;position:fixed;z-index:10010;width:72px!important;max-width:72px!important;padding:8px!important}
+#filterDock .dock-language{position:relative}
 #filterDock #dockLanguageToggle{display:grid!important;place-items:center;width:46px!important;height:49px!important;min-height:0!important;padding:6px!important;border:0;background:transparent;color:var(--muted);cursor:pointer}
 #filterDock #dockLanguageToggle:hover,#filterDock #dockLanguageToggle:focus-visible{color:var(--text)}
 #filterDock #dockLanguageToggle svg{display:block}
@@ -1261,13 +1263,21 @@ body > .dock-time-panel input[type="range"]{
 @media(max-width:720px){#filterDock .filter-toolbar{max-height:65dvh}}
 /* One real action row per article: flexible left group and right-aligned save action. */
 #stories .story .story-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:34px;margin-top:9px;width:100%}
-#stories .story .story-footer-left{display:flex;align-items:center;gap:13px;min-width:0;flex-wrap:wrap}
+#stories .story .story-footer-left{display:flex;align-items:center;gap:12px;min-width:0;flex-wrap:nowrap}
 #stories .story .story-footer-left>.story-map-link{display:inline-flex;align-items:center;justify-content:center;margin:0;padding:3px 0;min-height:28px;white-space:nowrap;line-height:1.2}
 #stories .story .story-footer-left>.story-location-flags{display:inline-flex;align-items:center;gap:12px;margin:0;line-height:1;vertical-align:middle}
 #stories .story .story-footer-left>.ifis-discussion-link{display:inline-flex;align-items:center;margin:0;height:28px;vertical-align:middle}
 #stories .story .story-footer>.story-menu{position:relative!important;inset:auto!important;right:auto!important;bottom:auto!important;top:auto!important;flex:none;display:flex;align-items:center;justify-content:center;align-self:center!important;grid-column:auto!important;grid-row:auto!important}
 #stories .story .story-footer>.story-menu>.save{display:inline-flex;align-items:center;justify-content:center;padding:0!important;margin:0!important;width:28px;height:28px;line-height:1}
 #stories .story .story-footer .assessment{display:none}
+#stories .story .story-footer-left>.story-location-flags{display:contents}
+#stories .story .story-footer-left>.story-map-link,
+#stories .story .story-footer-left .story-location-flag,
+#stories .story .story-footer-left>.ifis-discussion-link{flex:none;min-height:32px;align-items:center}
+#stories .story .story-footer>.story-menu>.save{width:32px;height:32px}
+@media(max-width:720px){
+ #stories.grid-2,#stories.grid-3{grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr))}
+}
 @media(max-width:720px){#stories .story .story-footer-left{gap:9px}#stories .story .story-footer-left>.story-location-flags{gap:8px}}
 /* Two-stage source markers: summary on hover, article links on click. */
 .ifis-activity-pin{position:relative}
@@ -1331,7 +1341,7 @@ body.ifis-info-open{overflow:hidden}
   
  </section>
  <div class="globe-legend-update"><?=esc($lastImportLabel)?></div>
-</div></details></div><div class="globe-info" id="globeInfo">Nachrichten geografisch entdecken. Punkte zeigen erkannte Ereignisorte, nicht den Sitz der Redaktion. Die Zuordnung ist vorläufig.</div></div><div class="filter-dock" id="filterDock"><button class="filter-dock-toggle" id="filterDockToggle" type="button" aria-label="Menü aufklappen" aria-expanded="false" title="Menü aufklappen"><svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg></button><div class="filter-toolbar" aria-label="Nachrichtenfilter"><button type="button" id="dockTimeToggle" title="Nachrichtenzeitraum" aria-label="Nachrichtenzeitraum einstellen" aria-expanded="false" aria-controls="dockTimePanel"><span class="dock-symbol" aria-hidden="true">◷</span><span>Zeitraum</span></button><button type="button" id="statsToggle" title="Nachrichtenbilanz" aria-expanded="false"><span class="dock-symbol" aria-hidden="true">▥</span><span>Bilanz</span></button><button type="button" data-open-filter="saved" title="Gemerkt anzeigen" aria-label="Gemerkt anzeigen" aria-pressed="false"><span class="dock-symbol" aria-hidden="true">☆</span><span>Gemerkt</span></button><button type="button" id="infoPagesToggle" title="Infoseiten" aria-expanded="false" aria-controls="infoPagesPanel"><span class="dock-symbol" aria-hidden="true">☷</span><span>Seiten</span></button><a href="admin-netzwerk.php" class="dock-network-link" title="Mein Netzwerk öffnen" aria-label="Mein Netzwerk öffnen"><svg viewBox="0 0 24 24" width="27" height="27" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="2.3"/><circle cx="5" cy="18" r="2.3"/><circle cx="19" cy="18" r="2.3"/><path d="m10.9 7.1-4.7 8.8M13.1 7.1l4.7 8.8M7.5 18h9"/></svg><span>Netzwerk</span></a><button type="button" id="gridToggle" class="grid-toggle" title="Spaltenzahl ändern" aria-label="Spaltenzahl ändern"><svg class="grid-toggle-symbol" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="2.5" y="13.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="13.5" width="8" height="8" rx="1.3"/></svg><span id="gridCount">1</span></button><div class="dock-language"><button type="button" id="dockLanguageToggle" aria-label="Sprache wechseln" title="Sprache wechseln"><svg viewBox="0 0 24 24" width="27" height="27" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c-3 2.4-4.5 5.4-4.5 9s1.5 6.6 4.5 9c3-2.4 4.5-5.4 4.5-9S15 5.4 12 3Z"/></svg></button><select id="language" aria-label="Sprache auswählen" title="Sprache" style="border:1px solid var(--line);border-radius:16px;background:var(--bg);color:var(--text);padding:6px"><option value="de">DE</option><option value="en">EN</option></select></div></div></div><nav id="infoPagesPanel" class="info-pages-panel" aria-label="Informationsseiten" hidden>
+</div></details></div><div class="globe-info" id="globeInfo">Nachrichten geografisch entdecken. Punkte zeigen erkannte Ereignisorte, nicht den Sitz der Redaktion. Die Zuordnung ist vorläufig.</div></div><div class="filter-dock" id="filterDock"><button class="filter-dock-toggle" id="filterDockToggle" type="button" aria-label="Menü aufklappen" aria-expanded="false" title="Menü aufklappen"><svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg></button><div class="filter-toolbar" aria-label="Nachrichtenfilter"><button type="button" data-open-filter="saved" title="Gemerkt anzeigen" aria-label="Gemerkt anzeigen" aria-pressed="false"><span class="dock-symbol" aria-hidden="true">☆</span><span>Gemerkt</span></button><button type="button" id="infoPagesToggle" title="Infoseiten" aria-expanded="false" aria-controls="infoPagesPanel"><span class="dock-symbol" aria-hidden="true">☷</span><span>Seiten</span></button><div class="dock-language"><button type="button" id="dockLanguageToggle" aria-expanded="false" aria-controls="language" aria-label="Sprache wechseln" title="Sprache wechseln"><svg viewBox="0 0 24 24" width="27" height="27" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c-3 2.4-4.5 5.4-4.5 9s1.5 6.6 4.5 9c3-2.4 4.5-5.4 4.5-9S15 5.4 12 3Z"/></svg></button><select hidden id="language" aria-label="Sprache auswählen" title="Sprache" style="border:1px solid var(--line);border-radius:16px;background:var(--bg);color:var(--text);padding:6px"><option value="de">DE</option><option value="en">EN</option></select></div><button type="button" id="gridToggle" class="grid-toggle" title="Spaltenzahl ändern" aria-label="Spaltenzahl ändern"><svg class="grid-toggle-symbol" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="2.5" width="8" height="8" rx="1.3"/><rect x="2.5" y="13.5" width="8" height="8" rx="1.3"/><rect x="13.5" y="13.5" width="8" height="8" rx="1.3"/></svg><span id="gridCount">1</span></button><a href="admin-netzwerk.php" class="dock-network-link" title="Mein Netzwerk öffnen" aria-label="Mein Netzwerk öffnen"><svg viewBox="0 0 24 24" width="27" height="27" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="2.3"/><circle cx="5" cy="18" r="2.3"/><circle cx="19" cy="18" r="2.3"/><path d="m10.9 7.1-4.7 8.8M13.1 7.1l4.7 8.8M7.5 18h9"/></svg><span>Netzwerk</span></a><div hidden><button type="button" id="dockTimeToggle" title="Nachrichtenzeitraum" aria-label="Nachrichtenzeitraum einstellen" aria-expanded="false" aria-controls="dockTimePanel"><span class="dock-symbol" aria-hidden="true">◷</span><span>Zeitraum</span></button><button type="button" id="statsToggle" title="Nachrichtenbilanz" aria-expanded="false"><span class="dock-symbol" aria-hidden="true">▥</span><span>Bilanz</span></button></div></div></div><nav id="infoPagesPanel" class="info-pages-panel" aria-label="Informationsseiten" hidden>
 <a href="info.php?page=about">Über IFIS News</a><a href="info.php?page=method">Quellen &amp; Methodik</a>
 <a href="info.php?page=imprint">Impressum</a><a href="info.php?page=privacy">Datenschutz</a><a href="https://ifis.net/">IFIS.net ↗</a>
 </nav><section id="dockTimePanel" class="dock-time-panel" aria-label="Nachrichtenzeitraum" hidden><div class="dock-time-heading"><strong>Zeitraum</strong><output id="dockTimeValue" for="dockTimeRange">24 h</output></div><input id="dockTimeRange" type="range" min="0" max="11" step="1" value="9" aria-label="Nachrichten der letzten Stunden"><div class="map-range-labels"><span>30 Min.</span><span>48 Std.</span></div></section><section id="newsStats" class="news-stats" hidden><div class="news-stats-head"><strong>Nachrichtenbilanz</strong><button type="button" id="statsClose" aria-label="Schließen">×</button></div><p id="statsScope"></p><div id="statsContent"></div><p class="stats-disclaimer">Automatische Stichwort-Schätzungen aus Titel und Kurztext. Clickbait-Verdacht ist kein Qualitätsurteil; Tonlage und Entwicklungsrichtung sind unterschiedliche Dimensionen. „Nicht bestimmbar“ wird mitgezählt.</p></section><div class="direction-nav filter-section" data-filter-section="direction"><span class="direction-label">Planetare Entwicklungsrichtung <span title="Vorläufige Zuordnung aus Titel und Kurztext; keine Wirkungsanalyse">ⓘ</span></span><div class="direction-buttons"><button data-direction="all" class="active">Alle</button><button data-direction="constructive">↗ Konstruktiv</button><button data-direction="harmful">↘ Problematisch</button><button data-direction="mixed">↔ Ambivalent</button><button data-direction="unknown">? Offen</button></div></div><div class="chips filter-section" data-filter-section="topics" id="chips" aria-label="Themenfilter"><button class="chip active" data-cat="Alle">Alle</button><?php foreach(['Politik','Gesellschaft','Wirtschaft','Technologie','Umwelt','Gesundheit','Bildung','Wissenschaft','Weitere'] as $c): ?><button class="chip" data-cat="<?=esc($c)?>"><?=esc($c)?></button><?php endforeach; ?></div>
@@ -1469,9 +1479,12 @@ document.getElementById('mapTimeRange').addEventListener('input',()=>{
 dockTimeToggle.addEventListener('click',()=>{const opening=dockTimePanel.hidden;closeDockOverlays();dockTimePanel.hidden=!opening;dockTimeToggle.setAttribute('aria-expanded',String(opening));if(opening){syncDockTime();positionDockPanel(dockTimePanel,dockTimeToggle);}});
 syncDockTime();
 function closeDockOverlays(){
+ const languageSelect=document.getElementById('language');
+ languageSelect.hidden=true;
+ document.getElementById('dockLanguageToggle').setAttribute('aria-expanded','false');
  hideInfoPages();
  document.querySelectorAll('[data-filter-section].filter-expanded').forEach(panel=>panel.classList.remove('filter-expanded'));
- document.querySelectorAll('[data-open-filter].active').forEach(button=>{button.classList.remove('active');button.setAttribute('aria-expanded','false')});
+ document.querySelectorAll('[data-open-filter]:not([data-open-filter="saved"]).active').forEach(button=>{button.classList.remove('active');button.setAttribute('aria-expanded','false')});
  dockTimePanel.hidden=true;
  dockTimeToggle.setAttribute('aria-expanded','false');
  statsPanel.hidden=true;
@@ -1656,7 +1669,15 @@ function translate(lang){
  document.dispatchEvent(new CustomEvent('ifis-language-change',{detail:{language:lang}}));
 }
 language.addEventListener('change',()=>translate(language.value));
-document.getElementById('dockLanguageToggle').addEventListener('click',()=>{language.value=language.value==='de'?'en':'de';language.dispatchEvent(new Event('change',{bubbles:true}));});
+const languageToggle=document.getElementById('dockLanguageToggle');
+document.body.appendChild(language);
+language.addEventListener('pointerdown',event=>event.stopPropagation());
+languageToggle.addEventListener('click',()=>{
+ const opening=language.hidden;closeDockOverlays();
+ language.hidden=!opening;languageToggle.setAttribute('aria-expanded',String(opening));
+ if(opening){positionDockPanel(language,languageToggle);language.focus();}
+});
+language.addEventListener('change',()=>{language.hidden=true;languageToggle.setAttribute('aria-expanded','false');languageToggle.focus();});
 translate(localStorage.getItem(prefix+'lang')||'de');
 // Feed and map are separate closures: expose an explicit selection interface.
 window.ifisNewsFeed={
