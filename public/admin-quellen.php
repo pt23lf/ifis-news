@@ -60,10 +60,11 @@ if($logged){
 <p>Freigabe nur nach Prüfung von Quelle, Berechtigung und geografischer Zuordnung. Feeds werden nicht automatisch importiert.</p>
 <?php foreach($rows as $row):?><article><strong>#<?=e($row['id'])?> · <?=e($row['title'])?></strong><p><?=e($row['type'])?> · <?=e($row['status'])?></p>
 <p><a href="<?=e($row['url'])?>" target="_blank" rel="noopener noreferrer"><?=e($row['url'])?></a></p>
+<?php if(!empty($row['homepage_url'])&&filter_var($row['homepage_url'],FILTER_VALIDATE_URL)&&strtolower((string)parse_url($row['homepage_url'],PHP_URL_SCHEME))==='https'):?><p>Homepage: <a href="<?=e($row['homepage_url'])?>" target="_blank" rel="noopener noreferrer"><?=e($row['homepage_url'])?></a></p><?php endif;?>
 <?php if(!empty($row['feed_url'])):?><p>Feed: <?=e($row['feed_url'])?></p><?php endif;?>
 <p><?=e($row['place'])?> · <?=e($row['description'])?></p>
 <?php if(!empty($row['kind'])):?><p><?=e(['idea'=>'Idee / Projekt','offer'=>'Angebot / Lösungsansatz','challenge'=>'Anfrage / Herausforderung'][$row['kind']]??'Idee / Projekt')?></p><?php endif;?>
-<?php if(!empty($row['topics'])):?><p>Themen: <?=e($row['topics'])?></p><?php endif;?>
+<?php if(!empty($row['topics'])):?><p>Tags / Suchbegriffe: <?=e($row['topics'])?></p><?php endif;?>
 <?php if(!empty($row['creator'])):?><p>Urheber: <?=e($row['creator'])?></p><?php endif;?>
 <?php if(!empty($row['private_note'])):?><details><summary>Persönliche Notiz · nur Admin</summary><p style="white-space:pre-wrap"><?=e($row['private_note'])?></p></details><?php endif;?>
 
