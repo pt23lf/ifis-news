@@ -1228,6 +1228,18 @@ body > .dock-time-panel input[type="range"]{
 #stories .story .story-menu{position:absolute!important;right:0;bottom:15px;top:auto;grid-column:auto!important;grid-row:auto!important;justify-self:auto!important;align-self:auto!important}
 #stories .story>div:not(.story-menu){min-width:0}
 #stories .story .story-menu>.save{width:26px;height:26px}
+/* Unified floating menu: arrow below actions, compact globe language switch. */
+#filterDock{display:flex!important;flex-direction:column-reverse!important}
+#filterDock .filter-toolbar{align-items:center;gap:7px}
+#filterDock .filter-toolbar [data-open-filter="hidden"]{display:none!important}
+#filterDock #filterDockToggle svg{display:block;transition:transform .18s ease}
+#filterDock.expanded #filterDockToggle svg{transform:rotate(180deg)}
+#filterDock .dock-language{display:flex;justify-content:center;align-items:center;margin:0;padding:0}
+#filterDock #language{display:none!important}
+#filterDock #dockLanguageToggle{display:grid!important;place-items:center;width:46px!important;height:49px!important;min-height:0!important;padding:6px!important;border:0;background:transparent;color:var(--muted);cursor:pointer}
+#filterDock #dockLanguageToggle:hover,#filterDock #dockLanguageToggle:focus-visible{color:var(--text)}
+#filterDock #dockLanguageToggle svg{display:block}
+#filterDock [data-open-filter="saved"][aria-pressed="true"] .dock-symbol{color:var(--text);font-weight:700}
 /* One real action row per article: flexible left group and right-aligned save action. */
 #stories .story .story-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:34px;margin-top:9px;width:100%}
 #stories .story .story-footer-left{display:flex;align-items:center;gap:13px;min-width:0;flex-wrap:wrap}
@@ -1300,7 +1312,7 @@ body.ifis-info-open{overflow:hidden}
   
  </section>
  <div class="globe-legend-update"><?=esc($lastImportLabel)?></div>
-</div></details></div><div class="globe-info" id="globeInfo">Nachrichten geografisch entdecken. Punkte zeigen erkannte Ereignisorte, nicht den Sitz der Redaktion. Die Zuordnung ist vorläufig.</div></div><div class="filter-dock" id="filterDock"><button class="filter-dock-toggle" id="filterDockToggle" type="button" aria-label="Filterleiste ein- oder ausklappen" aria-expanded="false">☷</button><div class="filter-toolbar" aria-label="Nachrichtenfilter"><button type="button" id="dockTimeToggle" title="Nachrichtenzeitraum" aria-label="Nachrichtenzeitraum einstellen" aria-expanded="false" aria-controls="dockTimePanel"><span class="dock-symbol" aria-hidden="true">◷</span><span>Zeitraum</span></button><button type="button" id="statsToggle" title="Nachrichtenbilanz" aria-expanded="false"><span class="dock-symbol" aria-hidden="true">▥</span><span>Bilanz</span></button><button type="button" data-open-filter="saved" title="Gemerkt"><span class="dock-symbol" aria-hidden="true">☆</span><span>Gemerkt</span></button><button type="button" data-open-filter="hidden" title="Ausgeblendet"><span class="dock-symbol" aria-hidden="true">⊘</span><span>Verborgen</span></button><button type="button" id="infoPagesToggle" title="Infoseiten" aria-expanded="false" aria-controls="infoPagesPanel"><span class="dock-symbol" aria-hidden="true">☷</span><span>Seiten</span></button><label class="dock-language" title="Sprache auswählen"><select id="language" aria-label="Sprache auswählen" title="Sprache" style="border:1px solid var(--line);border-radius:16px;background:var(--bg);color:var(--text);padding:6px"><option value="de">DE</option><option value="en">EN</option></select></label></div></div><nav id="infoPagesPanel" class="info-pages-panel" aria-label="Informationsseiten" hidden>
+</div></details></div><div class="globe-info" id="globeInfo">Nachrichten geografisch entdecken. Punkte zeigen erkannte Ereignisorte, nicht den Sitz der Redaktion. Die Zuordnung ist vorläufig.</div></div><div class="filter-dock" id="filterDock"><button class="filter-dock-toggle" id="filterDockToggle" type="button" aria-label="Menü aufklappen" aria-expanded="false" title="Menü aufklappen"><svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg></button><div class="filter-toolbar" aria-label="Nachrichtenfilter"><button type="button" id="dockTimeToggle" title="Nachrichtenzeitraum" aria-label="Nachrichtenzeitraum einstellen" aria-expanded="false" aria-controls="dockTimePanel"><span class="dock-symbol" aria-hidden="true">◷</span><span>Zeitraum</span></button><button type="button" id="statsToggle" title="Nachrichtenbilanz" aria-expanded="false"><span class="dock-symbol" aria-hidden="true">▥</span><span>Bilanz</span></button><button type="button" data-open-filter="saved" title="Gemerkt anzeigen" aria-label="Gemerkt anzeigen" aria-pressed="false"><span class="dock-symbol" aria-hidden="true">☆</span><span>Gemerkt</span></button><button type="button" id="infoPagesToggle" title="Infoseiten" aria-expanded="false" aria-controls="infoPagesPanel"><span class="dock-symbol" aria-hidden="true">☷</span><span>Seiten</span></button><div class="dock-language"><button type="button" id="dockLanguageToggle" aria-label="Sprache wechseln" title="Sprache wechseln"><svg viewBox="0 0 24 24" width="27" height="27" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c-3 2.4-4.5 5.4-4.5 9s1.5 6.6 4.5 9c3-2.4 4.5-5.4 4.5-9S15 5.4 12 3Z"/></svg></button><select id="language" aria-label="Sprache auswählen" title="Sprache" style="border:1px solid var(--line);border-radius:16px;background:var(--bg);color:var(--text);padding:6px"><option value="de">DE</option><option value="en">EN</option></select></div></div></div><nav id="infoPagesPanel" class="info-pages-panel" aria-label="Informationsseiten" hidden>
 <a href="info.php?page=about">Über IFIS News</a><a href="info.php?page=method">Quellen &amp; Methodik</a>
 <a href="info.php?page=imprint">Impressum</a><a href="info.php?page=privacy">Datenschutz</a><a href="https://ifis.net/">IFIS.net ↗</a>
 </nav><section id="dockTimePanel" class="dock-time-panel" aria-label="Nachrichtenzeitraum" hidden><div class="dock-time-heading"><strong>Zeitraum</strong><output id="dockTimeValue" for="dockTimeRange">24 h</output></div><input id="dockTimeRange" type="range" min="0" max="11" step="1" value="9" aria-label="Nachrichten der letzten Stunden"><div class="map-range-labels"><span>30 Min.</span><span>48 Std.</span></div></section><section id="newsStats" class="news-stats" hidden><div class="news-stats-head"><strong>Nachrichtenbilanz</strong><button type="button" id="statsClose" aria-label="Schließen">×</button></div><p id="statsScope"></p><div id="statsContent"></div><p class="stats-disclaimer">Automatische Stichwort-Schätzungen aus Titel und Kurztext. Clickbait-Verdacht ist kein Qualitätsurteil; Tonlage und Entwicklungsrichtung sind unterschiedliche Dimensionen. „Nicht bestimmbar“ wird mitgezählt.</p></section><div class="direction-nav filter-section" data-filter-section="direction"><span class="direction-label">Planetare Entwicklungsrichtung <span title="Vorläufige Zuordnung aus Titel und Kurztext; keine Wirkungsanalyse">ⓘ</span></span><div class="direction-buttons"><button data-direction="all" class="active">Alle</button><button data-direction="constructive">↗ Konstruktiv</button><button data-direction="harmful">↘ Problematisch</button><button data-direction="mixed">↔ Ambivalent</button><button data-direction="unknown">? Offen</button></div></div><div class="chips filter-section" data-filter-section="topics" id="chips" aria-label="Themenfilter"><button class="chip active" data-cat="Alle">Alle</button><?php foreach(['Politik','Gesellschaft','Wirtschaft','Technologie','Umwelt','Gesundheit','Bildung','Wissenschaft','Weitere'] as $c): ?><button class="chip" data-cat="<?=esc($c)?>"><?=esc($c)?></button><?php endforeach; ?></div>
@@ -1456,7 +1468,11 @@ title.textContent=mode==='saved'?'☆':mode==='hidden'?'Ausgeblendet':cat==='All
 title.classList.toggle('feed-title-saved',mode==='saved');
 title.setAttribute('aria-label',mode==='saved'?'Gemerkt':title.textContent);document.getElementById('shareSaved').hidden=mode!=='saved';
 document.querySelectorAll('[data-cat]').forEach(b=>b.classList.toggle('active',mode==='all'&&b.dataset.cat===cat));
-renderNewsStats();window.ifisNewsMap?.refreshMarkers?.();document.querySelector('[data-open-filter="saved"]').classList.toggle('active',mode==='saved');document.querySelector('[data-open-filter="hidden"]').classList.toggle('active',mode==='hidden');
+renderNewsStats();window.ifisNewsMap?.refreshMarkers?.();const savedButton=document.querySelector('[data-open-filter="saved"]');
+savedButton.classList.toggle('active',mode==='saved');
+savedButton.setAttribute('aria-pressed',String(mode==='saved'));
+savedButton.setAttribute('aria-label',mode==='saved'?'Alle Artikel anzeigen':'Gemerkt anzeigen');
+savedButton.title=mode==='saved'?'Alle Artikel anzeigen':'Gemerkt anzeigen';
 }
 function setCat(v){cat=v;mode='all';refresh()}
 document.querySelectorAll('[data-cat]').forEach(b=>b.addEventListener('click',()=>setCat(b.dataset.cat)));
@@ -1496,13 +1512,26 @@ document.getElementById('savedShareCopy').addEventListener('click',async()=>{con
 document.getElementById('savedShareSystem').addEventListener('click',async()=>{const url=await getSavedShareLink();if(!url)return;if(navigator.share){try{await navigator.share({title:'IFIS News · Gemerktliste',url})}catch(e){if(e.name!=='AbortError')shareSavedFeedback.textContent='Teilen nicht möglich'}}else{try{await navigator.clipboard.writeText(url);shareSavedFeedback.textContent='Link kopiert'}catch{shareSavedFeedback.textContent=url}}});
 document.getElementById('savedShareEmail').addEventListener('click',async()=>{const url=await getSavedShareLink();if(url)location.href='mailto:?subject='+encodeURIComponent('IFIS News · Gemerktliste')+'&body='+encodeURIComponent(url)});
 document.getElementById('savedShareWhatsapp').addEventListener('click',async()=>{const url=await getSavedShareLink();if(url)window.open('https://wa.me/?text='+encodeURIComponent(url),'_blank','noopener,noreferrer')});
-function showSaved(){window.ifisNewsFeed.clearMapStories();mode='saved';cat='Alle';search.value='';toneFilter.value='all';baitFilter.checked=false;showBait=false;direction='all';refresh();window.ifisNewsMap?.refreshMarkers?.();document.getElementById('stories').scrollIntoView({block:'start',behavior:'smooth'})}
+function toggleSaved(){
+ const returning=mode==='saved';
+ window.ifisNewsFeed.clearMapStories();
+ mode=returning?'all':'saved';cat='Alle';search.value='';toneFilter.value='all';baitFilter.checked=false;showBait=false;direction='all';
+ refresh();window.ifisNewsMap?.refreshMarkers?.();
+ document.getElementById('stories').scrollIntoView({block:'start',behavior:'smooth'});
+}
 
 
 
  const mobileSearchToggle=document.getElementById('mobileSearchToggle');
 mobileSearchToggle.addEventListener('click',()=>{const field=document.getElementById('search');const open=field.classList.toggle('open');mobileSearchToggle.setAttribute('aria-expanded',String(open));mobileSearchToggle.setAttribute('aria-label',open?'Suche schließen':'Suche öffnen');if(open)field.focus()});
-document.getElementById('filterDockToggle').addEventListener('click',()=>{const dock=document.getElementById('filterDock');const expanded=dock.classList.toggle('expanded');if(!expanded)closeDockOverlays();document.getElementById('filterDockToggle').setAttribute('aria-expanded',String(expanded))});
+document.getElementById('filterDockToggle').addEventListener('click',()=>{
+ const dock=document.getElementById('filterDock');const expanded=dock.classList.toggle('expanded');
+ if(!expanded)closeDockOverlays();
+ const toggle=document.getElementById('filterDockToggle');
+ toggle.setAttribute('aria-expanded',String(expanded));
+ toggle.setAttribute('aria-label',expanded?'Menü zuklappen':'Menü aufklappen');
+ toggle.title=expanded?'Menü zuklappen':'Menü aufklappen';
+});
 function positionDockPanel(panel,trigger){
  if(!panel||!trigger)return;
  const rect=trigger.getBoundingClientRect();
@@ -1522,7 +1551,7 @@ window.addEventListener('resize',()=>{
  const stats=document.getElementById('newsStats');
  if(stats&&!stats.hidden)positionDockPanel(stats,document.getElementById('statsToggle'));
 });
-document.querySelectorAll('[data-open-filter]').forEach(button=>button.addEventListener('click',()=>{const type=button.dataset.openFilter;if(type==='saved'){closeDockOverlays();showSaved();return}if(type==='hidden'){closeDockOverlays();window.ifisNewsFeed.clearMapStories();mode='hidden';cat='Alle';refresh();document.getElementById('stories').scrollIntoView({block:'start',behavior:'smooth'});return}const panel=document.querySelector('[data-filter-section="'+type+'"]');const opening=!panel.classList.contains('filter-expanded');closeDockOverlays();if(opening){panel.classList.add('filter-expanded');button.classList.add('active');button.setAttribute('aria-expanded','true');if(type==='quality')panel.open=true;positionDockPanel(panel,button)}}));
+document.querySelectorAll('[data-open-filter]').forEach(button=>button.addEventListener('click',()=>{const type=button.dataset.openFilter;if(type==='saved'){closeDockOverlays();toggleSaved();return}if(type==='hidden'){closeDockOverlays();window.ifisNewsFeed.clearMapStories();mode='hidden';cat='Alle';refresh();document.getElementById('stories').scrollIntoView({block:'start',behavior:'smooth'});return}const panel=document.querySelector('[data-filter-section="'+type+'"]');const opening=!panel.classList.contains('filter-expanded');closeDockOverlays();if(opening){panel.classList.add('filter-expanded');button.classList.add('active');button.setAttribute('aria-expanded','true');if(type==='quality')panel.open=true;positionDockPanel(panel,button)}}));
 document.addEventListener('pointerdown',event=>{
  const dock=document.getElementById('filterDock');
  if(dock.contains(event.target)||event.target.closest('.filter-section.filter-expanded, #newsStats:not([hidden]), #infoPagesPanel:not([hidden])'))return;
@@ -1607,7 +1636,9 @@ function translate(lang){
  });
  document.dispatchEvent(new CustomEvent('ifis-language-change',{detail:{language:lang}}));
 }
-language.addEventListener('change',()=>translate(language.value));translate(localStorage.getItem(prefix+'lang')||'de');
+language.addEventListener('change',()=>translate(language.value));
+document.getElementById('dockLanguageToggle').addEventListener('click',()=>{language.value=language.value==='de'?'en':'de';language.dispatchEvent(new Event('change',{bubbles:true}));});
+translate(localStorage.getItem(prefix+'lang')||'de');
 // Feed and map are separate closures: expose an explicit selection interface.
 window.ifisNewsFeed={
  refresh,
