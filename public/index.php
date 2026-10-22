@@ -1279,6 +1279,15 @@ body > .dock-time-panel input[type="range"]{
  #stories.grid-2,#stories.grid-3{grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr))}
 }
 @media(max-width:720px){#stories .story .story-footer-left{gap:9px}#stories .story .story-footer-left>.story-location-flags{gap:8px}}
+/* The old action column is empty now: let content and footer reach the image edge. */
+#stories.grid-2 .story>.story-content,
+#stories.grid-3 .story>.story-content,
+#stories.stories-grid .story>.story-content{grid-column:1/-1}
+#stories .story .story-footer>.story-menu{margin-right:0!important}
+#stories .story .story-footer>.story-menu>.save{justify-content:flex-end}
+@media(max-width:720px){
+ #stories .story>.story-content{grid-column:1/-1}
+}
 /* Two-stage source markers: summary on hover, article links on click. */
 .ifis-activity-pin{position:relative}
 .ifis-source-hover{position:absolute;left:50%;bottom:calc(100% + 12px);transform:translateX(-50%);width:max-content;max-width:min(280px,80vw);min-width:170px;background:var(--bg);color:var(--text);text-align:left;white-space:normal;border:1px solid var(--line);box-shadow:0 4px 18px #0003;border-radius:9px;padding:10px;pointer-events:none;font:12px/1.4 system-ui,sans-serif;z-index:40}
@@ -1351,7 +1360,7 @@ body.ifis-info-open{overflow:hidden}
  $imageScheme=strtolower((string)parse_url($imageCandidate,PHP_URL_SCHEME));
  $imageRights=$feedImageRights[(string)($item['source']??'')]??false;
  $showImage=$imageScheme==='https'&&$imageHost!==''&&($item['source']==='IFIS · Artikel'||$imageRights);
- ?><?php if($showImage): ?><img class="thumb" src="<?=esc($imageCandidate)?>" loading="lazy" decoding="async" referrerpolicy="no-referrer" alt="" onerror="this.style.display='none'"><?php endif; ?><div><div class="cat"><?=esc($item['category'])?></div><h2><a href="<?=esc($item['url'])?>" target="_blank" rel="noopener noreferrer"><?=esc($item['title'])?></a></h2><?php if(!empty($item['summary'])): ?><p class="summary"><?=esc($item['summary'])?></p><?php endif; ?><div class="meta"><?=esc($item['source'])?><?php if(($item['source']??'')==='USGS · Erdbeben'): ?> · Daten: U.S. Geological Survey<?php endif; ?><?php if($item['agency']): ?> · Agentur: <?=esc($item['agency'])?><?php endif; ?> · <time datetime="<?=esc(str_replace(' ','T',$item['published_at']))?>"><?=esc($item['published_at'])?></time> ↗</div><?php if(!empty($item['other_versions'])): ?><details class="news-duplicates"><summary><?=count($item['other_versions'])?> weitere Veröffentlichung<?=count($item['other_versions'])===1?'':'en'?> anzeigen</summary><?php foreach($item['other_versions'] as $other): ?><a href="<?=esc($other['url'])?>" target="_blank" rel="noopener noreferrer"><?=esc($other['source'])?> ↗</a><?php endforeach; ?></details><?php endif; ?><?php
+ ?><?php if($showImage): ?><img class="thumb" src="<?=esc($imageCandidate)?>" loading="lazy" decoding="async" referrerpolicy="no-referrer" alt="" onerror="this.style.display='none'"><?php endif; ?><div class="story-content"><div class="cat"><?=esc($item['category'])?></div><h2><a href="<?=esc($item['url'])?>" target="_blank" rel="noopener noreferrer"><?=esc($item['title'])?></a></h2><?php if(!empty($item['summary'])): ?><p class="summary"><?=esc($item['summary'])?></p><?php endif; ?><div class="meta"><?=esc($item['source'])?><?php if(($item['source']??'')==='USGS · Erdbeben'): ?> · Daten: U.S. Geological Survey<?php endif; ?><?php if($item['agency']): ?> · Agentur: <?=esc($item['agency'])?><?php endif; ?> · <time datetime="<?=esc(str_replace(' ','T',$item['published_at']))?>"><?=esc($item['published_at'])?></time> ↗</div><?php if(!empty($item['other_versions'])): ?><details class="news-duplicates"><summary><?=count($item['other_versions'])?> weitere Veröffentlichung<?=count($item['other_versions'])===1?'':'en'?> anzeigen</summary><?php foreach($item['other_versions'] as $other): ?><a href="<?=esc($other['url'])?>" target="_blank" rel="noopener noreferrer"><?=esc($other['source'])?> ↗</a><?php endforeach; ?></details><?php endif; ?><?php
  $ifisDiscussionUrl='';
  if(($item['source']??'')==='IFIS · Artikel'){
   $parts=parse_url((string)($item['url']??''));
