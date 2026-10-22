@@ -27,7 +27,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   if(!hash_equals($_SESSION['ifis_source_csrf'],(string)($_POST['csrf']??'')))throw new RuntimeException(tr('Sitzung abgelaufen. Bitte erneut laden.','Session expired. Please reload and try again.'));
   if(!empty($_POST['website']))throw new RuntimeException(tr('Einreichung nicht möglich.','Submission could not be accepted.'));
   if(($_SESSION['ifis_source_last']??0)>time()-60)throw new RuntimeException(tr('Bitte vor einer weiteren Einreichung kurz warten.','Please wait a moment before submitting again.'));
-  $type=val('type',20);$url=val('url',500);$title=val('title',120);$place=val('place',160);$description=val('description',800);$feed=val('feed_url',500);
+  $type=val('type',20);$url=val('url',500);$title=val('title',120);$place=implode(', ',array_filter([val('place',100),val('country',100)],static fn($value)=>$value!==''));$description=val('description',800);$feed=val('feed_url',500);
   if(!in_array($type,['linkedin','feed','website','network'],true)||!feedUrlValid($url)||$title===''||$description==='')throw new RuntimeException(tr('Bitte Art, Titel, Beschreibung und eine gültige öffentliche HTTPS-URL angeben.','Please provide a type, title, description and valid public HTTPS URL.'));
   if($type==='linkedin'&&!approvedUrl($url))throw new RuntimeException(tr('Bitte einen LinkedIn-Link oder lnkd.in-Kurzlink eingeben.','Please enter a LinkedIn link or lnkd.in short link.'));
   if($type==='feed'&&$feed==='')$feed=$url;
@@ -63,7 +63,8 @@ function out(string $s):string{return htmlspecialchars($s,ENT_QUOTES|ENT_SUBSTIT
 </select></label>
 <label><?=out(tr('Öffentlicher Quellenlink (HTTPS)','Public source link (HTTPS)'))?><input type="url" name="url" maxlength="500" placeholder="https://..." required></label>
 <label><?=out(tr("Eigener Titel oder Name des Projekts","Your title or project name"))?><input name="title" maxlength="120" required></label>
-<label><?=out(tr("Ereignisort / Region (optional)","Event location / region (optional)"))?><input name="place" maxlength="160" placeholder="<?=out(tr("z. B. Lübeck","e.g. Lübeck"))?>"></label>
+<label><?=out(tr("Ort / Region (optional)","City / region (optional)"))?><input name="place" maxlength="160" placeholder="<?=out(tr("z. B. Lübeck","e.g. Lübeck"))?>"></label>
+<label><?=out(tr("Land (optional)","Country (optional)"))?><input name="country" maxlength="100" placeholder="<?=out(tr("z. B. Deutschland","e.g. Germany"))?>"></label>
 <label><?=out(tr("Eigene Beschreibung: Was ist konstruktiv daran?","Your description: What makes it constructive?"))?><textarea name="description" maxlength="800" required></textarea></label>
 <label><?=out(tr('Zusätzlicher RSS-/Atom-Feed (optional)','Additional RSS/Atom feed (optional)'))?><input type="url" name="feed_url" maxlength="500" placeholder="<?=out(tr("https://beispiel.de/feed.xml","https://example.org/feed.xml"))?>"><small><?=out(tr('Wird zunächst nur geprüft, nicht automatisch abgerufen.','Reviewed first; not fetched automatically.'))?></small></label>
 <label><span><input type="checkbox" name="feed_permission" value="1"> <?=out(tr("Ich betreibe den Feed selbst oder habe die erforderliche Erlaubnis zur Einreichung und beantragten Nutzung.","I operate the feed or have permission for its submission and proposed use."))?></span></label>
