@@ -1330,6 +1330,14 @@ body > .dock-time-panel input[type="range"]{
 .globe-view #newsGlobe>.maplibregl-marker.ifis-positive-compass:hover,
 .globe-view #newsGlobe>.maplibregl-marker.ifis-positive-compass:focus-visible{z-index:26!important}
 .ifis-source-hover{z-index:10040!important}
+/* Leave a visible, tappable start of the feed below the map on phones. */
+@media(max-width:720px){
+ #globeView{
+  height:60vh;
+  height:min(60svh,calc(100svh - 200px));
+  min-height:0;
+ }
+}
 /* Mobile source icons have a larger invisible touch target without enlarging the symbol. */
 .globe-view #newsGlobe>.maplibregl-marker.ifis-positive-compass{overflow:visible!important;isolation:isolate}
 .globe-view #newsGlobe>.maplibregl-marker.ifis-positive-compass::before{content:"";position:absolute;inset:-13px;border-radius:50%;background:transparent;z-index:-1}
