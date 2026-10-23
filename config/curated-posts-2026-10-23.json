@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "approved_on": "2026-10-23",
+  "approval": "Von Lars ausdrücklich zur Veröffentlichung als Beiträge auf IFIS News ausgewählt.",
+  "posts": [
+    {
+      "url": "https://www.linkedin.com/feed/update/urn:li:activity:7511789125625212928",
+      "title": "Daniel Pink: Wenn abstrakte Managementsprache überzeugt",
+      "creator": "Daniel Pink",
+      "kind": "idea",
+      "topics": "Managementsprache, Motivation, Führung, Verhaltenswissenschaft, Sinnresonanz",
+      "description": "Daniel Pink stellt einen Forschungsansatz zur Empfänglichkeit für inhaltsarme Managementsprache vor. Der Beitrag fragt, weshalb abstrakte Formulierungen als überzeugende Führung wahrgenommen werden können, und verweist auf die Corporate Bullshit Receptivity Scale."
+    },
+    {
+      "url": "https://www.linkedin.com/feed/update/urn:li:activity:7509971991173668864",
+      "title": "Egemen Toprak: Technikgeschichte als KI-generiertes Motion-Video",
+      "creator": "Egemen Toprak",
+      "kind": "idea",
+      "topics": "KI, Storytelling, Motion Design, Creative Coding, HTML, JavaScript, GSAP, Suno",
+      "description": "Egemen Toprak beschreibt, wie aus einer Erzählidee zur Geschichte der Kommunikation ein kurzes Motion-Video entstand. Sein Beitrag verbindet einen konkreten Erzählfaden mit Animationen in Code und KI-gestützter Musikproduktion; der verwendete Prompt ist im Original enthalten."
+    },
+    {
+      "url": "https://www.linkedin.com/feed/update/urn:li:activity:7504221071001321473",
+      "title": "Daniel Pink: Erfahrungen statt immer weiterer Lebensoptimierung",
+      "creator": "Daniel Pink",
+      "kind": "idea",
+      "topics": "Lebensqualität, Erfahrungen, Konsum, Selbstoptimierung, Verhaltenswissenschaft",
+      "description": "Was bleibt von einem Kauf: ein Gegenstand oder eine Erfahrung, an die wir uns erinnern? Daniel Pink nimmt diese Frage zum Anlass, über Lebensqualität und die Grenzen ständiger Optimierung nachzudenken. Im Original verweist er auf Forschung zu Erlebnissen und materiellen Anschaffungen."
+    },
+    {
+      "url": "https://www.linkedin.com/feed/update/urn:li:activity:7496524275449749504",
+      "title": "Deon Grobbelaar: Menschlichen Beitrag sichtbar und wirksam machen",
+      "creator": "Deon Grobbelaar",
+      "kind": "idea",
+      "topics": "PHE, Positive Human Energy, menschlicher Beitrag, Regeneration, Care-Arbeit, Human Flourishing",
+      "description": "Deon Grobbelaar fragt, wie viel menschliches Potenzial ungenutzt bleibt, wenn Lernen, Fürsorge, Reparatur und Regeneration kaum sichtbar oder anerkannt werden. Unter dem Begriff Positive Human Energy schlägt er vor, solche Beiträge sichtbarer zu machen und ihre Wirkung zu ermöglichen."
+    },
+    {
+      "url": "https://www.linkedin.com/feed/update/urn:li:activity:7456061903807709187",
+      "title": "Murat Aydin: Die Idee hinter Apples Think-Different-Kampagne",
+      "creator": "Murat Aydin",
+      "kind": "idea",
+      "topics": "Kommunikation, Marketing, Think Different, Apple, Steve Jobs, Inspiration",
+      "description": "Murat Aydin verweist auf einen historischen Clip mit Steve Jobs zur Think-Different-Kampagne. Im Mittelpunkt steht die Frage, wie Kommunikation eine Überzeugung oder Idee vermitteln kann, die über die Beschreibung eines Produkts hinausgeht."
+    },
+    {
+      "url": "https://www.linkedin.com/feed/update/urn:li:activity:7139953498783211520",
+      "title": "Khizer Abbas: Fünf Prompt-Frameworks für ChatGPT",
+      "creator": "Khizer Abbas",
+      "kind": "idea",
+      "topics": "KI, ChatGPT, Prompt Engineering, Frameworks, Lernen, Arbeitsabläufe",
+      "description": "Khizer Abbas stellt in diesem Beitrag fünf Frameworks für die Formulierung von ChatGPT-Prompts vor. Der Originalbeitrag dient als Ausgangspunkt, um wiederverwendbare Strukturen für Aufgaben und gewünschte Ergebnisse kennenzulernen."
+    }
+  ]
+}
