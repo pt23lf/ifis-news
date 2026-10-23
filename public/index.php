@@ -4,7 +4,7 @@ header('Content-Type: text/html; charset=utf-8');
 $view = ($_GET['view'] ?? 'ifis') === 'world' ? 'world' : 'ifis';
 $shareCollectionType=in_array((string)($_GET['collection']??''),['event','source'],true)?(string)$_GET['collection']:'';
 $shareCollectionName=trim((string)($_GET['name']??''));
-if(mb_strlen($shareCollectionName,'UTF-8')>100)$shareCollectionName=mb_substr($shareCollectionName,0,100,'UTF-8');
+if(mb_strlen($shareCollectionName,'UTF-8')>400)$shareCollectionName=mb_substr($shareCollectionName,0,400,'UTF-8');
 if($shareCollectionName===''||preg_match('/[\x00-\x1f\x7f]/u',$shareCollectionName))$shareCollectionType='';
 $ogPageTitle=$shareCollectionType!==''?$shareCollectionName.' · '.($shareCollectionType==='event'?'Ereignisort':'Quellenort').' · IFIS News':'Links · IFIS News';
 $ogDescription=$shareCollectionType!==''?
@@ -405,7 +405,7 @@ details[open] > summary:not([aria-label="Weitere Optionen"])::after{
 .ifis-discussion-count{font-size:11px;line-height:1;font-variant-numeric:tabular-nums}
 #stories .story .story-menu{bottom:13px!important}
 
-</style><style>.my-comment-popup{color:var(--text);background:var(--bg);max-height:min(50vh,420px);overflow:auto;overflow-wrap:anywhere}.my-comment-popup section{border-top:1px solid var(--line);padding:10px 0}.my-comment-popup h3{font-size:14px;margin:4px 0}.my-comment-popup p{white-space:pre-wrap;font-size:13px}.my-comment-popup a{display:block;margin:7px 0;color:var(--accent)}#myCommentsStatus details{max-height:150px;overflow:auto}#myCommentsStatus a{color:var(--accent)}</style><link href="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.css" rel="stylesheet"><style>.globe-view{display:none;position:relative;height:min(72vh,680px);min-height:380px;border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:16px}.globe-view.open{display:block}.globe-view #newsGlobe{width:100%;height:100%}.globe-info{position:absolute;left:12px;bottom:12px;background:var(--bg);padding:12px;border-radius:10px;max-width:320px;box-shadow:0 2px 12px #0002;font-size:13px}.globe-toggle{border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:20px;padding:6px 12px;white-space:nowrap}.globe-toggle.active{background:var(--hover);color:var(--accent)}.geo-link{font-size:12px;color:var(--accent);cursor:pointer;border:0;background:none;padding:3px 0}.trust-tools{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:9px;font-size:12px;color:var(--muted)}.trust{border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text);padding:4px}.ifis-related a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}.globe-marker{background:#0d9488;color:white;border:2px solid white;border-radius:50%;width:29px;height:29px;display:grid;place-items:center;font-size:11px;box-shadow:0 1px 7px #0005;cursor:pointer}.globe-marker .constructive-count{position:absolute;right:-10px;top:-10px;background:#177245;color:white;border:1px solid white;border-radius:10px;min-width:20px;height:19px;padding:0 3px;display:grid;place-items:center;font-size:10px;font-weight:700;line-height:1}.globe-source{background:#e59a35;color:#17212e;border:2px solid white;border-radius:50%;width:25px;height:25px;display:grid;place-items:center;font-size:13px;cursor:pointer;box-shadow:0 1px 7px #0005}.globe-legend{position:absolute;right:12px;top:12px;background:var(--bg);padding:8px 10px;border-radius:9px;font-size:12px;z-index:2}.globe-legend span{margin-left:9px}.globe-view .globe-legend{left:auto;right:12px;top:12px;width:max-content;max-width:min(265px,calc(100% - 24px));padding:12px 14px;display:flex;flex-direction:column;align-items:stretch;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:12px;box-shadow:0 3px 12px #0002;font-size:12px;line-height:1.35}
+</style><style>.marker-collection-share-actions[hidden]{display:none!important}.source-post-actions{display:flex;gap:10px;align-items:center}.source-post-actions button{font:inherit;color:var(--accent,inherit);background:transparent;border:1px solid var(--line,#8885);border-radius:7px;padding:5px 8px;cursor:pointer}.globe-story-summary{display:block;font-size:12px;margin-top:6px;white-space:pre-wrap}.my-comment-popup{color:var(--text);background:var(--bg);max-height:min(50vh,420px);overflow:auto;overflow-wrap:anywhere}.my-comment-popup section{border-top:1px solid var(--line);padding:10px 0}.my-comment-popup h3{font-size:14px;margin:4px 0}.my-comment-popup p{white-space:pre-wrap;font-size:13px}.my-comment-popup a{display:block;margin:7px 0;color:var(--accent)}#myCommentsStatus details{max-height:150px;overflow:auto}#myCommentsStatus a{color:var(--accent)}</style><link href="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.css" rel="stylesheet"><style>.globe-view{display:none;position:relative;height:min(72vh,680px);min-height:380px;border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:16px}.globe-view.open{display:block}.globe-view #newsGlobe{width:100%;height:100%}.globe-info{position:absolute;left:12px;bottom:12px;background:var(--bg);padding:12px;border-radius:10px;max-width:320px;box-shadow:0 2px 12px #0002;font-size:13px}.globe-toggle{border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:20px;padding:6px 12px;white-space:nowrap}.globe-toggle.active{background:var(--hover);color:var(--accent)}.geo-link{font-size:12px;color:var(--accent);cursor:pointer;border:0;background:none;padding:3px 0}.trust-tools{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:9px;font-size:12px;color:var(--muted)}.trust{border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text);padding:4px}.ifis-related a{color:var(--accent);text-decoration:underline;text-underline-offset:2px}.globe-marker{background:#0d9488;color:white;border:2px solid white;border-radius:50%;width:29px;height:29px;display:grid;place-items:center;font-size:11px;box-shadow:0 1px 7px #0005;cursor:pointer}.globe-marker .constructive-count{position:absolute;right:-10px;top:-10px;background:#177245;color:white;border:1px solid white;border-radius:10px;min-width:20px;height:19px;padding:0 3px;display:grid;place-items:center;font-size:10px;font-weight:700;line-height:1}.globe-source{background:#e59a35;color:#17212e;border:2px solid white;border-radius:50%;width:25px;height:25px;display:grid;place-items:center;font-size:13px;cursor:pointer;box-shadow:0 1px 7px #0005}.globe-legend{position:absolute;right:12px;top:12px;background:var(--bg);padding:8px 10px;border-radius:9px;font-size:12px;z-index:2}.globe-legend span{margin-left:9px}.globe-view .globe-legend{left:auto;right:12px;top:12px;width:max-content;max-width:min(265px,calc(100% - 24px));padding:12px 14px;display:flex;flex-direction:column;align-items:stretch;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:12px;box-shadow:0 3px 12px #0002;font-size:12px;line-height:1.35}
 .globe-view .globe-legend-line{display:flex;align-items:center;gap:9px;margin:0;white-space:normal}
 .globe-view .globe-legend-line input{margin:0 2px 0 0;flex-shrink:0}
 .globe-view .globe-legend .legend-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0;margin:0}
@@ -1376,7 +1376,7 @@ body.ifis-info-open{overflow:hidden}
   <label class="map-legend-check"><input id="showSourceMarkers" type="checkbox" checked><span class="map-legend-swatch map-legend-source" aria-hidden="true"></span><span>Quellenorte</span></label>
   <label class="map-legend-check"><input id="showGdeltData" type="checkbox" checked><span class="map-legend-swatch" style="background:#d9822b" aria-hidden="true"></span><span>GDELT-Aktivität</span></label>
   <label class="map-legend-select">GDELT-Ereignistyp <select id="gdeltCameoFilter" aria-label="GDELT CAMEO-Ereignistyp"><option value="">Alle Ereignistypen</option><option value="01">01 · Öffentliche Aussagen</option><option value="02">02 · Appelle</option><option value="03">03 · Kooperationsabsicht</option><option value="04">04 · Konsultation</option><option value="05">05 · Diplomatische Zusammenarbeit</option><option value="06">06 · Materielle Zusammenarbeit</option><option value="07">07 · Hilfe leisten</option><option value="08">08 · Nachgeben</option><option value="09">09 · Untersuchung</option><option value="10">10 · Forderungen</option><option value="11">11 · Missbilligung</option><option value="12">12 · Ablehnung</option><option value="13">13 · Drohungen</option><option value="14">14 · Protest</option><option value="15">15 · Machtdemonstration</option><option value="16">16 · Beziehungen reduzieren</option><option value="17">17 · Zwang</option><option value="18">18 · Übergriffe</option><option value="19">19 · Kampfhandlungen</option><option value="20">20 · Unkonventionelle Gewalt</option></select></label>
-  <label class="map-legend-check"><input id="showLinkedInData" type="checkbox" checked><span class="map-legend-swatch" style="background:#278963" aria-hidden="true"></span><span>Quellen (freigegeben)</span></label>
+  <input id="showLinkedInData" type="checkbox" checked hidden>
   <label class="map-legend-check"><input id="showSourceLinks" type="checkbox"><span class="map-legend-swatch map-legend-connection" aria-hidden="true"></span><span>Verbindungslinien</span></label>
   <label class="map-legend-check"><input id="showMyComments" type="checkbox"><span class="map-legend-swatch" style="background:#8963b6" aria-hidden="true"></span><span>Meine Kommentare · privat</span></label>
   <div id="myCommentsStatus" class="subtle" role="status"></div>
@@ -1418,7 +1418,7 @@ body.ifis-info-open{overflow:hidden}
 </div>
 <footer class="site-footer" aria-label="Rechtliches und Informationen"><a href="info.php?page=about">Über IFIS News</a><a href="info.php?page=method">Quellen & Methodik</a><a href="info.php?page=imprint">Impressum</a><a href="info.php?page=privacy">Datenschutz</a><a href="https://ifis.net/">IFIS.net</a><span>IFIS News · Externe Nachrichtenquellen; automatische Einordnungen sind vorläufig.</span></footer>
 
-<script src="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.js"></script><script src="profile-threads.js?v=1"></script><script src="comment-map.js?v=2"></script><script>
+<script src="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.js"></script><script src="profile-threads.js?v=2"></script><script src="comment-map.js?v=2"></script><script>
 (()=>{'use strict';
 window.ifisReferenceArticles=<?=json_encode($ifisIndex,JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_UNESCAPED_UNICODE|JSON_INVALID_UTF8_SUBSTITUTE)?>;
 const prefix='ifis-news-v1-',load=(k)=>{try{return JSON.parse(localStorage.getItem(prefix+k)||'[]')}catch{return []}},store=(k,v)=>{try{localStorage.setItem(prefix+k,JSON.stringify(v))}catch{}};
@@ -1919,35 +1919,20 @@ function newsSourceFlag(source){
  return '📍';
 }
 function appendMapArticle(info,story){
- const a=document.createElement('a');a.className='globe-story-link';a.href='#'+story.id;
- const title=document.createElement('span');title.className='globe-story-title';
- title.textContent=story.querySelector('h2')?.textContent||'Artikel öffnen';
- const category=document.createElement('span');category.className='globe-story-category';
- category.textContent=story.querySelector('.cat')?.textContent?.trim()||'Weitere';
- const meta=document.createElement('small');meta.className='globe-story-meta';
- const sourceName=story.dataset.source||'Quelle unbekannt';
- const source=sourceFor(story);
- const place=story.dataset.place||'Nicht eindeutig erkannt';
- const sourceLine=document.createElement('span');sourceLine.className='globe-story-source';
- sourceLine.textContent=sourceName;
- const age=story.querySelector('time')?.textContent?.trim()||'';
- const places=document.createElement('span');places.className='globe-story-places';
- // Keep both endpoints explicit: a publisher's registered location is not where the event happened.
- const sourcePlace=document.createElement('span');
- sourcePlace.textContent=newsSourceFlag(source)+' Quelle: '+(source?.name?.split(' · ').pop()||'unbekannt');
- const eventPlace=document.createElement('span');
- eventPlace.textContent=newsPlaceFlag(place)+' Ereignis: '+place;
- places.append(sourcePlace,eventPlace);
- meta.append(sourceLine);
- if(age){const date=document.createElement('span');date.textContent=age;meta.append(date)}
- a.append(category,title,meta,places);
- a.addEventListener('pointerenter',event=>{if(event.pointerType!=='touch')setHoveredMapStory(story)});
- a.addEventListener('pointerleave',()=>{if(hoveredMapStory===story)setHoveredMapStory(null)});
- a.addEventListener('focus',()=>setHoveredMapStory(story));
- a.addEventListener('blur',()=>{if(hoveredMapStory===story)setHoveredMapStory(null)});
- a.addEventListener('click',e=>{e.preventDefault();setHoveredMapStory(null);openMapStory(story)});
- info.append(a);
+ const source=sourceFor(story),place=story.dataset.place||'Nicht eindeutig erkannt';
+ const node=window.appendSourcePost(info,{
+  title:story.querySelector('h2')?.textContent||'Beitrag öffnen',url:story.dataset.url,
+  source:story.dataset.source||'Quelle',category:story.querySelector('.cat')?.textContent?.trim()||'Beitrag',
+  date:story.querySelector('time')?.textContent?.trim()||'',summary:story.querySelector('.summary')?.textContent||'',
+  sourcePlace:newsSourceFlag(source)+' Quelle: '+(source?.name?.split(' · ').pop()||'unbekannt'),
+  eventPlace:newsPlaceFlag(place)+' Ereignis: '+place
+ },{open:()=>{setHoveredMapStory(null);openMapStory(story)},href:'#'+story.id});
+ node.addEventListener('pointerenter',event=>{if(event.pointerType!=='touch')setHoveredMapStory(story)});
+ node.addEventListener('pointerleave',()=>{if(hoveredMapStory===story)setHoveredMapStory(null)});
+ node.addEventListener('focusin',()=>setHoveredMapStory(story));
+ node.addEventListener('focusout',()=>{if(hoveredMapStory===story)setHoveredMapStory(null)});
 }
+
 function markStorySeen(story){
  if(!story||!story.dataset.url||seenUrls.has(story.dataset.url))return;
  seenUrls.add(story.dataset.url);
@@ -2085,11 +2070,12 @@ function showMarkerArticles(coordinates,title,articles,routePoints=[],descriptio
  if(articles.length)articles.slice(0,40).forEach(story=>appendMapArticle(list,story));
  else{const empty=document.createElement('p');empty.textContent='Keine zugeordneten Artikel in der aktuell geladenen Liste. Bitte Zeitraum oder Nachrichtenansicht erweitern.';list.append(empty);}
  details.append(list);
- if(shareSelection?.kind==='source'&&articles.some(story=>sourceFor(story)?.profile)){
-  window.loadProfileThreads?.(list,{postUrls:articles.map(story=>story.dataset.url),replace:true,keepFallback:true,onLoaded:profile=>{summary.textContent=profile.name+' · '+profile.post_count+' Posts · '+profile.comment_count+' eigene Kommentare · Privates Profilarchiv';wrapper.querySelector('.marker-collection-share')?.remove();}});
+ if(shareSelection?.kind==='source'&&articles.length){
+  window.loadProfileThreads?.(list,{postUrls:articles.map(story=>story.dataset.url),replace:true,keepFallback:true,onLoaded:profile=>{summary.textContent=profile.name+' · '+profile.post_count+' Posts · '+profile.comment_count+' eigene Kommentare · Privates Profilarchiv';const note=document.createElement('small');note.textContent='Sammlungen enthalten nur freigegebene Beiträge; eigene Kommentare bleiben privat.';wrapper.querySelector('.marker-collection-share')?.append(note);}});
  }
  if(shareSelection){
   const controls=document.createElement('div');controls.className='marker-collection-share';
+  const shareToggle=document.createElement('button');shareToggle.type='button';shareToggle.className='collection-share-button';shareToggle.textContent='↗ Teilen';shareToggle.setAttribute('aria-expanded','false');
   const fixed=document.createElement('button');fixed.type='button';fixed.className='collection-share-button';
   fixed.textContent='Fest teilen';
   fixed.title='Diese Artikelauswahl unveränderlich speichern und teilen';
@@ -2100,13 +2086,14 @@ function showMarkerArticles(coordinates,title,articles,routePoints=[],descriptio
   const actions=document.createElement('div');actions.className='marker-collection-share-actions';
   fixed.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();shareNewsCollection(shareSelection,articles,'fixed',feedback,fixed)});
   dynamic.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();shareNewsCollection(shareSelection,articles,'dynamic',feedback,dynamic)});
-  actions.append(fixed,dynamic);
+  actions.append(fixed,dynamic);actions.hidden=true;
+  shareToggle.addEventListener('click',()=>{actions.hidden=!actions.hidden;shareToggle.setAttribute('aria-expanded',String(!actions.hidden));});
   fixed.setAttribute('data-share-tip','Feste Sammlung: Die aktuelle Artikelauswahl bleibt unverändert (max. 40 Artikel).');
   dynamic.setAttribute('data-share-tip','Dynamische Sammlung: Die Artikel dieses Ortes können sich mit neuen Nachrichten ändern.');
   // Touch/keyboard: show the explanation on focus, without an extra row.
   fixed.setAttribute('aria-description','Speichert die aktuelle Artikelauswahl dauerhaft.');
   dynamic.setAttribute('aria-description','Zeigt künftig die jeweils aktuellen Artikel.');
-  controls.append(actions,feedback);wrapper.append(controls);
+  controls.append(shareToggle,actions,feedback);wrapper.append(controls);
  }
  wrapper.append(details);
  // The whole unit (popup + selected location) is centered together.
@@ -2256,7 +2243,7 @@ function addCountryBatchMarkers(){
  });
  hideFarSide();
 }
-['showEventMarkers','showSourceMarkers','showSourceLinks'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{if(map){hideFarSide();updateConnector()}}));
+['showEventMarkers','showSourceMarkers','showSourceLinks'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{if(map){hideFarSide();updateConnector();if(id==='showSourceMarkers')refreshLinkedInVisibility()}}));
 document.getElementById('mapTimeRange').addEventListener('input',()=>{if(map){if(mapOverlayOpen)closeMapOverlay();updateMapReadState();}else document.getElementById('mapTimeValue').textContent=Number(document.getElementById('mapTimeRange').value).toLocaleString('de-DE')+' h'});
 const mapLegend=document.getElementById('mapLegend');
 function fitMapLegendPanel(){
@@ -2689,7 +2676,7 @@ sources.forEach(source=>{
  const places=new Set(related.map(story=>story.dataset.place).filter(place=>place&&groups.has(place)));
  const dot=document.createElement('button');dot.type='button';dot.className='globe-source';
  dot._ifisStories=related;dot._ifisLabel=source.name;
- dot.textContent=String(source.profile?related.length:places.size);
+ dot.textContent=String(related.length);
  const audits=Object.entries(sourceLocations).filter(([,loc])=>loc===source).map(([key])=>sourceImprintAudit[key]).filter(Boolean);
  const audit=audits.find(item=>item.status==='address_city_found')||audits[0];
  dot.title=source.name+(source.profile?' · Profilstandort (ungefährer Stadtmittelpunkt, kein Ereignisort)':'')+' · '+places.size+' Ereignisorte · '+related.length+' Artikel · Standorthinweis: '+(audit?.status==='address_city_found'?'Adresshinweis auf offizieller Seite gefunden (noch redaktionell zu bestätigen)':audit?'Impressum ohne eindeutigen Standortnachweis':'redaktionell hinterlegt, noch nicht geprüft')+(audit?.evidence_url?' · '+audit.evidence_url:'');
@@ -2746,12 +2733,14 @@ function updateHeaderUnderline(){
 window.addEventListener('resize',updateHeaderUnderline);
 if(document.fonts?.ready)document.fonts.ready.then(updateHeaderUnderline);
 function restoreSharedCollection(){
- if(!sharedSelection||!map)return;
- let marker=markers.find(candidate=>{
+ if(!sharedSelection||!map||sharedCollectionRestored)return;
+ let marker=[...markers,...linkedinMarkers].find(candidate=>{
   const button=candidate.getElement();
   return button._ifisLabel===sharedSelection.name&&button.classList.contains(sharedSelection.kind==='source'?'globe-source':'globe-marker');
  });
  if(!marker){
+  if(!linkedInSourcesLoaded&&sharedSelection.kind==='source')return;
+  sharedCollectionRestored=true;
   const note=document.createElement('p');note.className='shared-collection-notice';
   note.textContent='Diese Artikelsammlung ist in der aktuellen Nachrichtenansicht nicht mehr verfügbar.';
   panel.after(note);
@@ -2766,6 +2755,7 @@ function restoreSharedCollection(){
   if(!(button._ifisTimeStories||[]).length&&button._ifisStories?.length)
    button._ifisTimeStories=button._ifisStories;
  }
+ sharedCollectionRestored=true;
  // A restored marker may be on the far hemisphere. Face it before opening.
  map.jumpTo({center:marker.getLngLat(),zoom:Math.max(1.8,map.getZoom())});
  requestAnimationFrame(()=>button.click());
@@ -2960,9 +2950,9 @@ function loadGdeltActivity(){
 }
 /* Only moderator-approved, explicitly geolocated voluntary submissions.
    Never fetch or crawl LinkedIn. Coordinates must be manually verified in DB. */
-let linkedinMarkers=[];
+let linkedinMarkers=[],linkedInSourcesLoaded=false,sharedCollectionRestored=false;
 function refreshLinkedInVisibility(){
- const show=document.getElementById('showLinkedInData')?.checked;
+ const show=document.getElementById('showSourceMarkers')?.checked;
  for(const m of linkedinMarkers){const visible=show&&externalMarkerFacing(m);m.getElement().style.visibility=visible?'visible':'hidden';m.getElement().style.pointerEvents=visible?'auto':'none';}
 }
 function focusMapMarker(lon,lat,popupElement){
@@ -2984,14 +2974,23 @@ function focusMapMarker(lon,lat,popupElement){
  }
  map.easeTo({center:[lon,lat],offset:[0,targetY-box.height/2],duration:480,essential:true});
 }
+function approvedSourceStories(item){
+ const urls=new Set([item.url,...(Array.isArray(item.articles)?item.articles.map(a=>a.url):[])]);
+ return stories.filter(story=>{
+  if(item.type==='ifis'){try{return new URL(story.dataset.url).hostname==='ifis.net'}catch{return false}}
+  return urls.has(story.dataset.url);
+ });
+}
 function loadLinkedInSources(){
  fetch('linkedin-sources-data.php',{credentials:'omit'}).then(r=>r.ok?r.json():Promise.reject()).then(data=>{
   linkedinMarkers.forEach(x=>{x.getElement()._ifisSourceTip?.remove();x.remove()});linkedinMarkers=[];
   for(const item of data.sources||[]){
    if(!Number.isFinite(item.lat)||!Number.isFinite(item.lon))continue;
-   const el=document.createElement('button');el.type='button';el.className='ifis-activity-pin';
-   el.classList.add('ifis-positive-compass');
-   el.innerHTML='<svg aria-hidden="true" class="positive-compass-needle" width="16" height="17" viewBox="0 0 16 17"><path d="M8 1.3 L15 15.7 L1 15.7 Z" fill="#22935a" stroke="#fff" stroke-width="1.1" stroke-linejoin="round"/></svg>';
+   const related=approvedSourceStories(item);
+   const same=markers.find(marker=>marker.getElement().classList.contains('globe-source')&&related.some(story=>marker.getElement()._ifisStories?.includes(story))&&Math.abs(marker.getLngLat().lng-item.lon)<.01&&Math.abs(marker.getLngLat().lat-item.lat)<.01);
+   if(same)continue;
+   const el=document.createElement('button');el.type='button';el.className='globe-source';el.textContent=String(related.length);
+   el._ifisStories=related;el._ifisLabel=related.map(story=>sourceFor(story)).find(Boolean)?.name||item.title;
    const kind={feed:'RSS/Atom',website:'Webseite',linkedin:'LinkedIn',network:'Netzwerk',ifis:'IFIS',post:'LinkedIn',profile:'LinkedIn'}[item.type]||'Quelle';
    el.removeAttribute('title');
    el.setAttribute('aria-label',item.title+' · '+kind+'; klicken für Artikel');
@@ -3023,40 +3022,16 @@ function loadLinkedInSources(){
    el.addEventListener('click',e=>{
     e.preventDefault();e.stopPropagation();
     tip.hidden=true;
-    const root=document.createElement('div');root.className='ifis-activity-source-list';
-    const title=document.createElement('strong');title.textContent=item.title+' · '+kind;root.append(title);
-    if(item.description){const d=document.createElement('p');d.textContent=item.description;root.append(d);}
-    const heading=document.createElement('div');heading.style.marginTop='10px';heading.textContent=item.type==='ifis'?'IFIS-Artikel':'Beiträge / Inhalte';root.append(heading);
-    const list=document.createElement('div');list.className='ifis-source-article-list';root.append(list);
-    const addLink=(name,url)=>{
-     if(typeof url!=='string'||!/^https:\/\//i.test(url))return;
-     const a=document.createElement('a');a.href=url;if(new URL(url,location.href).origin!==location.origin){a.target='_blank';a.rel='noopener noreferrer';}a.textContent=name+' ↗';list.append(a);
-    };
-    if(item.type==='ifis'){
-     const articles=[...document.querySelectorAll('.story')].filter(story=>{
-      try{return new URL(story.dataset.url).hostname==='ifis.net'}catch{return false}
-     });
-     const seen=new Set();
-     for(const story of articles){
-      if(seen.has(story.dataset.url))continue;seen.add(story.dataset.url);
-      addLink(story.querySelector('h2')?.textContent?.trim()||'IFIS-Artikel',location.origin+location.pathname+'?view=ifis&map=0#'+encodeURIComponent(story.id));
-     }
-    }else if(Array.isArray(item.articles)){
-     for(const article of item.articles)addLink(article.title||'Beitrag',article.url);
-    }
-    if(!list.childElementCount){
-     const p=document.createElement('p');p.textContent='Keine einzeln erfassten Beiträge verfügbar.';list.append(p);
-    }
-    const sourceLink=document.createElement('a');sourceLink.href=item.url;sourceLink.target='_blank';sourceLink.rel='noopener noreferrer';sourceLink.textContent='Quellenseite öffnen ↗';root.append(sourceLink);
-    if(['linkedin','post','profile'].includes(item.type))window.loadProfileThreads?.(list,{postUrls:[item.url,...(item.articles||[]).map(article=>article.url)],replace:true,keepFallback:true,onLoaded:()=>{heading.textContent='Posts und meine Kommentare · privat';}});
-    const popup=new maplibregl.Popup({maxWidth:'350px',anchor:'top',offset:18}).setLngLat([item.lon,item.lat]).setDOMContent(root).addTo(map);
-    popup.getElement()._ifisPopup=popup;
-    focusMapMarker(item.lon,item.lat,popup.getElement());
+    const related=approvedSourceStories(item);
+    const source=related.map(story=>sourceFor(story)).find(Boolean);
+    const name=source?.name||item.title;
+    selectedPlace=null;selectedSource=name;
+    showMarkerArticles([item.lon,item.lat],name,related,[],item.description||'Quellenstandort',{kind:'source',name});
    });
    linkedinMarkers.push(new maplibregl.Marker({element:el,anchor:'center',draggable:false,occludedOpacity:0}).setLngLat([item.lon,item.lat]).addTo(map));
   }
-  refreshLinkedInVisibility();
- }).catch(()=>{});
+  linkedInSourcesLoaded=true;refreshLinkedInVisibility();restoreSharedCollection();
+ }).catch(()=>{linkedInSourcesLoaded=true;restoreSharedCollection();});
 }
 for(const [id,cb] of [['showGdeltData',refreshGdeltActivity],['showLinkedInData',refreshLinkedInVisibility]]){
  const el=document.getElementById(id);if(!el)continue;

@@ -18,6 +18,7 @@ Die private Übersicht verbindet `capture_posts` und eigene `capture_comments` �
 
 ## Zugriff
 
-`profile-threads-data.php` prüft die vorhandene Adminsitzung und das eingerichtete Adminpasswort. Die Datenbank wird nur lesend geöffnet, Antworten tragen `private, no-store` und `Vary: Cookie`. Keine privaten Inhalte werden in das öffentliche HTML oder dieses Repository kopiert. Öffentliche Sammlungsteilen-Funktionen werden im angereicherten privaten Profilfeld entfernt; sie veröffentlichen keine persönlichen Kommentare.
+`profile-threads-data.php` prüft die vorhandene Adminsitzung und das eingerichtete Adminpasswort. Die Datenbank wird nur lesend geöffnet, Antworten tragen `private, no-store` und `Vary: Cookie`. Keine privaten Inhalte werden in das öffentliche HTML oder dieses Repository kopiert. Quellen und Profile verwenden dieselbe Beitragsdarstellung und dieselben Teilen-Funktionen. Geteilte Sammlungen enthalten ausschließlich freigegebene öffentliche Beiträge; private Kommentare werden dabei nicht übertragen. Einzelne Original-Links können direkt geteilt werden.
 
 Die Vollständigkeit entspricht dem gespeicherten Bestand. Ausschnitte und fehlende Original-Links bleiben als solche kenntlich.
+

@@ -153,7 +153,7 @@ $geo=array_values(array_map(static fn($r)=>['id'=>(int)$r['id'],'name'=>$r['name
 <section><div class="panel"><div class="row"><h2>Deine Weltkarte</h2><small class="muted"><?=count($geo)?> Orte · <?=count($rows)?> Kontakte</small></div><div class="map-tools"><label><input type="checkbox" id="showLines" checked> Verbindungslinien ab Lübeck</label><button id="geocodeMissing" type="button">Fehlende Orte zuordnen</button></div><p id="geoProgress" class="muted" role="status"></p><div id="map" aria-label="Private Netzwerk-Weltkarte"></div><p class="muted">Die Punkte zeigen ungefähre Profilstandorte, nicht zwingend Wohnorte oder Orte der besprochenen Projekte.</p></div>
 <div class="panel" style="margin-top:16px"><h2>Kontakte</h2><label>Kontakt suchen<input id="filter" type="search" placeholder="Name, Ort, Thema …"></label><div id="list"><?php foreach($rows as $r):?><div class="contact" data-search="<?=h(mb_strtolower($r['name'].' '.$r['place'].' '.$r['topic'],'UTF-8'))?>"><strong><?=h($r['name'])?></strong><small class="muted">Kontakt #<?=h($r['id'])?></small> · <span class="muted"><?=h($r['place'])?> · <?=h($r['topic'])?> · <?=h($r['comments_count'])?> Kommentare</span><?php if($r['linkedin_url']):?><p class="small"><a href="<?=h($r['linkedin_url'])?>" target="_blank" rel="noopener noreferrer">LinkedIn öffnen ↗</a></p><?php endif;?><div class="actions"><button type="button" class="edit" data-id="<?=h($r['id'])?>">Bearbeiten</button><form method="post" onsubmit="return confirm('Diesen Kontakt wirklich löschen?')"><input type="hidden" name="csrf" value="<?=h($_SESSION['ifis_admin_token'])?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="confirm" value="yes"><input type="hidden" name="id" value="<?=h($r['id'])?>"><button>Löschen</button></form></div></div><?php endforeach;?></div></div>
 </section></main>
-<script src="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.js"></script><script src="profile-threads.js?v=1"></script><script>
+<script src="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.js"></script><script src="profile-threads.js?v=2"></script><script>
 const contacts=<?=json_encode($rows,JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_INVALID_UTF8_SUBSTITUTE|JSON_UNESCAPED_UNICODE)?>;
 const geo=<?=json_encode($geo,JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_INVALID_UTF8_SUBSTITUTE|JSON_UNESCAPED_UNICODE)?>;
 const form=document.getElementById('contactForm');
@@ -273,4 +273,5 @@ form.addEventListener('submit',async e=>{
  }
 });
 </script></body></html>
+
 

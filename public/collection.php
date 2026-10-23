@@ -12,7 +12,7 @@ function outJson(int $status,array $value): never {
 }
 function validGeoPoint($point): ?array {
  if(!is_array($point)||!isset($point['name'],$point['coordinates'])||
-    !is_string($point['name'])||mb_strlen($point['name'],'UTF-8')>110 ||
+    !is_string($point['name'])||mb_strlen($point['name'],'UTF-8')>400 ||
     !is_array($point['coordinates'])||count($point['coordinates'])!==2)return null;
  [$lon,$lat]=array_values($point['coordinates']);
  if(!is_numeric($lon)||!is_numeric($lat)||abs((float)$lon)>180||abs((float)$lat)>90)return null;
@@ -21,6 +21,7 @@ function validGeoPoint($point): ?array {
 function h(string $value): string {
  return htmlspecialchars($value,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8');
 }
+require dirname(__DIR__).'/lib/public-collection-records.php';
 $directory=dirname(__DIR__).'/storage/collections';
 if($_SERVER['REQUEST_METHOD']==='POST'){
  if(!extension_loaded('pdo_sqlite'))outJson(503,['error'=>'SQLite ist derzeit nicht verfügbar.']);
@@ -36,7 +37,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
  $urls=$input['urls']??null;
  if(!in_array($kind,['source','event','saved'],true) ||
     !in_array($section,['world','ifis'],true) ||
-    $name===''||mb_strlen($name,'UTF-8')>100||
+    $name===''||mb_strlen($name,'UTF-8')>400||
     !is_array($urls)||count($urls)<1||count($urls)>($kind==='saved'?400:40)) {
   outJson(400,['error'=>'Artikelauswahl ungültig.']);
  }
@@ -45,15 +46,8 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
    in_array(strtolower((string)parse_url($url,PHP_URL_SCHEME)),['https','http'],true);
  })));
  if(!$urls||count($urls)>($kind==='saved'?400:40))outJson(400,['error'=>'Keine gültigen Artikel-Links.']);
- $dbPath=dirname(__DIR__).'/storage/news.sqlite';
- if(!is_file($dbPath))outJson(503,['error'=>'Nachrichtendatenbank nicht verfügbar.']);
  try {
-  $db=new PDO('sqlite:'.$dbPath,null,null,[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
-  $placeholders=implode(',',array_fill(0,count($urls),'?'));
-  $q=$db->prepare('SELECT title,url,source,published_at,summary FROM articles WHERE section=? AND source=? AND url IN ('.$placeholders.')');
-  $q->execute(array_merge([$section,'IFIS · Artikel'],$urls));
-  $records=[];
-  foreach($q->fetchAll(PDO::FETCH_ASSOC) as $article)$records[$article['url']]=$article;
+  $records=publicCollectionRecords(dirname(__DIR__),$section,$urls);
   // Do not silently convert an archival selection into a partial collection.
   foreach($urls as $url)if(!isset($records[$url]))outJson(409,['error'=>'Mindestens ein Artikel ist nicht mehr in der Datenbank. Bitte Auswahl aktualisieren.']);
   $articles=array_map(static fn($url)=>$records[$url],$urls);
@@ -126,14 +120,13 @@ $name=(string)($data['name']??'Sammlung');
 $kind=(string)($data['kind']??'event');
 $section=(string)($data['view']??'ifis');
 $created=(string)($data['created_at']??'');
-// Fail closed: even mixed legacy snapshots must never expose retained external material.
+// Frozen approved submissions are public only while their approval still exists.
+$manualUrls=[];
+foreach($data['articles'] as $item)if(is_array($item)&&($item['publication']??'')==='approved-submission-v1')$manualUrls[]=(string)($item['url']??'');
+try{$approved=publicCollectionRecords(dirname(__DIR__),$section,$manualUrls);}catch(Throwable $e){http_response_code(503);echo 'Freigabeprüfung derzeit nicht verfügbar.';exit;}
 foreach($data['articles'] as $item){
- if(!is_array($item) || ($item['source']??'')!=='IFIS · Artikel'
-    || !str_starts_with((string)($item['url']??''),'https://ifis.net/artikel/')){
-  http_response_code(410);
-  header('Content-Type: text/plain; charset=utf-8');
-  echo 'Diese historische Sammlung ist aus Lizenzschutzgründen nicht mehr verfügbar.';
-  exit;
+ if(!is_array($item)||!publicCollectionSnapshotAllowed($item,$approved)){
+  http_response_code(410);header('Content-Type: text/plain; charset=utf-8');echo 'Diese Sammlung enthält nicht mehr freigegebene Inhalte.';exit;
  }
 }
 $articles=$data['articles'];
