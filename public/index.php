@@ -1286,8 +1286,16 @@ body > .dock-time-panel input[type="range"]{
 #stories .story .story-footer-left .story-location-flag,
 #stories .story .story-footer-left>.ifis-discussion-link{flex:none;min-height:32px;align-items:center}
 #stories .story .story-footer>.story-menu>.save{width:32px;height:32px}
+/* Respect the selected column count on phones, including narrow screens. */
 @media(max-width:720px){
- #stories.grid-2,#stories.grid-3{grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr))}
+ #stories.grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #stories.grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+ #stories.grid-2 .story,#stories.grid-3 .story{min-width:0}
+ #stories.grid-2 .story h2,#stories.grid-3 .story h2,
+ #stories.grid-2 .story .meta,#stories.grid-3 .story .meta{overflow-wrap:anywhere}
+ #stories.grid-2 .story .story-footer,#stories.grid-3 .story .story-footer{flex-wrap:wrap;gap:4px}
+ #stories.grid-2 .story .story-footer-left,#stories.grid-3 .story .story-footer-left{flex-wrap:wrap;max-width:100%;gap:4px}
+ #stories.grid-2 .story .story-footer>.story-menu,#stories.grid-3 .story .story-footer>.story-menu{margin-left:auto}
 }
 @media(max-width:720px){#stories .story .story-footer-left{gap:9px}#stories .story .story-footer-left>.story-location-flags{gap:8px}}
 /* The old action column is empty now: let content and footer reach the image edge. */
