@@ -1418,7 +1418,7 @@ body.ifis-info-open{overflow:hidden}
 </div>
 <footer class="site-footer" aria-label="Rechtliches und Informationen"><a href="info.php?page=about">Über IFIS News</a><a href="info.php?page=method">Quellen & Methodik</a><a href="info.php?page=imprint">Impressum</a><a href="info.php?page=privacy">Datenschutz</a><a href="https://ifis.net/">IFIS.net</a><span>IFIS News · Externe Nachrichtenquellen; automatische Einordnungen sind vorläufig.</span></footer>
 
-<script src="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.js"></script><script src="comment-map.js?v=1"></script><script>
+<script src="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.js"></script><script src="profile-threads.js?v=1"></script><script src="comment-map.js?v=2"></script><script>
 (()=>{'use strict';
 window.ifisReferenceArticles=<?=json_encode($ifisIndex,JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_UNESCAPED_UNICODE|JSON_INVALID_UTF8_SUBSTITUTE)?>;
 const prefix='ifis-news-v1-',load=(k)=>{try{return JSON.parse(localStorage.getItem(prefix+k)||'[]')}catch{return []}},store=(k,v)=>{try{localStorage.setItem(prefix+k,JSON.stringify(v))}catch{}};
@@ -2085,6 +2085,9 @@ function showMarkerArticles(coordinates,title,articles,routePoints=[],descriptio
  if(articles.length)articles.slice(0,40).forEach(story=>appendMapArticle(list,story));
  else{const empty=document.createElement('p');empty.textContent='Keine zugeordneten Artikel in der aktuell geladenen Liste. Bitte Zeitraum oder Nachrichtenansicht erweitern.';list.append(empty);}
  details.append(list);
+ if(shareSelection?.kind==='source'&&articles.some(story=>sourceFor(story)?.profile)){
+  window.loadProfileThreads?.(list,{postUrls:articles.map(story=>story.dataset.url),replace:true,keepFallback:true,onLoaded:profile=>{summary.textContent=profile.name+' · '+profile.post_count+' Posts · '+profile.comment_count+' eigene Kommentare · Privates Profilarchiv';wrapper.querySelector('.marker-collection-share')?.remove();}});
+ }
  if(shareSelection){
   const controls=document.createElement('div');controls.className='marker-collection-share';
   const fixed=document.createElement('button');fixed.type='button';fixed.className='collection-share-button';
@@ -3045,6 +3048,7 @@ function loadLinkedInSources(){
      const p=document.createElement('p');p.textContent='Keine einzeln erfassten Beiträge verfügbar.';list.append(p);
     }
     const sourceLink=document.createElement('a');sourceLink.href=item.url;sourceLink.target='_blank';sourceLink.rel='noopener noreferrer';sourceLink.textContent='Quellenseite öffnen ↗';root.append(sourceLink);
+    if(['linkedin','post','profile'].includes(item.type))window.loadProfileThreads?.(list,{postUrls:[item.url,...(item.articles||[]).map(article=>article.url)],replace:true,keepFallback:true,onLoaded:()=>{heading.textContent='Posts und meine Kommentare · privat';}});
     const popup=new maplibregl.Popup({maxWidth:'350px',anchor:'top',offset:18}).setLngLat([item.lon,item.lat]).setDOMContent(root).addTo(map);
     popup.getElement()._ifisPopup=popup;
     focusMapMarker(item.lon,item.lat,popup.getElement());
@@ -3181,5 +3185,6 @@ requestAnimationFrame(updateHeaderUnderline);
 })();
 </script>
 </body></html>
+
 
 

@@ -153,7 +153,7 @@ $geo=array_values(array_map(static fn($r)=>['id'=>(int)$r['id'],'name'=>$r['name
 <section><div class="panel"><div class="row"><h2>Deine Weltkarte</h2><small class="muted"><?=count($geo)?> Orte · <?=count($rows)?> Kontakte</small></div><div class="map-tools"><label><input type="checkbox" id="showLines" checked> Verbindungslinien ab Lübeck</label><button id="geocodeMissing" type="button">Fehlende Orte zuordnen</button></div><p id="geoProgress" class="muted" role="status"></p><div id="map" aria-label="Private Netzwerk-Weltkarte"></div><p class="muted">Die Punkte zeigen ungefähre Profilstandorte, nicht zwingend Wohnorte oder Orte der besprochenen Projekte.</p></div>
 <div class="panel" style="margin-top:16px"><h2>Kontakte</h2><label>Kontakt suchen<input id="filter" type="search" placeholder="Name, Ort, Thema …"></label><div id="list"><?php foreach($rows as $r):?><div class="contact" data-search="<?=h(mb_strtolower($r['name'].' '.$r['place'].' '.$r['topic'],'UTF-8'))?>"><strong><?=h($r['name'])?></strong><small class="muted">Kontakt #<?=h($r['id'])?></small> · <span class="muted"><?=h($r['place'])?> · <?=h($r['topic'])?> · <?=h($r['comments_count'])?> Kommentare</span><?php if($r['linkedin_url']):?><p class="small"><a href="<?=h($r['linkedin_url'])?>" target="_blank" rel="noopener noreferrer">LinkedIn öffnen ↗</a></p><?php endif;?><div class="actions"><button type="button" class="edit" data-id="<?=h($r['id'])?>">Bearbeiten</button><form method="post" onsubmit="return confirm('Diesen Kontakt wirklich löschen?')"><input type="hidden" name="csrf" value="<?=h($_SESSION['ifis_admin_token'])?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="confirm" value="yes"><input type="hidden" name="id" value="<?=h($r['id'])?>"><button>Löschen</button></form></div></div><?php endforeach;?></div></div>
 </section></main>
-<script src="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.js"></script><script>
+<script src="https://unpkg.com/maplibre-gl@5.7.1/dist/maplibre-gl.js"></script><script src="profile-threads.js?v=1"></script><script>
 const contacts=<?=json_encode($rows,JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_INVALID_UTF8_SUBSTITUTE|JSON_UNESCAPED_UNICODE)?>;
 const geo=<?=json_encode($geo,JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_INVALID_UTF8_SUBSTITUTE|JSON_UNESCAPED_UNICODE)?>;
 const form=document.getElementById('contactForm');
@@ -200,9 +200,13 @@ if(window.maplibregl){
   const box=document.createElement('div');const title=document.createElement('strong');title.textContent=c.name;box.append(title);
   const place=document.createElement('p');place.textContent=c.place||'Ungefährer Profilstandort';box.append(place);
   if(c.topic){const t=document.createElement('p');t.textContent=c.topic;box.append(t);}
-  const interactions=document.createElement('p');interactions.textContent=(c.comments_count||0)+' erfasste Kommentare';box.append(interactions);
+  const interactions=document.createElement('p');interactions.textContent='Posts und meine Kommentare';box.append(interactions);
   if(c.url){const link=document.createElement('a');link.href=c.url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='LinkedIn öffnen ↗';box.append(link);}
-  new maplibregl.Marker({element:el,occludedOpacity:0}).setLngLat([c.lon,c.lat]).setPopup(new maplibregl.Popup({offset:18}).setDOMContent(box)).addTo(map);
+  const threads=document.createElement('div');box.append(threads);
+  const profilePopup=new maplibregl.Popup({offset:18,maxWidth:'min(400px,calc(100vw - 40px))'}).setDOMContent(box);
+  profilePopup.on('open',()=>window.loadProfileThreads?.(threads,{contactId:c.id,replace:true}));
+  box.style.maxHeight='min(55vh,420px)';box.style.overflowY='auto';
+  new maplibregl.Marker({element:el,occludedOpacity:0}).setLngLat([c.lon,c.lat]).setPopup(profilePopup).addTo(map);
  });
 }
 document.getElementById('geocodeMissing').addEventListener('click',async()=>{
@@ -269,3 +273,4 @@ form.addEventListener('submit',async e=>{
  }
 });
 </script></body></html>
+

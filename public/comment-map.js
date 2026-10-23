@@ -59,15 +59,7 @@
    const root=document.createElement('div');root.className='my-comment-popup';
    addText(root,'strong',connection.name+' · '+connection.place);
    addText(root,'p','Meine Kommentare · Profilstandort, kein Ereignisort');
-   for(const post of connection.posts){
-    const entry=document.createElement('section');root.append(entry);
-    addText(entry,'h3',post.title);
-    if(post.excerpt){const details=document.createElement('details');entry.append(details);addText(details,'summary','Beitragskontext');addText(details,'p',post.excerpt);}
-    addText(entry,'strong','Mein gespeicherter Kommentar');addText(entry,'p',post.comment);
-    if(post.url)addLink(entry,'Originalbeitrag ↗',post.url);else addText(entry,'small','Original-Link noch nicht erfasst.');
-    if(post.comment_url)addLink(entry,'Originalkommentar ↗',post.comment_url);
-    addLink(entry,'Im privaten Kommentararchiv öffnen',post.detail_url);
-   }
+   window.loadProfileThreads?.(root,{contactId:connection.id,onLoaded:()=>{if(popup&&root.isConnected)focusMarker?.(connection.coordinates[0],connection.coordinates[1],popup.getElement());}});
    popup=new maplibregl.Popup({offset:18,maxWidth:'min(400px, calc(100vw - 40px))'}).setLngLat(connection.coordinates).setDOMContent(root).addTo(map);
    focusMarker?.(connection.coordinates[0],connection.coordinates[1],popup.getElement());
   }
@@ -109,3 +101,4 @@
   window.addEventListener('pagehide',()=>{clear();toggle.checked=false;status.replaceChildren();});
  };
 })();
+
