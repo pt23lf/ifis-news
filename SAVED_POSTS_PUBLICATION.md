@@ -1,17 +1,23 @@
 # Ausgewählte LinkedIn-Beiträge veröffentlichen
 
-Die sechs von Lars am 23.10.2026 ausdrücklich ausgewählten Beiträge stehen in `config/curated-posts-2026-10-23.json`. Jeder Eintrag enthält einen eigenen Titel und eine kurze redaktionelle Zusammenfassung, den Urheber, Suchbegriffe und den direkten LinkedIn-Post-Link. Die vollständigen Transkriptionen und Profilinformationen im privaten Netzwerk-Repository werden nicht veröffentlicht.
+Die sechs ausgewählten Beiträge stehen in `config/curated-posts-2026-10-23.json`: eigene redaktionelle Kurzfassungen, Urheber, Suchbegriffe und direkte Original-Links. Private Netzwerknotizen und vollständige Transkriptionen werden nicht übernommen.
 
-Nach Aktualisierung des Codes auf dem Server:
+Nach Aktualisierung des Codes im News-Repository ausführen:
 
 ```bash
 php bin/publish-saved-posts.php
 ```
 
-Der Befehl übernimmt die ausgewählten Linkkarten als freigegebene Einträge in `storage/source-submissions.sqlite`. Die vorhandene öffentliche Linkübersicht zeigt diese Daten bereits an. Das Erfassungsdatum ist der Zeitpunkt der Veröffentlichung auf IFIS News, kein behauptetes Originaldatum des LinkedIn-Posts.
+Der Befehl speichert freigegebene Linkkarten in `storage/source-submissions.sqlite`. Das angezeigte Datum ist das Erfassungsdatum auf IFIS News, kein behauptetes Originaldatum.
 
-Ein erneuter Aufruf erzeugt keine Duplikate. Ein bereits freigegebener Eintrag bleibt unverändert. Ein vorhandener offener Eintrag desselben Posts wird freigegeben. Frühere Ablehnungen und doppelte Bestandszuordnungen führen zu einem Abbruch ohne Teilübernahme. LinkedIn-Ansichtsparameter und regionale URL-Varianten verändern die erkannte Aktivitäts-ID nicht.
+Erneutes Ausführen erzeugt keine Duplikate und ergänzt bei bereits veröffentlichten Beiträgen fehlende Profilstandorte. Inhaltliche Änderungen und bereits eingetragene Quellenkoordinaten bleiben erhalten. Offene Einträge derselben LinkedIn-Aktivität werden freigegeben; abgelehnte Einträge oder mehrfache Zuordnungen brechen die gesamte Übernahme ohne Teiländerungen ab. LinkedIn-Trackingparameter und regionale URL-Varianten werden bei der Zuordnung ignoriert.
 
-Optional kann `--dry-run` angehängt werden. Dann wird die gesamte Übernahme einschließlich Schema-Ergänzungen zurückgerollt. Ohne vorhandene Datenbank verwendet die Vorschau eine temporäre Datenbank im Arbeitsspeicher.
+`--dry-run` prüft die Übernahme und rollt auch Schemaänderungen zurück. Ohne vorhandene Datenbank verwendet die Vorschau eine Datenbank im Arbeitsspeicher.
 
-Die Beiträge bekommen keinen aus dem Autorenprofil abgeleiteten Ereignis- oder Projektort. Sie erscheinen als Linkkarten; Karteneinträge können später mit belegten Projektorten ergänzt werden.
+## Profilstandorte auf der Karte
+
+`source_place`, `source_lat` und `source_lon` speichern den Quellenort getrennt von den bisherigen Ereignisfeldern `place`, `lat` und `lon`. Die aus den bereitgestellten Profilaufnahmen bekannten Städte werden als ungefähre Stadtmittelpunkte hinterlegt. Sie bezeichnen keine Wohnadresse und keinen Ereignisort.
+
+Unter „Quellenorte“ erscheinen fünf Autorenmarker: Daniel Pink in Washington, Egemen Toprak in Prag, Deon Grobbelaar in Pretoria, Murat Aydin in Brüssel und Khizer Abbas in Islamabad. Jeder Marker öffnet seine zugehörigen Beiträge; Daniel Pinks Marker bündelt zwei Posts. Die Ziffer am Profilmarker zählt die Beiträge. Profilstandorte bleiben für die kuratierten Beiträge auch außerhalb des Nachrichten-Zeitfensters erreichbar.
+
+Ältere Datenbanken bleiben bis zum erneuten Import lesbar; ohne die neuen Quellenfelder erscheinen noch keine Autorenmarker. Nach dem Import die Seite neu laden und „Quellenorte“ einschalten, falls dieser Kartenfilter abgewählt ist.

@@ -29,6 +29,10 @@ function savedPostManifest(string $json):array {
     throw new RuntimeException('Beitragsfeld fehlt oder ist zu lang: '.$key);
    }
   }
+  if(isset($post['source_place'])&&(!is_string($post['source_place'])||trim($post['source_place'])===''||mb_strlen($post['source_place'],'UTF-8')>160
+   ||!is_numeric($post['source_lat']??null)||!is_numeric($post['source_lon']??null)
+   ||!is_finite((float)$post['source_lat'])||!is_finite((float)$post['source_lon'])
+   ||abs((float)$post['source_lat'])>90||abs((float)$post['source_lon'])>180))throw new RuntimeException('Ungültiger Profilstandort.');
   $activity=savedPostActivity($post['url']);
   if($activity===''||isset($ids[$activity])||!in_array($post['kind']??'',['idea','offer','challenge'],true)){
    throw new RuntimeException('Ungültiger oder doppelter LinkedIn-Beitrag.');
@@ -45,7 +49,7 @@ function publishSavedPosts(PDO $db,array $posts,bool $save):array {
  try{
   $db->exec('CREATE TABLE IF NOT EXISTS submissions (id INTEGER PRIMARY KEY AUTOINCREMENT,created_at TEXT NOT NULL,type TEXT NOT NULL,url TEXT NOT NULL,title TEXT NOT NULL,place TEXT NOT NULL,description TEXT NOT NULL,status TEXT NOT NULL DEFAULT "pending")');
   $columns=array_column($db->query('PRAGMA table_info(submissions)')->fetchAll(PDO::FETCH_ASSOC),'name');
-  foreach(['homepage_url'=>"TEXT NOT NULL DEFAULT ''",'feed_url'=>"TEXT NOT NULL DEFAULT ''",'kind'=>"TEXT NOT NULL DEFAULT 'idea'",'topics'=>"TEXT NOT NULL DEFAULT ''",'creator'=>"TEXT NOT NULL DEFAULT ''",'private_note'=>"TEXT NOT NULL DEFAULT ''",'lat'=>'REAL','lon'=>'REAL'] as $column=>$definition){
+  foreach(['homepage_url'=>"TEXT NOT NULL DEFAULT ''",'feed_url'=>"TEXT NOT NULL DEFAULT ''",'kind'=>"TEXT NOT NULL DEFAULT 'idea'",'topics'=>"TEXT NOT NULL DEFAULT ''",'creator'=>"TEXT NOT NULL DEFAULT ''",'private_note'=>"TEXT NOT NULL DEFAULT ''",'lat'=>'REAL','lon'=>'REAL','source_place'=>"TEXT NOT NULL DEFAULT ''",'source_lat'=>'REAL','source_lon'=>'REAL'] as $column=>$definition){
    if(!in_array($column,$columns,true))$db->exec("ALTER TABLE submissions ADD COLUMN $column $definition");
   }
   $byActivity=[];
@@ -53,20 +57,27 @@ function publishSavedPosts(PDO $db,array $posts,bool $save):array {
    $id=savedPostActivity((string)$row['url']);
    if($id!=='')$byActivity[$id][]=$row;
   }
-  $counts=['new'=>0,'approved'=>0,'existing'=>0];
+  $counts=['new'=>0,'approved'=>0,'existing'=>0,'located'=>0];
   $insert=$db->prepare("INSERT INTO submissions(created_at,type,url,title,place,description,status,homepage_url,feed_url,kind,topics,creator,private_note,lat,lon) VALUES(?,'linkedin',?,?,'',?,'approved','','',?,?,?,'',NULL,NULL)");
   $approve=$db->prepare("UPDATE submissions SET status='approved' WHERE id=? AND status='pending'");
+  $locate=$db->prepare("UPDATE submissions SET source_place=?,source_lat=?,source_lon=? WHERE id=? AND COALESCE(source_place,'')='' AND source_lat IS NULL AND source_lon IS NULL");
   foreach($posts as $post){
    $id=savedPostActivity($post['url']);$existing=$byActivity[$id]??[];
    if(count($existing)>1)throw new RuntimeException('Beitrag mehrfach vorhanden; bitte zuerst prüfen: '.$post['title']);
    if($existing){
     $row=$existing[0];
-    if($row['status']==='approved'){$counts['existing']++;continue;}
+    if($row['status']==='approved'){
+     if(isset($post['source_place'])){$locate->execute([$post['source_place'],$post['source_lat'],$post['source_lon'],$row['id']]);$counts['located']+=$locate->rowCount();}
+     $counts['existing']++;continue;
+    }
     if($row['status']!=='pending')throw new RuntimeException('Beitrag wurde bereits abgelehnt; bitte in der Quellenprüfung prüfen: '.$post['title']);
-    $approve->execute([$row['id']]);$counts['approved']++;continue;
+    $approve->execute([$row['id']]);
+    if(isset($post['source_place'])){$locate->execute([$post['source_place'],$post['source_lat'],$post['source_lon'],$row['id']]);$counts['located']+=$locate->rowCount();}
+    $counts['approved']++;continue;
    }
    // No inferred event location, copied media or private contact details.
    $insert->execute([gmdate('c'),$post['url'],$post['title'],$post['description'],$post['kind'],$post['topics'],$post['creator']]);
+   if(isset($post['source_place'])){$locate->execute([$post['source_place'],$post['source_lat'],$post['source_lon'],$db->lastInsertId()]);$counts['located']+=$locate->rowCount();}
    $counts['new']++;
   }
   $db->exec($save?'COMMIT':'ROLLBACK');
@@ -88,6 +99,7 @@ try{
  $path=$root.'/storage/source-submissions.sqlite';
  $db=new PDO($dryRun&&!is_file($path)?'sqlite::memory:':'sqlite:'.$path,null,null,[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION,PDO::ATTR_TIMEOUT=>5]);
  $result=publishSavedPosts($db,$posts,!$dryRun);
- echo ($dryRun?'Vorschau: ':'Gespeichert: ').$result['new'].' neue Beiträge, '.$result['approved'].' bisher offene freigegeben, '.$result['existing']." bereits veröffentlicht.\n";
+ echo ($dryRun?'Vorschau: ':'Gespeichert: ').$result['new'].' neue Beiträge, '.$result['approved'].' bisher offene freigegeben, '.$result['existing']." bereits veröffentlicht, ".$result['located']." Profilstandorte ergänzt.\n";
  if(!$dryRun)echo "Öffentliche Linkübersicht: https://news.ifis.net/?view=world&map=0#stories\n";
 }catch(Throwable $error){fwrite(STDERR,'Beitragsübernahme abgebrochen: '.$error->getMessage()."\n");exit(1);}
+

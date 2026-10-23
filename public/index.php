@@ -120,7 +120,7 @@ if(is_file($submittedDb)&&extension_loaded('pdo_sqlite')){
   $submissionCols=array_column($linked->query('PRAGMA table_info(submissions)')->fetchAll(PDO::FETCH_ASSOC),'name');
   $geoColumns=in_array('lat',$submissionCols,true)&&in_array('lon',$submissionCols,true)?'lat,lon':'NULL AS lat,NULL AS lon';
   $metaColumns=[];
-  foreach(['kind','topics','creator','homepage_url'] as $column)$metaColumns[]=in_array($column,$submissionCols,true)?$column:"'' AS ".$column;
+  foreach(['kind','topics','creator','homepage_url','source_place','source_lat','source_lon'] as $column)$metaColumns[]=in_array($column,$submissionCols,true)?$column:"'' AS ".$column;
   $metaSelect=implode(',',$metaColumns);
   $q=$linked->query("SELECT type,title,url,description,created_at,place,$geoColumns,$metaSelect FROM submissions WHERE status='approved' ORDER BY id DESC LIMIT 150");
   foreach($q as $record){
@@ -133,6 +133,7 @@ if(is_file($submittedDb)&&extension_loaded('pdo_sqlite')){
     'summary'=>(string)$record['description'],'image_url'=>'',
     'category'=>category(['title'=>(string)$record['title'],'summary'=>(string)$record['description']]),
     'homepage_url'=>(string)$record['homepage_url'],'topics'=>(string)$record['topics'],'creator'=>(string)$record['creator'],'kind'=>(string)$record['kind'],
+    'source_place'=>(string)$record['source_place'],'source_lat'=>$record['source_lat'],'source_lon'=>$record['source_lon'],
     'submitted_place'=>(string)$record['place'],'submitted_lat'=>$record['lat'],'submitted_lon'=>$record['lon']];
   }
  }catch(Throwable $e){error_log('LinkedIn submissions: '.$e->getMessage());}
@@ -1393,7 +1394,7 @@ body.ifis-info-open{overflow:hidden}
 <a href="info.php?page=about">Über IFIS News</a><a href="info.php?page=method">Quellen &amp; Methodik</a>
 <a href="info.php?page=imprint">Impressum</a><a href="info.php?page=privacy">Datenschutz</a><a href="https://ifis.net/">IFIS.net ↗</a>
 </nav><section id="dockTimePanel" class="dock-time-panel" aria-label="Nachrichtenzeitraum" hidden><div class="dock-time-heading"><strong>Zeitraum</strong><output id="dockTimeValue" for="dockTimeRange">24 h</output></div><input id="dockTimeRange" type="range" min="0" max="11" step="1" value="9" aria-label="Nachrichten der letzten Stunden"><div class="map-range-labels"><span>30 Min.</span><span>48 Std.</span></div></section><section id="newsStats" class="news-stats" hidden><div class="news-stats-head"><strong>Nachrichtenbilanz</strong><button type="button" id="statsClose" aria-label="Schließen">×</button></div><p id="statsScope"></p><div id="statsContent"></div><p class="stats-disclaimer">Automatische Stichwort-Schätzungen aus Titel und Kurztext. Clickbait-Verdacht ist kein Qualitätsurteil; Tonlage und Entwicklungsrichtung sind unterschiedliche Dimensionen. „Nicht bestimmbar“ wird mitgezählt.</p></section><div class="direction-nav filter-section" data-filter-section="direction"><span class="direction-label">Planetare Entwicklungsrichtung <span title="Vorläufige Zuordnung aus Titel und Kurztext; keine Wirkungsanalyse">ⓘ</span></span><div class="direction-buttons"><button data-direction="all" class="active">Alle</button><button data-direction="constructive">↗ Konstruktiv</button><button data-direction="harmful">↘ Problematisch</button><button data-direction="mixed">↔ Ambivalent</button><button data-direction="unknown">? Offen</button></div></div><div class="chips filter-section" data-filter-section="topics" id="chips" aria-label="Themenfilter"><button class="chip active" data-cat="Alle">Alle</button><?php foreach(['Politik','Gesellschaft','Wirtschaft','Technologie','Umwelt','Gesundheit','Bildung','Wissenschaft','Weitere'] as $c): ?><button class="chip" data-cat="<?=esc($c)?>"><?=esc($c)?></button><?php endforeach; ?></div>
-<details class="refine filter-section" data-filter-section="quality"><summary>Filter & Quellen <span class="muted">· optional</span></summary><div class="source-controls"><button id="sourcesToggle" type="button">⚙ Quellen auswählen</button><div id="sourcePanel" hidden><div id="sourceList"></div><button id="sourcesAll" type="button">Alle</button><button id="sourcesNone" type="button">Keine</button><p class="subtle">Auswahl wird nur in diesem Browser gespeichert. Eigene RSS-Adressen folgen mit einer sicheren serverseitigen Importfunktion.</p></div></div><div class="quality-controls"><label>Tonlage <select id="toneFilter"><option value="all">Alle</option><option value="positive">Hoffnungsvoll</option><option value="balanced">Sachlich / gemischt</option><option value="negative">Belastend</option><option value="unknown">Unbestimmt</option></select></label><label><input type="checkbox" id="filterClickbait" checked> Clickbait-Verdacht ausblenden</label><button id="showFiltered" type="button">Ausgefilterte anzeigen</button></div><p class="subtle">Tonlage beschreibt die Wortwahl, nicht den Wert einer Nachricht. Entwicklungsrichtung und Gestaltbarkeit sind davon zu unterscheiden. Automatische Schlagwort-Einschätzung aus Titel und Kurztext, keine Inhaltsprüfung.</p></details><div class="feedhead"><h1 id="feedTitle">Links</h1><button id="shareSaved" type="button" class="news-share-trigger" hidden aria-label="Gemerktliste teilen">↗ Teilen</button></div><div id="stories"><?php foreach($items as $i=>$item): ?><article id="news-<?=esc(substr(hash('sha256',$item['url']),0,16))?>" class="story <?= $i===0?'feature':'' ?>" data-submitted-place="<?=esc($item['submitted_place']??'')?>" data-submitted-lat="<?=esc(isset($item['submitted_lat'])?(string)$item['submitted_lat']:'')?>" data-submitted-lon="<?=esc(isset($item['submitted_lon'])?(string)$item['submitted_lon']:'')?>" data-source="<?=esc($item['source'])?>" data-url="<?=esc($item['url'])?>" data-cat="<?=esc($item['category'])?>" data-search="<?=esc(mb_strtolower(($item['title']??'').' '.($item['summary']??'').' '.($item['source']??'').' '.($item['topics']??'').' '.($item['creator']??'').' '.($item['homepage_url']??'').' '.($item['submitted_place']??''),'UTF-8'))?>"><?php
+<details class="refine filter-section" data-filter-section="quality"><summary>Filter & Quellen <span class="muted">· optional</span></summary><div class="source-controls"><button id="sourcesToggle" type="button">⚙ Quellen auswählen</button><div id="sourcePanel" hidden><div id="sourceList"></div><button id="sourcesAll" type="button">Alle</button><button id="sourcesNone" type="button">Keine</button><p class="subtle">Auswahl wird nur in diesem Browser gespeichert. Eigene RSS-Adressen folgen mit einer sicheren serverseitigen Importfunktion.</p></div></div><div class="quality-controls"><label>Tonlage <select id="toneFilter"><option value="all">Alle</option><option value="positive">Hoffnungsvoll</option><option value="balanced">Sachlich / gemischt</option><option value="negative">Belastend</option><option value="unknown">Unbestimmt</option></select></label><label><input type="checkbox" id="filterClickbait" checked> Clickbait-Verdacht ausblenden</label><button id="showFiltered" type="button">Ausgefilterte anzeigen</button></div><p class="subtle">Tonlage beschreibt die Wortwahl, nicht den Wert einer Nachricht. Entwicklungsrichtung und Gestaltbarkeit sind davon zu unterscheiden. Automatische Schlagwort-Einschätzung aus Titel und Kurztext, keine Inhaltsprüfung.</p></details><div class="feedhead"><h1 id="feedTitle">Links</h1><button id="shareSaved" type="button" class="news-share-trigger" hidden aria-label="Gemerktliste teilen">↗ Teilen</button></div><div id="stories"><?php foreach($items as $i=>$item): ?><article id="news-<?=esc(substr(hash('sha256',$item['url']),0,16))?>" class="story <?= $i===0?'feature':'' ?>" data-creator="<?=esc($item['creator']??'')?>" data-source-place="<?=esc($item['source_place']??'')?>" data-source-lat="<?=esc(isset($item['source_lat'])?(string)$item['source_lat']:'')?>" data-source-lon="<?=esc(isset($item['source_lon'])?(string)$item['source_lon']:'')?>" data-submitted-place="<?=esc($item['submitted_place']??'')?>" data-submitted-lat="<?=esc(isset($item['submitted_lat'])?(string)$item['submitted_lat']:'')?>" data-submitted-lon="<?=esc(isset($item['submitted_lon'])?(string)$item['submitted_lon']:'')?>" data-source="<?=esc($item['source'])?>" data-url="<?=esc($item['url'])?>" data-cat="<?=esc($item['category'])?>" data-search="<?=esc(mb_strtolower(($item['title']??'').' '.($item['summary']??'').' '.($item['source']??'').' '.($item['topics']??'').' '.($item['creator']??'').' '.($item['homepage_url']??'').' '.($item['submitted_place']??'').' '.($item['source_place']??''),'UTF-8'))?>"><?php
  $imageCandidate=(string)($item['image_url']??'');
  $imageHost=strtolower((string)parse_url($imageCandidate,PHP_URL_HOST));
  $imageScheme=strtolower((string)parse_url($imageCandidate,PHP_URL_SCHEME));
@@ -1952,7 +1953,7 @@ function markStorySeen(story){
  updateMapReadState();
 }
 function storyAge(story){const raw=story.querySelector('time')?.getAttribute('datetime')||'';const parsed=Date.parse(raw.endsWith('Z')?raw:raw.replace(' ','T')+'Z');return Number.isFinite(parsed)?(Date.now()-parsed)/3600000:Infinity}
-function mapTimeStories(items){const hours=window.ifisTimeHours();return items.filter(story=>{if(story.dataset.submittedPlace)return true;const age=storyAge(story);return age>=0&&age<=hours;});}
+function mapTimeStories(items){const hours=window.ifisTimeHours();return items.filter(story=>{if(story.dataset.submittedPlace||story.dataset.sourcePlace)return true;const age=storyAge(story);return age>=0&&age<=hours;});}
 window.ifisNewsMap={refreshMarkers:()=>updateMapReadState()};
 function updateMapReadState(){
  const hours=window.ifisTimeHours();
@@ -2385,6 +2386,10 @@ const sourceLocations={
  'IEEE Spectrum':{name:'IEEE Spectrum · New York',coordinates:[-73.9857,40.7484]}
 };
 function sourceFor(story){
+ if(story.dataset.sourcePlace&&story.dataset.sourceLat!==''&&story.dataset.sourceLon!==''){
+  const lat=Number(story.dataset.sourceLat),lon=Number(story.dataset.sourceLon);
+  if(Number.isFinite(lat)&&Number.isFinite(lon)&&Math.abs(lat)<=90&&Math.abs(lon)<=180)return {name:(story.dataset.creator||'Profil')+' · '+story.dataset.sourcePlace,coordinates:[lon,lat],flag:newsPlaceFlag(story.dataset.sourcePlace),profile:true};
+ }
  if(story.dataset.submittedPlace&&story.dataset.submittedLat!==''&&story.dataset.submittedLon!==''){
   const lat=Number(story.dataset.submittedLat),lon=Number(story.dataset.submittedLon);
   if(Number.isFinite(lat)&&Number.isFinite(lon))return {name:(story.querySelector('h2')?.textContent||'Quelle')+' · '+story.dataset.submittedPlace,coordinates:[lon,lat],flag:newsPlaceFlag(story.dataset.submittedPlace)};
@@ -2679,18 +2684,18 @@ sources.forEach(source=>{
  const places=new Set(related.map(story=>story.dataset.place).filter(place=>place&&groups.has(place)));
  const dot=document.createElement('button');dot.type='button';dot.className='globe-source';
  dot._ifisStories=related;dot._ifisLabel=source.name;
- dot.textContent=String(places.size);
+ dot.textContent=String(source.profile?related.length:places.size);
  const audits=Object.entries(sourceLocations).filter(([,loc])=>loc===source).map(([key])=>sourceImprintAudit[key]).filter(Boolean);
  const audit=audits.find(item=>item.status==='address_city_found')||audits[0];
- dot.title=source.name+' · '+places.size+' Ereignisorte · '+related.length+' Artikel · Standorthinweis: '+(audit?.status==='address_city_found'?'Adresshinweis auf offizieller Seite gefunden (noch redaktionell zu bestätigen)':audit?'Impressum ohne eindeutigen Standortnachweis':'redaktionell hinterlegt, noch nicht geprüft')+(audit?.evidence_url?' · '+audit.evidence_url:'');
- dot._ifisAuditNote=audit?.status==='address_city_found'?'Adresshinweis auf offizieller Website gefunden · nicht abschließend geprüft':'Standort redaktionell zugeordnet · noch nicht bestätigt';
+ dot.title=source.name+(source.profile?' · Profilstandort (ungefährer Stadtmittelpunkt, kein Ereignisort)':'')+' · '+places.size+' Ereignisorte · '+related.length+' Artikel · Standorthinweis: '+(audit?.status==='address_city_found'?'Adresshinweis auf offizieller Seite gefunden (noch redaktionell zu bestätigen)':audit?'Impressum ohne eindeutigen Standortnachweis':'redaktionell hinterlegt, noch nicht geprüft')+(audit?.evidence_url?' · '+audit.evidence_url:'');
+ dot._ifisAuditNote=source.profile?'Profilstandort aus Profilaufnahme · ungefährer Stadtmittelpunkt, kein Ereignisort':audit?.status==='address_city_found'?'Adresshinweis auf offizieller Website gefunden · nicht abschließend geprüft':'Standort redaktionell zugeordnet · noch nicht bestätigt';
  attachMarkerHover(dot);
  dot.addEventListener('click',()=>{
   const selected=dot._ifisTimeStories||mapTimeStories(related);if(!selected.length)return;
   const visitedPlaces=new Set(selected.map(story=>story.dataset.place).filter(Boolean));
   selectedPlace=null;selectedSource=source.name;updateSourceLinks();
   const points=selected.map(story=>groups.get(story.dataset.place)?.loc).filter(Boolean).map(loc=>[loc[2],loc[1]]);
-  showMarkerArticles(source.coordinates,source.name,selected,points,visitedPlaces.size+' Ereignisorte',{kind:'source',name:source.name});
+  showMarkerArticles(source.coordinates,source.name,selected,points,source.profile?'Profilstandort · ungefährer Stadtmittelpunkt, kein Ereignisort':visitedPlaces.size+' Ereignisorte',{kind:'source',name:source.name});
  });
  markers.push(new maplibregl.Marker({element:dot,anchor:'center'}).setLngLat(source.coordinates).addTo(map));
 });
@@ -3173,3 +3178,4 @@ requestAnimationFrame(updateHeaderUnderline);
 })();
 </script>
 </body></html>
+
