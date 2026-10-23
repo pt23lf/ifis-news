@@ -6,6 +6,9 @@ function captureSchema(PDO $db):void {
  $db->exec('CREATE UNIQUE INDEX IF NOT EXISTS contacts_linkedin_unique ON contacts(linkedin_url) WHERE linkedin_url <> ""');
  // Separate tables preserve the existing CSV imports and their original interpretation.
  $db->exec("CREATE TABLE IF NOT EXISTS capture_profiles(source_key TEXT PRIMARY KEY,contact_id INTEGER NOT NULL,homepage_url TEXT NOT NULL DEFAULT '',headline TEXT NOT NULL DEFAULT '',evidence TEXT NOT NULL DEFAULT '',FOREIGN KEY(contact_id) REFERENCES contacts(id))");
+ // Extend existing capture tables without changing contact records.
+ $profileColumns=$db->query('PRAGMA table_info(capture_profiles)')->fetchAll(PDO::FETCH_COLUMN,1);
+ if(!in_array('about',$profileColumns,true))$db->exec("ALTER TABLE capture_profiles ADD COLUMN about TEXT NOT NULL DEFAULT ''");
  $db->exec("CREATE TABLE IF NOT EXISTS capture_posts(id INTEGER PRIMARY KEY AUTOINCREMENT,source_key TEXT NOT NULL UNIQUE,url TEXT NOT NULL DEFAULT '',title TEXT NOT NULL,excerpt TEXT NOT NULL DEFAULT '',author_id INTEGER,place TEXT NOT NULL DEFAULT '',tags TEXT NOT NULL DEFAULT '',evidence TEXT NOT NULL DEFAULT '',FOREIGN KEY(author_id) REFERENCES contacts(id))");
  $db->exec('CREATE UNIQUE INDEX IF NOT EXISTS capture_post_url ON capture_posts(url) WHERE url <> ""');
  $db->exec("CREATE TABLE IF NOT EXISTS capture_comments(id INTEGER PRIMARY KEY AUTOINCREMENT,source_key TEXT NOT NULL UNIQUE,post_id INTEGER NOT NULL,author_id INTEGER NOT NULL,text TEXT NOT NULL,text_status TEXT NOT NULL DEFAULT 'excerpt',url TEXT NOT NULL DEFAULT '',evidence TEXT NOT NULL DEFAULT '',FOREIGN KEY(post_id) REFERENCES capture_posts(id),FOREIGN KEY(author_id) REFERENCES contacts(id))");
@@ -37,7 +40,7 @@ function captureUrl(string $v,bool $profile=false,bool $homepage=false):string {
 function captureBatch(string $json):array {
  if(strlen($json)>1048576)throw new RuntimeException('Maximal 1 MB pro Import.');
  $b=json_decode($json,true,32,JSON_THROW_ON_ERROR);
- if(!is_array($b)||($b['schema_version']??null)!==1)throw new RuntimeException('schema_version: 1 wird benötigt.');
+ if(!is_array($b)||!in_array($b['schema_version']??null,[1,2],true))throw new RuntimeException('schema_version: 1 oder 2 wird benötigt.');
  $total=0;
  foreach(['profiles','posts','comments'] as $type){
   $b[$type]=$b[$type]??[];
@@ -70,7 +73,7 @@ function captureImport(PDO $db,array $b,bool $save):array {
    $key=captureText($r,'key',180,true);$name=captureText($r,'name',140,true);
    $url=captureUrl(captureText($r,'linkedin_url',600),true);
    $homepage=captureUrl(captureText($r,'homepage_url',600),false,true);
-   $headline=captureText($r,'headline',500);$evidence=captureText($r,'evidence',1000,true);
+   $about=captureText($r,'about',6000);$headline=captureText($r,'headline',500);$evidence=captureText($r,'evidence',1000,true);
    $place=implode(', ',array_filter([captureText($r,'city',75),captureText($r,'country',75)],static fn($v)=>$v!==''));
    $tags=captureText($r,'tags',220);
    $linked=captureFind($db,'SELECT c.* FROM capture_profiles p JOIN contacts c ON c.id=p.contact_id WHERE p.source_key=?',[$key]);
@@ -104,8 +107,8 @@ function captureImport(PDO $db,array $b,bool $save):array {
     $q=$db->prepare('UPDATE contacts SET linkedin_url=CASE WHEN linkedin_url="" THEN ? ELSE linkedin_url END,place=CASE WHEN place="" OR ?=1 THEN ? ELSE place END,lat=CASE WHEN ?=1 THEN NULL ELSE lat END,lon=CASE WHEN ?=1 THEN NULL ELSE lon END,topic=CASE WHEN topic="" THEN ? ELSE topic END,updated_at=? WHERE id=?');
     $q->execute([$url,$refine,$place,$refine,$refine,$tags,gmdate('c'),$id]);
    }
-   $q=$db->prepare('INSERT INTO capture_profiles(source_key,contact_id,homepage_url,headline,evidence) VALUES(?,?,?,?,?) ON CONFLICT(source_key) DO UPDATE SET homepage_url=CASE WHEN excluded.homepage_url<>"" THEN excluded.homepage_url ELSE capture_profiles.homepage_url END,headline=CASE WHEN excluded.headline<>"" THEN excluded.headline ELSE capture_profiles.headline END');
-   $q->execute([$key,$id,$homepage,$headline,$evidence]);
+   $q=$db->prepare('INSERT INTO capture_profiles(source_key,contact_id,homepage_url,headline,evidence,about) VALUES(?,?,?,?,?,?) ON CONFLICT(source_key) DO UPDATE SET homepage_url=CASE WHEN excluded.homepage_url<>"" THEN excluded.homepage_url ELSE capture_profiles.homepage_url END,headline=CASE WHEN excluded.headline<>"" THEN excluded.headline ELSE capture_profiles.headline END,about=CASE WHEN excluded.about<>"" THEN excluded.about ELSE capture_profiles.about END,evidence=CASE WHEN excluded.about<>"" THEN excluded.evidence ELSE capture_profiles.evidence END');
+   $q->execute([$key,$id,$homepage,$headline,$evidence,$about]);
   }
   foreach($b['posts'] as $r){
    $key=captureText($r,'key',180,true);$url=captureUrl(captureText($r,'url',600));
@@ -116,8 +119,14 @@ function captureImport(PDO $db,array $b,bool $save):array {
    if($byUrl&&(!$old||(int)$old['id']!==(int)$byUrl['id']))throw new RuntimeException('Beitrag bereits unter Schlüssel '.$byUrl['source_key'].' erfasst. Bitte diesen Schlüssel verwenden.');
    if($old){
     if(($url!==''&&$old['url']!==''&&$old['url']!==$url)||($author!==null&&$old['author_id']!==null&&(int)$old['author_id']!==$author))throw new RuntimeException('Widersprüchlicher Beitrag: '.$key);
+    $previous=captureText($r,'previous_excerpt_sha256',64);
+    if($previous!==''&&$old['excerpt']!==$excerpt){
+     if(!preg_match('/^[a-f0-9]{64}$/',$previous)||!hash_equals(hash('sha256',$old['excerpt']),$previous))throw new RuntimeException('Beitragsänderung benötigt den passenden bisherigen Text-Hash: '.$key);
+     $q=$db->prepare('UPDATE capture_posts SET excerpt=?,evidence=? WHERE id=?');$q->execute([$excerpt,$evidence,$old['id']]);$counts['updated']++;
+    }
     $q=$db->prepare('UPDATE capture_posts SET url=CASE WHEN url="" THEN ? ELSE url END,author_id=COALESCE(author_id,?) WHERE id=?');$q->execute([$url,$author,$old['id']]);$counts['existing']++;
    }else{
+    if(captureText($r,'previous_excerpt_sha256',64)!=='')throw new RuntimeException('Zu ergänzender Beitrag fehlt: '.$key);
     $q=$db->prepare('INSERT INTO capture_posts(source_key,url,title,excerpt,author_id,place,tags,evidence) VALUES(?,?,?,?,?,?,?,?)');$q->execute([$key,$url,$title,$excerpt,$author,$place,$tags,$evidence]);$counts['posts']++;
    }
   }
@@ -145,3 +154,4 @@ function captureImport(PDO $db,array $b,bool $save):array {
  }catch(Throwable $e){if($db->inTransaction())$db->rollBack();throw $e;}
  return $counts;
 }
+
