@@ -119,7 +119,7 @@ if ($user && isset($_GET['edit']) && ctype_digit((string)$_GET['edit'])) {
 </style></head>
 <body>
 <header><a href="/"><?=e($labels['back'])?></a><div>
-<form method="post"><input type="hidden" name="csrf" value="<?=e($_SESSION['csrf'])?>"><input type="hidden" name="action" value="language"><label style="margin:0"><span><?=e($labels['lang'])?></span><select name="language" onchange="this.form.submit()"><option value="de" <?=$language==='de'?'selected':''?>>Deutsch</option><option value="en" <?=$language==='en'?'selected':''?>>English</option></select></label></form>
+<form method="post"><input type="hidden" name="csrf" value="<?=e($_SESSION['csrf'])?>"><input type="hidden" name="action" value="language"><label style="margin:0"><span><?=e($labels['lang'])?></span><select name="language" id="personal-language"><option value="de" <?=$language==='de'?'selected':''?>>Deutsch</option><option value="en" <?=$language==='en'?'selected':''?>>English</option></select></label></form>
 <?php if ($user): ?><form method="post"><input type="hidden" name="csrf" value="<?=e($_SESSION['csrf'])?>"><input type="hidden" name="action" value="logout"><button><?=e($labels['sign_out'])?></button></form><?php endif;?>
 </div></header>
 <main><h1><?=e($labels['title'])?></h1>
