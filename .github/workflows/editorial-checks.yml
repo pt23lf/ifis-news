@@ -1,0 +1,46 @@
+name: Editorial foundation checks
+
+on:
+  pull_request:
+    paths:
+      - 'lib/**'
+      - 'lang/**'
+      - 'public/mein-netzwerk.php'
+      - 'public/personal-network.js'
+      - 'database/migrations/**'
+      - 'tests/**'
+      - '.github/workflows/editorial-checks.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  php-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_sqlite, sqlite3, mbstring
+          coverage: none
+      - name: Lint editorial PHP
+        run: |
+          php -l lib/EditorialAuth.php
+          php -l lib/PersonalNetwork.php
+          php -l lib/I18n.php
+          php -l public/mein-netzwerk.php
+          php -l bin/migrate-network-owners.php
+          php -l tests/editorial-auth-smoke.php
+          php -l tests/personal-network-smoke.php
+          php -l lang/de.php
+          php -l lang/en.php
+      - name: Authentication smoke tests
+        run: php tests/editorial-auth-smoke.php
+      - name: Personal network isolation smoke tests
+        run: php tests/personal-network-smoke.php
+      - name: Translation catalogue parity
+        run: |
+          php -r '$de=require "lang/de.php"; $en=require "lang/en.php"; $missing=array_diff(array_keys($de),array_keys($en)); if($missing){fwrite(STDERR,implode(",",$missing));exit(1);} echo "Translation keys match\n";'
