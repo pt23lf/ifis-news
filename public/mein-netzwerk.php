@@ -88,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && ($_POST['action'] ?? '')==='login' &&
         $error=$labels['login_error'];
     }
 }
-if ($user && $_SERVER['REQUEST_METHOD']==='POST' && ($_POST['action'] ?? '')==='save') {
+if ($user && $_SERVER['REQUEST_METHOD']==='POST' && ($_POST['action'] ?? '')==='save' && $user['role'] !== 'reader') {
     if (!csrfValid()) $error=$labels['security'];
     else {
         try {
@@ -134,7 +134,7 @@ if ($user && isset($_GET['edit']) && ctype_digit((string)$_GET['edit'])) {
 <?php else: ?>
 <p class="muted"><?=e($user['display_name'])?> · <?=e($i18n->text('network.not_public'))?></p>
 <div class="columns"><section class="panel"><h2><?=e($editing ? $labels['edit'] : $labels['add'])?></h2>
-<form method="post"><input type="hidden" name="action" value="save"><input type="hidden" name="csrf" value="<?=e($_SESSION['csrf'])?>">
+<?php if ($user['role'] !== 'reader'): ?><form method="post"><input type="hidden" name="action" value="save"><input type="hidden" name="csrf" value="<?=e($_SESSION['csrf'])?>">
 <input type="hidden" name="id" value="<?=e($editing ? (string)$editing['id'] : '')?>">
 <label><?=e($labels['name'])?><input name="name" maxlength="140" value="<?=e($editing['name']??'')?>" required></label>
 <label><?=e($labels['url'])?><input type="url" name="linkedin_url" maxlength="500" value="<?=e($editing['linkedin_url']??'')?>"></label>
@@ -145,17 +145,17 @@ if ($user && isset($_GET['edit']) && ctype_digit((string)$_GET['edit'])) {
 </select></label>
 <label><?=e($labels['note'])?><textarea name="note" maxlength="1200"><?=e($editing['note']??'')?></textarea></label>
 <button class="primary"><?=e($labels['save'])?></button> <a href="mein-netzwerk.php"><?=e($labels['cancel'])?></a>
-</form></section>
+</form><?php endif; ?></section>
 <section class="panel"><h2><?=e($i18n->text('network.contacts'))?> (<?=count($contacts)?>)</h2>
 <label><?=e($labels['search'])?><input id="search" type="search" autocomplete="off"></label>
 <div id="contacts"><?php foreach ($contacts as $c): ?>
 <article class="contact" data-filter="<?=e(mb_strtolower($c['name'].' '.$c['place'].' '.$c['topic'],'UTF-8'))?>">
 <strong><?=e($c['name'])?></strong><span class="muted"><?=e($c['place'])?> · <?=e($c['topic'])?></span>
 <?php if ($c['linkedin_url']): ?><p><a href="<?=e($c['linkedin_url'])?>" target="_blank" rel="noopener noreferrer">LinkedIn</a></p><?php endif; ?>
-<p><a href="?edit=<?=(int)$c['id']?>"><?=e($labels['edit'])?></a></p>
+<?php if ($user['role'] !== 'reader'): ?><p><a href="?edit=<?=(int)$c['id']?>"><?=e($labels['edit'])?></a></p><?php endif; ?>
 </article><?php endforeach; ?></div>
 <?php if (!$contacts): ?><p class="muted"><?=e($labels['no_contacts'])?></p><?php endif;?>
 </section></div>
 <?php endif;?></main>
-<script>const search=document.getElementById('search');if(search)search.addEventListener('input',()=>{const term=search.value.trim().toLocaleLowerCase();document.querySelectorAll('#contacts .contact').forEach(el=>{el.hidden=!el.dataset.filter.includes(term)})});</script>
+<script src="/personal-network.js" defer></script>
 </body></html>
