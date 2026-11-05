@@ -74,7 +74,7 @@ final class EditorialAuth
         if (!preg_match('/^[a-f0-9]{64}$/D', $token)) {
             throw new InvalidArgumentException('Invalid invitation token.');
         }
-        $this->db->exec('BEGIN IMMEDIATE');
+        $this->db->beginTransaction();
         try {
             $stmt = $this->db->prepare("SELECT id,email,role FROM editorial_invitations
                WHERE token_hash=? AND accepted_at IS NULL AND revoked_at IS NULL
@@ -90,7 +90,7 @@ final class EditorialAuth
             $this->db->commit();
             return $id;
         } catch (Throwable $e) {
-            $this->db->rollBack();
+            if ($this->db->inTransaction()) $this->db->rollBack();
             throw $e;
         }
     }
